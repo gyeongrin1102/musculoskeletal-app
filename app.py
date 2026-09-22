@@ -607,53 +607,71 @@ if st.button(
 
         data["최종판정"] = final_judgment
 
-        # -----------------------------
-        # CSV 저장
-        # -----------------------------
 
-        new_df = pd.DataFrame([data])
 
-        file_name = "survey_result.csv"
+        # =====================================================
+        # Supabase DB 저장
+        # =====================================================
 
-        if os.path.exists(file_name):
+        try:
+            from supabase import create_client
 
-            old_df = pd.read_csv(file_name)
+            supabase_url = st.secrets["SUPABASE_URL"]
+            supabase_key = st.secrets["SUPABASE_KEY"]
 
-            # 기존 CSV와 새 데이터 열 구조 맞추기
-            all_columns = list(
-                dict.fromkeys(
-                    list(old_df.columns)
-                    + list(new_df.columns)
-                )
+            supabase = create_client(
+                supabase_url,
+                supabase_key
             )
 
-            old_df = old_df.reindex(
-                columns=all_columns
+            db_data = {
+                "name": str(data.get("성명", "")),
+                "gender": str(data.get("성별", "")),
+                "age": int(data.get("연령", 0))
+                if str(data.get("연령", "")).strip() not in ["", "None"]
+                else None,
+
+                "marriage": str(
+                    data.get("결혼여부", "")
+                ),
+
+                "department": str(
+                    data.get("작업부서", "")
+                ),
+
+                "sub_department": str(
+                    data.get("라인/세부부서", "")
+                ),
+
+                "current_work": str(
+                    data.get("현재작업", "")
+                ),
+
+                "symptom_exists": str(
+                    data.get("근골격계증상여부", "")
+                ),
+
+                "final_judgment": str(
+                    data.get("최종판정", "")
+                ),
+
+                # 전체 설문 원본 데이터 저장
+                "survey_data": data
+            }
+
+            response = (
+                supabase
+                .table("survey_results")
+                .insert(db_data)
+                .execute()
             )
 
-            new_df = new_df.reindex(
-                columns=all_columns
+            st.success(
+                "근골격계 증상조사가 정상적으로 저장되었습니다."
             )
 
-            combined_df = pd.concat(
-                [old_df, new_df],
-                ignore_index=True
+        except Exception as e:
+
+            st.error(
+                f"저장 중 오류가 발생했습니다: {e}"
             )
-
-            combined_df.to_csv(
-                file_name,
-                index=False,
-                encoding="utf-8-sig"
-            )
-
-        else:
-
-            new_df.to_csv(
-                file_name,
-                index=False,
-                encoding="utf-8-sig"
-            )
-
-        st.success(
-            "근골격계 증상조사가 정상적으로 저장되었습니다."
-        )
