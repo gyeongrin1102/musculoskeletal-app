@@ -4,3 +4,4 @@ openpyxl
 python-docx
 matplotlib
 qrcode[pil]
+supabase
