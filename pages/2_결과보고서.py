@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import koreanize_matplotlib
 
 from io import BytesIO
 from datetime import datetime
@@ -43,7 +44,7 @@ st.divider()
 # 한글 그래프 설정
 # =========================================================
 
-plt.rcParams["font.family"] = "Malgun Gothic"
+
 plt.rcParams["axes.unicode_minus"] = False
 
 
