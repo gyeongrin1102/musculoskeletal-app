@@ -5,4 +5,3 @@ python-docx
 matplotlib
 qrcode[pil]
 supabase
-koreanize-matplotlib
