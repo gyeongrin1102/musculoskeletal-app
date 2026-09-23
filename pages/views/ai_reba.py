@@ -329,6 +329,148 @@ def get_pose_angles(
         "오른쪽 상완": right_shoulder_angle,
         "몸통 기울기": trunk_angle
     }
+    # =========================================================
+# AI 관절각 → REBA 기본점수 추천
+# =========================================================
+
+def recommend_reba_from_angles(angles):
+
+    # -----------------------------
+    # 몸통
+    # -----------------------------
+    trunk_angle = abs(
+        angles.get("몸통 기울기") or 0
+    )
+
+    if trunk_angle <= 5:
+        trunk_score = 1
+    elif trunk_angle <= 20:
+        trunk_score = 2
+    elif trunk_angle <= 60:
+        trunk_score = 3
+    else:
+        trunk_score = 4
+
+
+    # -----------------------------
+    # 상완
+    # 좌/우 중 더 불리한 자세 사용
+    # -----------------------------
+    upper_angles = [
+        angles.get("왼쪽 상완"),
+        angles.get("오른쪽 상완")
+    ]
+
+    upper_angles = [
+        x for x in upper_angles
+        if x is not None
+    ]
+
+    upper_angle = (
+        max(upper_angles)
+        if upper_angles
+        else 0
+    )
+
+    if upper_angle <= 20:
+        upper_arm_score = 1
+    elif upper_angle <= 45:
+        upper_arm_score = 2
+    elif upper_angle <= 90:
+        upper_arm_score = 3
+    else:
+        upper_arm_score = 4
+
+
+    # -----------------------------
+    # 전완
+    # 한쪽이라도 60~100°를 벗어나면 2점 추천
+    # -----------------------------
+    elbow_angles = [
+        angles.get("왼쪽 팔꿈치"),
+        angles.get("오른쪽 팔꿈치")
+    ]
+
+    elbow_angles = [
+        x for x in elbow_angles
+        if x is not None
+    ]
+
+    lower_arm_score = 1
+
+    for elbow_angle in elbow_angles:
+
+        if not (
+            60 <= elbow_angle <= 100
+        ):
+            lower_arm_score = 2
+            break
+
+
+    # -----------------------------
+    # 다리
+    # 무릎 굴곡 정도만 이용한 보조 추천
+    # -----------------------------
+    knee_angles = [
+        angles.get("왼쪽 무릎"),
+        angles.get("오른쪽 무릎")
+    ]
+
+    knee_angles = [
+        x for x in knee_angles
+        if x is not None
+    ]
+
+    if knee_angles:
+
+        knee_flexions = [
+            max(
+                0,
+                180 - angle
+            )
+            for angle in knee_angles
+        ]
+
+        max_knee_flexion = max(
+            knee_flexions
+        )
+
+    else:
+
+        max_knee_flexion = 0
+
+
+    if max_knee_flexion < 30:
+        legs_score = 1
+
+    elif max_knee_flexion <= 60:
+        legs_score = 2
+
+    else:
+        legs_score = 3
+
+
+    return {
+        "trunk": trunk_score,
+        "upper_arm": upper_arm_score,
+        "lower_arm": lower_arm_score,
+        "legs": legs_score,
+
+        "trunk_angle": round(
+            trunk_angle,
+            1
+        ),
+
+        "upper_arm_angle": round(
+            upper_angle,
+            1
+        ),
+
+        "max_knee_flexion": round(
+            max_knee_flexion,
+            1
+        )
+    }
 
 
 # =========================================================
@@ -620,6 +762,42 @@ if uploaded_file is not None:
                 width,
                 height
             )
+            # REBA 자동 추천값 계산
+recommendation = recommend_reba_from_angles(
+    angles
+)
+
+
+# REBA 입력창에 추천값 전달
+st.session_state[
+    "reba_trunk"
+] = recommendation[
+    "trunk"
+]
+
+st.session_state[
+    "reba_upper_arm"
+] = recommendation[
+    "upper_arm"
+]
+
+st.session_state[
+    "reba_lower_arm"
+] = recommendation[
+    "lower_arm"
+]
+
+st.session_state[
+    "reba_legs"
+] = recommendation[
+    "legs"
+]
+
+
+# 추천결과 저장
+st.session_state[
+    "ai_reba_recommendation"
+] = recommendation
 
 
             st.write(
@@ -650,6 +828,28 @@ if uploaded_file is not None:
                 hide_index=True,
                 width="stretch"
             )
+st.write(
+    "#### 🤖 AI REBA 추천"
+)
+
+st.success(
+    f"""
+    AI가 사진에서 확인 가능한 자세를 기준으로
+    다음 점수를 추천했습니다.
+
+    - 몸통: {recommendation['trunk']}점
+    - 상완: {recommendation['upper_arm']}점
+    - 전완: {recommendation['lower_arm']}점
+    - 다리: {recommendation['legs']}점
+    """
+)
+
+st.caption(
+    "※ 목, 손목, 하중, 커플링, 활동요인은 "
+    "사진만으로 정확한 판단이 어려우므로 "
+    "평가자가 직접 확인해야 합니다."
+)
+
 
 
             st.info(
@@ -697,28 +897,29 @@ with c2:
     trunk = st.selectbox(
         "몸통 점수",
         [1, 2, 3, 4, 5],
-        format_func=lambda x: {
-            1: "1점 — 중립",
-            2: "2점 — 경미한 굴곡/신전",
-            3: "3점 — 중등도 굴곡",
-            4: "4점 — 큰 굴곡",
-            5: "5점 — 비틀림·측굴 등을 포함한 높은 점수"
-        }[x]
-    )
+        key="reba_trunk",
+    format_func=lambda x: {
+        1: "1점 — 중립",
+        2: "2점 — 경미한 굴곡/신전",
+        3: "3점 — 중등도 굴곡",
+        4: "4점 — 큰 굴곡",
+        5: "5점 — 비틀림·측굴 등을 포함한 높은 점수"
+    }[x]
+)
 
 with c3:
 
     legs = st.selectbox(
-        "다리 점수",
-        [1, 2, 3, 4],
-        format_func=lambda x: {
-            1: "1점 — 양발 안정 지지",
-            2: "2점 — 한쪽 지지/불안정",
-            3: "3점 — 무릎 굴곡 등 보정",
-            4: "4점 — 큰 무릎 굴곡 등"
-        }[x]
-    )
-
+    "다리 점수",
+    [1, 2, 3, 4],
+    key="reba_legs",
+    format_func=lambda x: {
+        1: "1점 — 양발 안정 지지",
+        2: "2점 — 한쪽 지지/불안정 또는 무릎 굴곡",
+        3: "3점 — 큰 무릎 굴곡 등",
+        4: "4점 — 매우 불리한 하지 자세"
+    }[x]
+)
 
 st.write("#### 하중/힘")
 
@@ -744,23 +945,24 @@ c1, c2, c3 = st.columns(3)
 
 with c1:
 
-    upper_arm = st.selectbox(
-        "상완 점수",
-        [1, 2, 3, 4, 5, 6],
-        format_func=lambda x: f"{x}점"
-    )
+   upper_arm = st.selectbox(
+    "상완 점수",
+    [1, 2, 3, 4, 5, 6],
+    key="reba_upper_arm",
+    format_func=lambda x: f"{x}점"
+)
 
 with c2:
 
     lower_arm = st.selectbox(
-        "전완 점수",
-        [1, 2],
-        format_func=lambda x: {
-            1: "1점 — 대체로 60~100°",
-            2: "2점 — 그 외 자세"
-        }[x]
-    )
-
+    "전완 점수",
+    [1, 2],
+    key="reba_lower_arm",
+    format_func=lambda x: {
+        1: "1점 — 대체로 60~100°",
+        2: "2점 — 그 외 자세"
+    }[x]
+)
 with c3:
 
     wrist = st.selectbox(
