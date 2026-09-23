@@ -3,6 +3,10 @@ import streamlit as st
 from auth import is_admin
 
 
+# =========================================================
+# 앱 설정
+# =========================================================
+
 st.set_page_config(
     page_title="근골격계 증상조사",
     page_icon="🩺",
@@ -11,7 +15,7 @@ st.set_page_config(
 
 
 # =========================================================
-# 근로자
+# 근로자 페이지
 # =========================================================
 
 survey_page = st.Page(
@@ -23,7 +27,7 @@ survey_page = st.Page(
 
 
 # =========================================================
-# 로그인
+# 관리자 로그인
 # =========================================================
 
 login_page = st.Page(
@@ -43,11 +47,13 @@ admin_dashboard_page = st.Page(
     icon="📊"
 )
 
+
 report_page = st.Page(
     "pages/views/report.py",
     title="결과보고서",
     icon="📄"
 )
+
 
 qr_page = st.Page(
     "pages/views/qr.py",
@@ -55,11 +61,14 @@ qr_page = st.Page(
     icon="📱"
 )
 
+
 ai_reba_page = st.Page(
     "pages/views/ai_reba.py",
     title="AI 자세·REBA 평가",
     icon="🤖"
 )
+
+
 reba_improvement_page = st.Page(
     "pages/views/reba_improvement.py",
     title="REBA 개선 전·후 비교",
@@ -85,7 +94,8 @@ if is_admin():
             ai_reba_page,
             reba_improvement_page,
             login_page
-]
+        ]
+    }
 
 else:
 
@@ -99,6 +109,10 @@ else:
         ]
     }
 
+
+# =========================================================
+# 네비게이션 실행
+# =========================================================
 
 pg = st.navigation(
     pages,
