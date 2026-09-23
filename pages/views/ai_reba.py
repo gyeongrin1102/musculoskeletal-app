@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import cv2
@@ -9,6 +8,7 @@ import mediapipe as mp
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from supabase import create_client
 
 from auth import require_admin, logout_button
 
@@ -18,6 +18,22 @@ from auth import require_admin, logout_button
 # =========================================================
 
 require_admin()
+
+
+# =========================================================
+# Supabase 연결
+# =========================================================
+
+@st.cache_resource
+def get_supabase():
+
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
+    )
+
+
+supabase = get_supabase()
 
 
 # =========================================================
@@ -38,7 +54,7 @@ MODEL_PATH = (
 # =========================================================
 
 POSE_CONNECTIONS = [
-    (11, 12),  # 어깨
+    (11, 12),
     (11, 13),
     (13, 15),
     (12, 14),
@@ -63,18 +79,17 @@ POSE_CONNECTIONS = [
 
 
 IMPORTANT_POINTS = [
-    11, 12,  # 어깨
-    13, 14,  # 팔꿈치
-    15, 16,  # 손목
-    23, 24,  # 엉덩이
-    25, 26,  # 무릎
-    27, 28,  # 발목
+    11, 12,
+    13, 14,
+    15, 16,
+    23, 24,
+    25, 26,
+    27, 28,
 ]
 
 
 # =========================================================
 # REBA TABLE A
-# 몸통 × 목 × 다리
 # =========================================================
 
 TABLE_A = {
@@ -113,7 +128,6 @@ TABLE_A = {
 
 # =========================================================
 # REBA TABLE B
-# 상완 × 전완 × 손목
 # =========================================================
 
 TABLE_B = {
@@ -225,7 +239,7 @@ def calculate_angle(a, b, c):
 
 
 # =========================================================
-# 랜드마크 좌표 변환
+# 랜드마크 좌표
 # =========================================================
 
 def landmark_xy(
@@ -242,10 +256,6 @@ def landmark_xy(
         int(lm.y * height)
     )
 
-
-# =========================================================
-# 랜드마크 가시성
-# =========================================================
 
 def landmark_visible(
     landmarks,
@@ -311,10 +321,8 @@ def analyze_pose(image_rgb):
                 "사진에서 작업자의 자세를 인식하지 못했습니다."
             )
 
-        landmarks = result.pose_landmarks[0]
-
         return (
-            landmarks,
+            result.pose_landmarks[0],
             None
         )
 
@@ -339,10 +347,6 @@ def draw_pose(
 
     height, width = output.shape[:2]
 
-
-    # -----------------------------
-    # 연결선
-    # -----------------------------
 
     for start_idx, end_idx in POSE_CONNECTIONS:
 
@@ -380,10 +384,6 @@ def draw_pose(
             3
         )
 
-
-    # -----------------------------
-    # 관절점
-    # -----------------------------
 
     for idx in IMPORTANT_POINTS:
 
@@ -450,10 +450,6 @@ def get_pose_angles(
     right_ankle = pt(28)
 
 
-    # -----------------------------
-    # 팔꿈치
-    # -----------------------------
-
     left_elbow_angle = calculate_angle(
         left_shoulder,
         left_elbow,
@@ -466,10 +462,6 @@ def get_pose_angles(
         right_wrist
     )
 
-
-    # -----------------------------
-    # 무릎
-    # -----------------------------
 
     left_knee_angle = calculate_angle(
         left_hip,
@@ -484,10 +476,6 @@ def get_pose_angles(
     )
 
 
-    # -----------------------------
-    # 상완
-    # -----------------------------
-
     left_shoulder_angle = calculate_angle(
         left_elbow,
         left_shoulder,
@@ -500,10 +488,6 @@ def get_pose_angles(
         right_hip
     )
 
-
-    # -----------------------------
-    # 몸통 중심선
-    # -----------------------------
 
     shoulder_mid = (
 
@@ -572,16 +556,12 @@ def get_pose_angles(
 
 
 # =========================================================
-# AI 관절각 → REBA 점수 추천
+# AI 관절각 → REBA 추천
 # =========================================================
 
 def recommend_reba_from_angles(
     angles
 ):
-
-    # -----------------------------
-    # 몸통
-    # -----------------------------
 
     trunk_angle = abs(
         angles.get(
@@ -590,27 +570,19 @@ def recommend_reba_from_angles(
         or 0
     )
 
-    if trunk_angle <= 5:
 
+    if trunk_angle <= 5:
         trunk_score = 1
 
     elif trunk_angle <= 20:
-
         trunk_score = 2
 
     elif trunk_angle <= 60:
-
         trunk_score = 3
 
     else:
-
         trunk_score = 4
 
-
-    # -----------------------------
-    # 상완
-    # 좌우 중 큰 각도 기준
-    # -----------------------------
 
     upper_angles = [
         angles.get("왼쪽 상완"),
@@ -632,25 +604,17 @@ def recommend_reba_from_angles(
 
 
     if upper_angle <= 20:
-
         upper_arm_score = 1
 
     elif upper_angle <= 45:
-
         upper_arm_score = 2
 
     elif upper_angle <= 90:
-
         upper_arm_score = 3
 
     else:
-
         upper_arm_score = 4
 
-
-    # -----------------------------
-    # 전완
-    # -----------------------------
 
     elbow_angles = [
         angles.get("왼쪽 팔꿈치"),
@@ -675,14 +639,8 @@ def recommend_reba_from_angles(
         ):
 
             lower_arm_score = 2
-
             break
 
-
-    # -----------------------------
-    # 다리
-    # 무릎 굴곡 기준 보조추천
-    # -----------------------------
 
     knee_angles = [
         angles.get("왼쪽 무릎"),
@@ -718,15 +676,12 @@ def recommend_reba_from_angles(
 
 
     if max_knee_flexion < 30:
-
         legs_score = 1
 
     elif max_knee_flexion <= 60:
-
         legs_score = 2
 
     else:
-
         legs_score = 3
 
 
@@ -765,7 +720,7 @@ def recommend_reba_from_angles(
 
 
 # =========================================================
-# REBA 위험수준
+# 위험수준 판정
 # =========================================================
 
 def classify_reba(score):
@@ -773,75 +728,50 @@ def classify_reba(score):
     if score <= 1:
 
         return {
-            "level":
-                "무시 가능",
-
-            "action":
-                "별도 조치가 일반적으로 필요하지 않음",
-
-            "action_level":
-                0
+            "level": "무시 가능",
+            "action": "별도 조치가 일반적으로 필요하지 않음",
+            "action_level": 0
         }
 
 
     elif score <= 3:
 
         return {
-            "level":
-                "낮음",
-
-            "action":
-                "개선 필요 여부 검토",
-
-            "action_level":
-                1
+            "level": "낮음",
+            "action": "개선 필요 여부 검토",
+            "action_level": 1
         }
 
 
     elif score <= 7:
 
         return {
-            "level":
-                "중간",
-
-            "action":
-                "작업 개선 필요",
-
-            "action_level":
-                2
+            "level": "중간",
+            "action": "작업 개선 필요",
+            "action_level": 2
         }
 
 
     elif score <= 10:
 
         return {
-            "level":
-                "높음",
-
-            "action":
-                "빠른 시일 내 개선 필요",
-
-            "action_level":
-                3
+            "level": "높음",
+            "action": "빠른 시일 내 개선 필요",
+            "action_level": 3
         }
 
 
     else:
 
         return {
-            "level":
-                "매우 높음",
-
-            "action":
-                "즉각적인 개선 검토 필요",
-
-            "action_level":
-                4
+            "level": "매우 높음",
+            "action": "즉각적인 개선 검토 필요",
+            "action_level": 4
         }
 
 
 # =========================================================
-# 페이지 제목
+# 페이지
 # =========================================================
 
 st.title(
@@ -852,17 +782,15 @@ logout_button()
 
 
 st.write(
-    "작업사진을 업로드하면 AI가 작업자의 "
-    "주요 관절 위치와 각도를 분석하고 "
-    "REBA 자세점수를 보조 추천합니다."
+    "작업사진을 업로드하면 AI가 주요 관절 위치와 "
+    "각도를 분석하고 REBA 자세점수를 보조 추천합니다."
 )
 
 
 st.info(
-    "AI 추천값은 보조자료입니다. "
-    "촬영 방향, 원근, 가림, 실제 하중, "
-    "반복작업, 커플링 및 작업조건 등을 "
-    "평가자가 최종 확인해야 합니다."
+    "AI 결과는 보조자료입니다. 실제 하중, 반복성, "
+    "지속시간, 작업자세 및 현장조건을 평가자가 "
+    "최종 확인해야 합니다."
 )
 
 
@@ -870,7 +798,7 @@ st.divider()
 
 
 # =========================================================
-# 1. 기본정보
+# 1. 작업 기본정보
 # =========================================================
 
 st.subheader(
@@ -890,7 +818,7 @@ with col1:
 
     department = st.text_input(
         "부서/공종",
-        placeholder="예: 토공 / 파일공"
+        placeholder="예: 파일공"
     )
 
 
@@ -1007,7 +935,6 @@ if uploaded_file is not None:
                     "#### AI 관절 인식 결과"
                 )
 
-
                 st.image(
                     analyzed_image,
                     width="stretch"
@@ -1026,20 +953,12 @@ if uploaded_file is not None:
                 )
 
 
-                # -----------------------------------------
-                # AI REBA 추천값 생성
-                # -----------------------------------------
-
                 recommendation = (
                     recommend_reba_from_angles(
                         angles
                     )
                 )
 
-
-                # -----------------------------------------
-                # 추천값 session_state 저장
-                # -----------------------------------------
 
                 st.session_state[
                     "reba_trunk"
@@ -1080,7 +999,7 @@ if uploaded_file is not None:
 
 
 # =========================================================
-# 저장된 AI 결과 표시
+# AI 분석 결과 표시
 # =========================================================
 
 if (
@@ -1110,8 +1029,7 @@ if (
 
         angle_data.append(
             {
-                "부위":
-                    name,
+                "부위": name,
 
                 "측정각도":
                     (
@@ -1150,22 +1068,9 @@ AI가 사진에서 확인 가능한 자세를 기준으로 추천했습니다.
 
 
     st.caption(
-        "※ 목, 손목, 하중, 커플링, "
-        "몸통 비틀림·측굴, 어깨 들림, "
-        "한쪽 다리 지지 및 활동요인은 "
-        "사진만으로 확정하기 어려우므로 "
-        "평가자가 직접 확인해야 합니다."
+        "※ 목, 손목, 하중, 커플링, 활동요인 등은 "
+        "평가자가 실제 작업조건을 확인하여 판단하세요."
     )
-
-
-else:
-
-    if uploaded_file is None:
-
-        st.caption(
-            "사진이 없어도 아래에서 "
-            "REBA 수동 평가는 가능합니다."
-        )
 
 
 st.divider()
@@ -1180,12 +1085,6 @@ st.subheader(
 )
 
 
-st.caption(
-    "AI 추천값이 있는 항목은 자동 입력됩니다. "
-    "평가자가 실제 작업조건을 확인한 후 수정할 수 있습니다."
-)
-
-
 c1, c2, c3 = st.columns(3)
 
 
@@ -1195,14 +1094,9 @@ with c1:
         "목 점수",
         [1, 2, 3],
         format_func=lambda x: {
-            1:
-                "1점 — 거의 중립 자세",
-
-            2:
-                "2점 — 굴곡/신전 자세",
-
-            3:
-                "3점 — 비틀림·측굴 등 보정 포함"
+            1: "1점 — 거의 중립 자세",
+            2: "2점 — 굴곡/신전 자세",
+            3: "3점 — 비틀림·측굴 등 보정 포함"
         }[x]
     )
 
@@ -1214,20 +1108,11 @@ with c2:
         [1, 2, 3, 4, 5],
         key="reba_trunk",
         format_func=lambda x: {
-            1:
-                "1점 — 중립",
-
-            2:
-                "2점 — 경미한 굴곡/신전",
-
-            3:
-                "3점 — 중등도 굴곡",
-
-            4:
-                "4점 — 큰 굴곡",
-
-            5:
-                "5점 — 비틀림·측굴 등 보정 포함"
+            1: "1점 — 중립",
+            2: "2점 — 경미한 굴곡/신전",
+            3: "3점 — 중등도 굴곡",
+            4: "4점 — 큰 굴곡",
+            5: "5점 — 비틀림·측굴 등 보정 포함"
         }[x]
     )
 
@@ -1239,41 +1124,22 @@ with c3:
         [1, 2, 3, 4],
         key="reba_legs",
         format_func=lambda x: {
-            1:
-                "1점 — 양발 안정 지지",
-
-            2:
-                "2점 — 한쪽 지지/불안정 또는 무릎 굴곡",
-
-            3:
-                "3점 — 큰 무릎 굴곡 등",
-
-            4:
-                "4점 — 매우 불리한 하지 자세"
+            1: "1점 — 양발 안정 지지",
+            2: "2점 — 한쪽 지지/불안정 또는 무릎 굴곡",
+            3: "3점 — 큰 무릎 굴곡 등",
+            4: "4점 — 매우 불리한 하지 자세"
         }[x]
     )
-
-
-st.write(
-    "#### 하중 / 힘"
-)
 
 
 load_score = st.selectbox(
     "하중·힘 점수",
     [0, 1, 2, 3],
     format_func=lambda x: {
-        0:
-            "0점 — 5 kg 미만",
-
-        1:
-            "1점 — 5~10 kg",
-
-        2:
-            "2점 — 10 kg 초과",
-
-        3:
-            "3점 — 높은 하중 + 충격/급격한 힘"
+        0: "0점 — 5 kg 미만",
+        1: "1점 — 5~10 kg",
+        2: "2점 — 10 kg 초과",
+        3: "3점 — 높은 하중 + 충격/급격한 힘"
     }[x]
 )
 
@@ -1311,11 +1177,8 @@ with c2:
         [1, 2],
         key="reba_lower_arm",
         format_func=lambda x: {
-            1:
-                "1점 — 대체로 60~100°",
-
-            2:
-                "2점 — 그 외 자세"
+            1: "1점 — 대체로 60~100°",
+            2: "2점 — 그 외 자세"
         }[x]
     )
 
@@ -1326,38 +1189,21 @@ with c3:
         "손목 점수",
         [1, 2, 3],
         format_func=lambda x: {
-            1:
-                "1점 — 중립에 가까움",
-
-            2:
-                "2점 — 15° 초과 굴곡/신전",
-
-            3:
-                "3점 — 편위·비틀림 보정 포함"
+            1: "1점 — 중립에 가까움",
+            2: "2점 — 15° 초과 굴곡/신전",
+            3: "3점 — 편위·비틀림 보정 포함"
         }[x]
     )
-
-
-st.write(
-    "#### 커플링(손잡이 / 잡기 상태)"
-)
 
 
 coupling = st.selectbox(
     "커플링 점수",
     [0, 1, 2, 3],
     format_func=lambda x: {
-        0:
-            "0점 — Good : 잡기 좋음",
-
-        1:
-            "1점 — Fair : 보통",
-
-        2:
-            "2점 — Poor : 잡기 불편",
-
-        3:
-            "3점 — Unacceptable : 매우 불량"
+        0: "0점 — Good",
+        1: "1점 — Fair",
+        2: "2점 — Poor",
+        3: "3점 — Unacceptable"
     }[x]
 )
 
@@ -1378,11 +1224,9 @@ static_posture = st.checkbox(
     "1분 이상 정적인 자세를 유지함 (+1)"
 )
 
-
 repetition = st.checkbox(
     "분당 4회 이상 작은 범위의 반복동작이 있음 (+1)"
 )
-
 
 rapid_change = st.checkbox(
     "큰 자세변화가 빠르게 발생하거나 지지기반이 불안정함 (+1)"
@@ -1409,10 +1253,6 @@ if st.button(
     width="stretch"
 ):
 
-    # -----------------------------
-    # TABLE A
-    # -----------------------------
-
     table_a_score = TABLE_A[
         trunk
     ][
@@ -1429,10 +1269,6 @@ if st.button(
     )
 
 
-    # -----------------------------
-    # TABLE B
-    # -----------------------------
-
     table_b_score = TABLE_B[
         upper_arm
     ][
@@ -1448,10 +1284,6 @@ if st.button(
         12
     )
 
-
-    # -----------------------------
-    # TABLE C
-    # -----------------------------
 
     score_c = TABLE_C[
         score_a - 1
@@ -1472,9 +1304,89 @@ if st.button(
     )
 
 
-    # =====================================================
-    # 결과
-    # =====================================================
+    # 결과를 session_state에 저장
+    st.session_state[
+        "latest_reba_result"
+    ] = {
+
+        "worker":
+            worker,
+
+        "department":
+            department,
+
+        "task_name":
+            task_name,
+
+        "evaluator":
+            evaluator,
+
+        "neck_score":
+            neck,
+
+        "trunk_score":
+            trunk,
+
+        "legs_score":
+            legs,
+
+        "load_score":
+            load_score,
+
+        "upper_arm_score":
+            upper_arm,
+
+        "lower_arm_score":
+            lower_arm,
+
+        "wrist_score":
+            wrist,
+
+        "coupling_score":
+            coupling,
+
+        "activity_score":
+            activity_score,
+
+        "score_a":
+            score_a,
+
+        "score_b":
+            score_b,
+
+        "final_reba":
+            final_score,
+
+        "risk_level":
+            result[
+                "level"
+            ],
+
+        "action_level":
+            result[
+                "action_level"
+            ],
+
+        "action_text":
+            result[
+                "action"
+            ]
+    }
+
+
+# =========================================================
+# 7. 계산 결과 표시
+# =========================================================
+
+if (
+    "latest_reba_result"
+    in st.session_state
+):
+
+    saved_result = st.session_state[
+        "latest_reba_result"
+    ]
+
 
     st.subheader(
         "6. REBA 평가결과"
@@ -1488,7 +1400,9 @@ if st.button(
 
         st.metric(
             "Score A",
-            score_a
+            saved_result[
+                "score_a"
+            ]
         )
 
 
@@ -1496,7 +1410,9 @@ if st.button(
 
         st.metric(
             "Score B",
-            score_b
+            saved_result[
+                "score_b"
+            ]
         )
 
 
@@ -1504,7 +1420,9 @@ if st.button(
 
         st.metric(
             "Activity",
-            activity_score
+            saved_result[
+                "activity_score"
+            ]
         )
 
 
@@ -1512,7 +1430,9 @@ if st.button(
 
         st.metric(
             "최종 REBA",
-            final_score
+            saved_result[
+                "final_reba"
+            ]
         )
 
 
@@ -1521,38 +1441,39 @@ if st.button(
     )
 
 
+    final_score = saved_result[
+        "final_reba"
+    ]
+
+
+    result_text = (
+        f"{saved_result['risk_level']} — "
+        f"{saved_result['action_text']}"
+    )
+
+
     if final_score <= 3:
 
         st.success(
-            f"{result['level']} — "
-            f"{result['action']}"
+            result_text
         )
-
 
     elif final_score <= 7:
 
         st.warning(
-            f"{result['level']} — "
-            f"{result['action']}"
+            result_text
         )
-
 
     else:
 
         st.error(
-            f"{result['level']} — "
-            f"{result['action']}"
+            result_text
         )
 
 
     st.write(
         f"**Action Level:** "
-        f"{result['action_level']}"
-    )
-
-
-    st.write(
-        "### 평가내역"
+        f"{saved_result['action_level']}"
     )
 
 
@@ -1571,15 +1492,41 @@ if st.button(
             ],
 
             "점수": [
-                neck,
-                trunk,
-                legs,
-                load_score,
-                upper_arm,
-                lower_arm,
-                wrist,
-                coupling,
-                activity_score
+                saved_result[
+                    "neck_score"
+                ],
+
+                saved_result[
+                    "trunk_score"
+                ],
+
+                saved_result[
+                    "legs_score"
+                ],
+
+                saved_result[
+                    "load_score"
+                ],
+
+                saved_result[
+                    "upper_arm_score"
+                ],
+
+                saved_result[
+                    "lower_arm_score"
+                ],
+
+                saved_result[
+                    "wrist_score"
+                ],
+
+                saved_result[
+                    "coupling_score"
+                ],
+
+                saved_result[
+                    "activity_score"
+                ]
             ]
         }
     )
@@ -1592,10 +1539,188 @@ if st.button(
     )
 
 
-    st.info(
-        "AI 분석 결과와 REBA 결과는 "
-        "보건관리자의 작업자세 평가를 보조하기 위한 자료입니다. "
-        "사진 한 장으로 실제 하중, 반복성, 지속시간, "
-        "비틀림, 지지상태 등의 모든 작업조건을 "
-        "확정할 수 없으므로 현장 확인 후 최종 판정하세요."
+    st.divider()
+
+
+    # =====================================================
+    # 8. Supabase 저장
+    # =====================================================
+
+    st.subheader(
+        "7. 평가결과 저장"
+    )
+
+
+    if not worker:
+
+        st.warning(
+            "저장하려면 작업자/대상자를 입력해주세요."
+        )
+
+
+    if not task_name:
+
+        st.warning(
+            "저장하려면 작업명을 입력해주세요."
+        )
+
+
+    save_disabled = (
+        not worker
+        or not task_name
+    )
+
+
+    if st.button(
+        "💾 REBA 평가결과 저장",
+        type="primary",
+        width="stretch",
+        disabled=save_disabled
+    ):
+
+        try:
+
+            pose_angles = (
+                st.session_state.get(
+                    "ai_pose_angles",
+                    {}
+                )
+            )
+
+
+            ai_recommendation = (
+                st.session_state.get(
+                    "ai_reba_recommendation",
+                    {}
+                )
+            )
+
+
+            insert_data = {
+
+                "worker":
+                    saved_result[
+                        "worker"
+                    ],
+
+                "department":
+                    saved_result[
+                        "department"
+                    ],
+
+                "task_name":
+                    saved_result[
+                        "task_name"
+                    ],
+
+                "evaluator":
+                    saved_result[
+                        "evaluator"
+                    ],
+
+                "pose_angles":
+                    pose_angles,
+
+                "ai_recommendation":
+                    ai_recommendation,
+
+                "neck_score":
+                    saved_result[
+                        "neck_score"
+                    ],
+
+                "trunk_score":
+                    saved_result[
+                        "trunk_score"
+                    ],
+
+                "legs_score":
+                    saved_result[
+                        "legs_score"
+                    ],
+
+                "load_score":
+                    saved_result[
+                        "load_score"
+                    ],
+
+                "upper_arm_score":
+                    saved_result[
+                        "upper_arm_score"
+                    ],
+
+                "lower_arm_score":
+                    saved_result[
+                        "lower_arm_score"
+                    ],
+
+                "wrist_score":
+                    saved_result[
+                        "wrist_score"
+                    ],
+
+                "coupling_score":
+                    saved_result[
+                        "coupling_score"
+                    ],
+
+                "activity_score":
+                    saved_result[
+                        "activity_score"
+                    ],
+
+                "score_a":
+                    saved_result[
+                        "score_a"
+                    ],
+
+                "score_b":
+                    saved_result[
+                        "score_b"
+                    ],
+
+                "final_reba":
+                    saved_result[
+                        "final_reba"
+                    ],
+
+                "risk_level":
+                    saved_result[
+                        "risk_level"
+                    ],
+
+                "action_level":
+                    saved_result[
+                        "action_level"
+                    ],
+
+                "action_text":
+                    saved_result[
+                        "action_text"
+                    ]
+            }
+
+
+            supabase.table(
+                "reba_results"
+            ).insert(
+                insert_data
+            ).execute()
+
+
+            st.success(
+                "✅ REBA 평가결과가 Supabase에 저장되었습니다."
+            )
+
+
+        except Exception as e:
+
+            st.error(
+                f"저장 중 오류가 발생했습니다: {e}"
+            )
+
+
+    st.caption(
+        "AI 분석값과 최종 평가자가 선택한 REBA 점수를 "
+        "함께 저장합니다."
     )
