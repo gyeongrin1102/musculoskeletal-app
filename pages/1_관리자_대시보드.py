@@ -3,6 +3,7 @@ import pandas as pd
 
 from io import BytesIO
 from supabase import create_client
+from auth import require_admin, logout_button
 
 
 # =========================================================
@@ -15,7 +16,11 @@ st.set_page_config(
     layout="wide"
 )
 
+require_admin()
+
 st.title("📊 근골격계 증상조사 관리자 대시보드")
+
+logout_button()
 
 st.write(
     "Supabase 데이터베이스에 저장된 근골격계 증상조사 결과를 "
