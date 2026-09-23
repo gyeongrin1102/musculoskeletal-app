@@ -44,11 +44,7 @@ def classify_body_part(
 # -----------------------------
 # 페이지 설정
 # -----------------------------
-st.set_page_config(
-    page_title="근골격계 증상조사표",
-    page_icon="🩺",
-    layout="wide"
-)
+
 
 st.title("근골격계 증상조사표")
 st.caption("근로자의 근골격계 증상 및 작업 관련 특성을 확인하기 위한 조사입니다.")
