@@ -10,11 +10,7 @@ from auth import require_admin, logout_button
 # 페이지 설정
 # =========================================================
 
-st.set_page_config(
-    page_title="근골격계 증상조사 관리자 대시보드",
-    page_icon="📊",
-    layout="wide"
-)
+
 
 require_admin()
 
