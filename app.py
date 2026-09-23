@@ -15,7 +15,7 @@ st.set_page_config(
 # =========================================================
 
 survey_page = st.Page(
-    "pages/views/survey.py",
+    "views/survey.py",
     title="근골격계 증상조사",
     icon="🩺",
     default=True
