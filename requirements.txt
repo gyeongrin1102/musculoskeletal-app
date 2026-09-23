@@ -5,3 +5,6 @@ python-docx
 matplotlib
 qrcode[pil]
 supabase
+mediapipe
+opencv-python-headless
+numpy
