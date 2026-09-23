@@ -3,6 +3,8 @@ import qrcode
 
 from io import BytesIO
 
+from auth import require_admin, logout_button
+
 
 # =========================================================
 # 페이지 설정
@@ -14,8 +16,12 @@ st.set_page_config(
     layout="wide"
 )
 
+require_admin()
+
 
 st.title("📱 근골격계 증상조사 QR 배포")
+
+logout_button()
 
 st.write(
     "근로자가 휴대폰으로 QR 코드를 촬영하여 "
