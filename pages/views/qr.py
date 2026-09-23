@@ -10,11 +10,7 @@ from auth import require_admin, logout_button
 # 페이지 설정
 # =========================================================
 
-st.set_page_config(
-    page_title="QR 설문 배포",
-    page_icon="📱",
-    layout="wide"
-)
+
 
 require_admin()
 
