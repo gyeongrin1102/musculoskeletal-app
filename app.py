@@ -60,6 +60,11 @@ ai_reba_page = st.Page(
     title="AI 자세·REBA 평가",
     icon="🤖"
 )
+reba_improvement_page = st.Page(
+    "pages/views/reba_improvement.py",
+    title="REBA 개선 전·후 비교",
+    icon="🔄"
+)
 
 
 # =========================================================
@@ -78,9 +83,9 @@ if is_admin():
             report_page,
             qr_page,
             ai_reba_page,
+            reba_improvement_page,
             login_page
-        ]
-    }
+]
 
 else:
 
