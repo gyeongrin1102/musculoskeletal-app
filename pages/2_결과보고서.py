@@ -11,6 +11,7 @@ from supabase import create_client
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.section import WD_SECTION
 from docx.oxml.ns import qn
 
 from auth import require_admin, logout_button
@@ -29,21 +30,14 @@ st.set_page_config(
 require_admin()
 
 st.title("📄 근골격계 증상조사 결과보고서")
-
 logout_button()
 
 st.write(
-    "Supabase 데이터베이스에 저장된 증상조사 결과를 이용하여 "
-    "Word 결과보고서를 자동으로 생성합니다."
+    "Supabase DB에 저장된 조사 결과를 이용하여 "
+    "제출용 Word 결과보고서를 자동 생성합니다."
 )
 
 st.divider()
-
-
-# =========================================================
-# 한글 그래프 설정
-# =========================================================
-
 
 plt.rcParams["axes.unicode_minus"] = False
 
@@ -53,184 +47,79 @@ plt.rcParams["axes.unicode_minus"] = False
 # =========================================================
 
 try:
-
-    supabase_url = st.secrets["SUPABASE_URL"]
-    supabase_key = st.secrets["SUPABASE_KEY"]
-
     supabase = create_client(
-        supabase_url,
-        supabase_key
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
     )
 
 except Exception as e:
-
-    st.error(
-        f"Supabase 연결정보를 불러오지 못했습니다: {e}"
-    )
-
+    st.error(f"Supabase 연결 오류: {e}")
     st.stop()
 
 
 # =========================================================
-# DB 데이터 불러오기
+# 데이터 불러오기
 # =========================================================
 
 try:
-
     response = (
         supabase
         .table("survey_results")
         .select("*")
-        .order(
-            "created_at",
-            desc=True
-        )
+        .order("created_at", desc=True)
         .execute()
     )
 
     db_rows = response.data
 
 except Exception as e:
-
-    st.error(
-        f"데이터베이스 조회 중 오류가 발생했습니다: {e}"
-    )
-
+    st.error(f"데이터 조회 오류: {e}")
     st.stop()
 
 
 if not db_rows:
-
-    st.warning(
-        "아직 저장된 조사 결과가 없습니다."
-    )
-
+    st.warning("저장된 조사 결과가 없습니다.")
     st.stop()
 
 
 # =========================================================
-# Supabase 데이터 → 기존 설문 형식으로 변환
+# DB 데이터 변환
 # =========================================================
 
 converted_rows = []
 
-
 for db_row in db_rows:
 
-    survey_data = db_row.get(
-        "survey_data",
-        {}
-    )
+    survey_data = db_row.get("survey_data", {})
 
-    if not isinstance(
-        survey_data,
-        dict
-    ):
+    if not isinstance(survey_data, dict):
         survey_data = {}
-
 
     row = survey_data.copy()
 
-
-    row["DB_ID"] = db_row.get(
-        "id",
-        ""
-    )
-
-    row["제출일시"] = db_row.get(
-        "created_at",
-        row.get(
-            "제출일시",
-            ""
-        )
-    )
-
-    row["성명"] = db_row.get(
-        "name",
-        row.get(
-            "성명",
-            ""
-        )
-    )
-
-    row["성별"] = db_row.get(
-        "gender",
-        row.get(
-            "성별",
-            ""
-        )
-    )
-
-    row["연령"] = db_row.get(
-        "age",
-        row.get(
-            "연령",
-            ""
-        )
-    )
-
-    row["결혼여부"] = db_row.get(
-        "marriage",
-        row.get(
-            "결혼여부",
-            ""
-        )
-    )
-
-    row["작업부서"] = db_row.get(
-        "department",
-        row.get(
-            "작업부서",
-            ""
-        )
-    )
-
-    row["라인/세부부서"] = db_row.get(
-        "sub_department",
-        row.get(
-            "라인/세부부서",
-            ""
-        )
-    )
-
-    row["현재작업"] = db_row.get(
-        "current_work",
-        row.get(
-            "현재작업",
-            ""
-        )
-    )
-
+    row["DB_ID"] = db_row.get("id", "")
+    row["제출일시"] = db_row.get("created_at", "")
+    row["성명"] = db_row.get("name", row.get("성명", ""))
+    row["성별"] = db_row.get("gender", row.get("성별", ""))
+    row["연령"] = db_row.get("age", row.get("연령", ""))
+    row["결혼여부"] = db_row.get("marriage", row.get("결혼여부", ""))
+    row["작업부서"] = db_row.get("department", row.get("작업부서", ""))
+    row["라인/세부부서"] = db_row.get("sub_department", row.get("라인/세부부서", ""))
+    row["현재작업"] = db_row.get("current_work", row.get("현재작업", ""))
     row["근골격계증상여부"] = db_row.get(
         "symptom_exists",
-        row.get(
-            "근골격계증상여부",
-            ""
-        )
+        row.get("근골격계증상여부", "")
     )
-
     row["최종판정"] = db_row.get(
         "final_judgment",
-        row.get(
-            "최종판정",
-            ""
-        )
+        row.get("최종판정", "")
     )
 
-
-    converted_rows.append(
-        row
-    )
+    converted_rows.append(row)
 
 
-df = pd.DataFrame(
-    converted_rows
-)
+df = pd.DataFrame(converted_rows)
 
-
-# =========================================================
-# 기본 설정
-# =========================================================
 
 body_parts = [
     "목",
@@ -249,9 +138,7 @@ for col in [
     "근골격계증상여부",
     "최종판정"
 ]:
-
     if col not in df.columns:
-
         df[col] = ""
 
 
@@ -260,7 +147,6 @@ for col in [
 # =========================================================
 
 total_count = len(df)
-
 
 normal_count = (
     df["최종판정"]
@@ -271,7 +157,6 @@ normal_count = (
     .sum()
 )
 
-
 manage_count = (
     df["최종판정"]
     .fillna("")
@@ -280,7 +165,6 @@ manage_count = (
     .eq("관리대상자")
     .sum()
 )
-
 
 pain_count = (
     df["최종판정"]
@@ -291,97 +175,279 @@ pain_count = (
     .sum()
 )
 
-
-classified_count = (
-    normal_count
-    + manage_count
-    + pain_count
-)
-
-
 unclassified_count = (
     total_count
-    - classified_count
+    - normal_count
+    - manage_count
+    - pain_count
+)
+
+symptom_count = (
+    df["근골격계증상여부"]
+    .fillna("")
+    .astype(str)
+    .str.strip()
+    .eq("예")
+    .sum()
+)
+
+symptom_rate = (
+    symptom_count / total_count * 100
+    if total_count > 0
+    else 0
 )
 
 
 # =========================================================
-# 조사 현황
+# 신체부위별 판정
+# =========================================================
+
+part_summary = []
+
+for part in body_parts:
+
+    col = f"{part}_판정"
+
+    if col in df.columns:
+
+        series = (
+            df[col]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
+
+        normal = (series == "정상").sum()
+        manage = (series == "관리대상자").sum()
+        pain = (series == "통증호소자").sum()
+
+    else:
+        normal = 0
+        manage = 0
+        pain = 0
+
+    abnormal = manage + pain
+
+    abnormal_rate = (
+        abnormal / total_count * 100
+        if total_count > 0
+        else 0
+    )
+
+    part_summary.append({
+        "신체부위": part,
+        "정상": int(normal),
+        "관리대상자": int(manage),
+        "통증호소자": int(pain),
+        "유소견계": int(abnormal),
+        "유소견율(%)": round(abnormal_rate, 1)
+    })
+
+
+part_summary_df = pd.DataFrame(part_summary)
+
+
+# =========================================================
+# 부서별 판정
+# =========================================================
+
+department_summary = []
+
+valid_dept_df = df[
+    df["작업부서"].notna()
+].copy()
+
+valid_dept_df = valid_dept_df[
+    valid_dept_df["작업부서"]
+    .astype(str)
+    .str.strip()
+    != ""
+]
+
+
+for dept in valid_dept_df["작업부서"].unique():
+
+    dept_df = valid_dept_df[
+        valid_dept_df["작업부서"] == dept
+    ]
+
+    dept_total = len(dept_df)
+
+    dept_normal = (
+        dept_df["최종판정"] == "정상"
+    ).sum()
+
+    dept_manage = (
+        dept_df["최종판정"] == "관리대상자"
+    ).sum()
+
+    dept_pain = (
+        dept_df["최종판정"] == "통증호소자"
+    ).sum()
+
+    abnormal = dept_manage + dept_pain
+
+    abnormal_rate = (
+        abnormal / dept_total * 100
+        if dept_total > 0
+        else 0
+    )
+
+    department_summary.append({
+        "부서": dept,
+        "응답자수": int(dept_total),
+        "정상": int(dept_normal),
+        "관리대상자": int(dept_manage),
+        "통증호소자": int(dept_pain),
+        "유소견계": int(abnormal),
+        "유소견율(%)": round(abnormal_rate, 1)
+    })
+
+
+department_summary_df = pd.DataFrame(department_summary)
+
+if len(department_summary_df) > 0:
+    department_summary_df = department_summary_df.sort_values(
+        by="유소견율(%)",
+        ascending=False
+    ).reset_index(drop=True)
+
+
+# =========================================================
+# 사후관리 대상자
+# =========================================================
+
+target_df = df[
+    df["최종판정"].isin(
+        ["관리대상자", "통증호소자"]
+    )
+].copy()
+
+
+# =========================================================
+# 자동 종합분석
+# =========================================================
+
+abnormal_total = manage_count + pain_count
+
+abnormal_rate = (
+    abnormal_total / total_count * 100
+    if total_count > 0
+    else 0
+)
+
+
+abnormal_parts_df = part_summary_df[
+    part_summary_df["유소견계"] > 0
+].copy()
+
+
+if len(abnormal_parts_df) > 0:
+
+    abnormal_parts_df = abnormal_parts_df.sort_values(
+        by="유소견율(%)",
+        ascending=False
+    )
+
+    top_part_row = abnormal_parts_df.iloc[0]
+
+    top_part = top_part_row["신체부위"]
+    top_count = int(top_part_row["유소견계"])
+    top_rate = float(top_part_row["유소견율(%)"])
+
+    auto_analysis = (
+        f"총 {total_count}명을 대상으로 근골격계 증상조사를 실시한 결과, "
+        f"근골격계 증상 경험자는 {symptom_count}명"
+        f"({symptom_rate:.1f}%)으로 확인되었습니다. "
+        f"최종판정 기준 관리대상자 및 통증호소자는 총 {abnormal_total}명"
+        f"({abnormal_rate:.1f}%)이었습니다. "
+        f"신체부위별로는 {top_part} 부위의 유소견자가 "
+        f"{top_count}명({top_rate:.1f}%)으로 가장 높게 나타났습니다. "
+        "해당 결과는 증상조사 응답을 기반으로 한 관리 참고자료이며, "
+        "실제 작업자세, 작업강도, 반복성 및 작업환경을 함께 확인하여 "
+        "사후관리 및 작업개선 우선순위를 결정할 필요가 있습니다."
+    )
+
+else:
+
+    auto_analysis = (
+        f"총 {total_count}명을 대상으로 근골격계 증상조사를 실시한 결과, "
+        f"근골격계 증상 경험자는 {symptom_count}명"
+        f"({symptom_rate:.1f}%)으로 확인되었습니다. "
+        "현재 관리대상자 또는 통증호소자로 판정된 신체부위는 "
+        "확인되지 않았습니다. "
+        "다만 정기적인 증상 확인과 작업조건 점검을 통해 "
+        "근골격계질환 예방관리를 지속할 필요가 있습니다."
+    )
+
+
+# =========================================================
+# 자동 향후 관리계획
+# =========================================================
+
+if abnormal_total == 0:
+
+    auto_plan = (
+        "1. 정기적인 근골격계 증상조사를 통해 증상 발생 여부를 지속 확인한다.\n"
+        "2. 반복작업, 부적절한 작업자세, 중량물 취급 등 근골격계 부담요인을 주기적으로 확인한다.\n"
+        "3. 작업 전 스트레칭 및 근골격계질환 예방교육을 지속 실시한다.\n"
+        "4. 작업환경 또는 작업방법 변경 시 유해요인 변화를 재확인한다."
+    )
+
+else:
+
+    auto_plan = (
+        "1. 관리대상자 및 통증호소자를 대상으로 증상 정도와 작업 관련성을 추가 확인한다.\n"
+        "2. 유소견율이 높은 신체부위와 관련된 작업자세, 반복성, 힘의 사용 및 작업시간을 우선 점검한다.\n"
+        "3. 필요 시 작업방법 개선, 작업대 높이 조정, 보조도구 적용 및 작업순환 등을 검토한다.\n"
+        "4. 증상 지속 또는 악화 근로자는 보건상담 및 의료기관 진료 등 적절한 사후관리를 실시한다.\n"
+        "5. 작업개선 실시 후 증상 변화 및 개선 효과를 재평가한다."
+    )
+
+
+# =========================================================
+# 웹 화면
 # =========================================================
 
 st.subheader("조사 현황")
 
+c1, c2, c3, c4, c5 = st.columns(5)
 
-col1, col2, col3, col4, col5 = st.columns(5)
+with c1:
+    st.metric("총 조사자", f"{total_count}명")
 
+with c2:
+    st.metric("증상 경험자", f"{symptom_count}명")
 
-with col1:
+with c3:
+    st.metric("정상", f"{normal_count}명")
 
-    st.metric(
-        "총 조사자",
-        f"{total_count}명"
-    )
+with c4:
+    st.metric("관리대상자", f"{manage_count}명")
 
-
-with col2:
-
-    st.metric(
-        "정상",
-        f"{normal_count}명"
-    )
-
-
-with col3:
-
-    st.metric(
-        "관리대상자",
-        f"{manage_count}명"
-    )
-
-
-with col4:
-
-    st.metric(
-        "통증호소자",
-        f"{pain_count}명"
-    )
-
-
-with col5:
-
-    st.metric(
-        "미분류",
-        f"{unclassified_count}명"
-    )
+with c5:
+    st.metric("통증호소자", f"{pain_count}명")
 
 
 st.divider()
 
 
-# =========================================================
-# 보고서 기본정보
-# =========================================================
-
 st.subheader("보고서 기본정보")
-
 
 report_title = st.text_input(
     "보고서 제목",
     value="근골격계 증상조사 결과보고서"
 )
 
-
 company_name = st.text_input(
     "사업장명",
     placeholder="예: OO사업장"
 )
 
-
 survey_period = st.text_input(
     "조사기간",
     placeholder="예: 2026.09.01 ~ 2026.09.30"
 )
-
 
 writer = st.text_input(
     "작성자",
@@ -392,89 +458,7 @@ writer = st.text_input(
 st.divider()
 
 
-# =========================================================
-# 신체부위별 판정 현황
-# =========================================================
-
-part_summary = []
-
-
-for part in body_parts:
-
-    column_name = (
-        f"{part}_판정"
-    )
-
-
-    if column_name in df.columns:
-
-        series = (
-            df[column_name]
-            .fillna("")
-            .astype(str)
-            .str.strip()
-        )
-
-
-        normal = (
-            series == "정상"
-        ).sum()
-
-
-        manage = (
-            series == "관리대상자"
-        ).sum()
-
-
-        pain = (
-            series == "통증호소자"
-        ).sum()
-
-
-    else:
-
-        normal = 0
-        manage = 0
-        pain = 0
-
-
-    abnormal = (
-        manage
-        + pain
-    )
-
-
-    abnormal_rate = (
-        abnormal
-        / total_count
-        * 100
-        if total_count > 0
-        else 0
-    )
-
-
-    part_summary.append({
-        "신체부위": part,
-        "정상": int(normal),
-        "관리대상자": int(manage),
-        "통증호소자": int(pain),
-        "유소견계": int(abnormal),
-        "유소견율(%)": round(
-            abnormal_rate,
-            1
-        )
-    })
-
-
-part_summary_df = pd.DataFrame(
-    part_summary
-)
-
-
-st.subheader(
-    "신체부위별 판정 현황"
-)
-
+st.subheader("신체부위별 판정 현황")
 
 st.dataframe(
     part_summary_df,
@@ -483,104 +467,21 @@ st.dataframe(
 )
 
 
-# =========================================================
-# 자동 종합의견
-# =========================================================
+st.subheader("종합분석")
 
-abnormal_total = (
-    manage_count
-    + pain_count
+edited_analysis = st.text_area(
+    "보고서 종합분석",
+    value=auto_analysis,
+    height=200
 )
 
 
-overall_abnormal_rate = (
-    abnormal_total
-    / total_count
-    * 100
-    if total_count > 0
-    else 0
-)
+st.subheader("향후 관리계획")
 
-
-abnormal_parts_df = part_summary_df[
-    part_summary_df[
-        "유소견계"
-    ] > 0
-].copy()
-
-
-if len(
-    abnormal_parts_df
-) == 0:
-
-    auto_opinion = (
-        f"총 {total_count}명을 대상으로 근골격계 증상조사를 실시한 결과, "
-        "현재 관리대상자 또는 통증호소자로 분류된 신체부위는 "
-        "확인되지 않았습니다. "
-        "본 결과는 증상조사 응답을 기반으로 한 참고자료이며, "
-        "실제 작업조건과 작업자세를 함께 확인하여 관리할 필요가 있습니다."
-    )
-
-
-else:
-
-    abnormal_parts_df = (
-        abnormal_parts_df
-        .sort_values(
-            by="유소견율(%)",
-            ascending=False
-        )
-    )
-
-
-    top_row = (
-        abnormal_parts_df
-        .iloc[0]
-    )
-
-
-    top_part = (
-        top_row[
-            "신체부위"
-        ]
-    )
-
-
-    top_rate = (
-        top_row[
-            "유소견율(%)"
-        ]
-    )
-
-
-    top_count = (
-        top_row[
-            "유소견계"
-        ]
-    )
-
-
-    auto_opinion = (
-        f"총 {total_count}명을 대상으로 근골격계 증상조사를 실시한 결과, "
-        f"관리대상자 및 통증호소자는 총 {abnormal_total}명으로 "
-        f"전체 조사자의 {overall_abnormal_rate:.1f}%에 해당합니다. "
-        f"신체부위별로는 {top_part} 부위의 유소견자가 "
-        f"{int(top_count)}명({top_rate:.1f}%)으로 가장 높게 나타났습니다. "
-        "해당 결과는 증상조사 결과를 기반으로 한 관리 참고자료이며, "
-        "실제 작업조건과 작업자세를 함께 확인하여 "
-        "사후관리 우선순위를 검토할 필요가 있습니다."
-    )
-
-
-st.subheader(
-    "자동 종합의견"
-)
-
-
-edited_opinion = st.text_area(
-    "보고서에 들어갈 종합의견",
-    value=auto_opinion,
-    height=180
+edited_plan = st.text_area(
+    "보고서 관리계획",
+    value=auto_plan,
+    height=220
 )
 
 
@@ -588,279 +489,204 @@ st.divider()
 
 
 # =========================================================
-# 그래프 1
-# 신체부위별 유소견율
+# 그래프 함수
 # =========================================================
 
 def create_bodypart_chart():
 
-    chart_data = (
-        part_summary_df.copy()
-    )
-
+    chart_data = part_summary_df.copy()
 
     fig, ax = plt.subplots(
-        figsize=(8, 4.5)
+        figsize=(8, 4.2)
     )
-
 
     bars = ax.bar(
-        chart_data[
-            "신체부위"
-        ],
-        chart_data[
-            "유소견율(%)"
-        ]
+        chart_data["신체부위"],
+        chart_data["유소견율(%)"]
     )
-
 
     ax.set_title(
         "신체부위별 유소견율"
     )
 
-
     ax.set_ylabel(
         "유소견율(%)"
     )
-
 
     ax.set_xlabel(
         "신체부위"
     )
 
-
     max_value = (
-        chart_data[
-            "유소견율(%)"
-        ]
+        chart_data["유소견율(%)"]
         .max()
     )
 
-
     ax.set_ylim(
         0,
-        max(
-            100,
-            max_value + 10
-        )
+        max(20, max_value + 10)
     )
-
 
     for bar, value in zip(
         bars,
-        chart_data[
-            "유소견율(%)"
-        ]
+        chart_data["유소견율(%)"]
     ):
 
         ax.text(
-            bar.get_x()
-            + bar.get_width() / 2,
-            bar.get_height() + 1,
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.5,
             f"{value:.1f}%",
             ha="center",
             va="bottom"
         )
 
-
     plt.xticks(
-        rotation=20
+        rotation=15
     )
-
 
     plt.tight_layout()
 
-
-    image_stream = BytesIO()
-
+    output = BytesIO()
 
     plt.savefig(
-        image_stream,
+        output,
         format="png",
-        dpi=150,
+        dpi=160,
         bbox_inches="tight"
     )
 
+    plt.close(fig)
 
-    plt.close(
-        fig
-    )
+    output.seek(0)
 
+    return output
 
-    image_stream.seek(
-        0
-    )
-
-
-    return image_stream
-
-
-# =========================================================
-# 그래프 2
-# 부서별 판정 분포
-# =========================================================
 
 def create_department_chart():
 
-    chart_source = df.copy()
-
-
-    chart_source = chart_source[
-        chart_source[
-            "작업부서"
-        ]
-        .notna()
-    ]
-
-
-    chart_source = chart_source[
-        chart_source[
-            "작업부서"
-        ]
-        .astype(str)
-        .str.strip()
-        != ""
-    ]
-
-
-    if len(
-        chart_source
-    ) == 0:
-
+    if len(department_summary_df) == 0:
         return None
 
-
-    dept_chart_df = pd.crosstab(
-        chart_source[
-            "작업부서"
-        ],
-        chart_source[
-            "최종판정"
-        ]
-    )
-
-
-    for col in [
-        "정상",
-        "관리대상자",
-        "통증호소자"
-    ]:
-
-        if col not in (
-            dept_chart_df
-            .columns
-        ):
-
-            dept_chart_df[
-                col
-            ] = 0
-
-
-    dept_chart_df = (
-        dept_chart_df[
+    chart_df = (
+        department_summary_df[
             [
+                "부서",
                 "정상",
                 "관리대상자",
                 "통증호소자"
             ]
         ]
+        .set_index("부서")
     )
-
 
     fig, ax = plt.subplots(
-        figsize=(8, 4.5)
+        figsize=(8, 4.2)
     )
 
-
-    dept_chart_df.plot(
+    chart_df.plot(
         kind="bar",
         ax=ax
     )
-
 
     ax.set_title(
         "부서별 판정 분포"
     )
 
-
     ax.set_ylabel(
         "인원"
     )
 
-
     ax.set_xlabel(
         "부서"
     )
-
 
     plt.xticks(
         rotation=20,
         ha="right"
     )
 
-
     plt.tight_layout()
 
-
-    image_stream = BytesIO()
-
+    output = BytesIO()
 
     plt.savefig(
-        image_stream,
+        output,
         format="png",
-        dpi=150,
+        dpi=160,
         bbox_inches="tight"
     )
 
+    plt.close(fig)
 
-    plt.close(
-        fig
-    )
+    output.seek(0)
 
-
-    image_stream.seek(
-        0
-    )
-
-
-    return image_stream
+    return output
 
 
 # =========================================================
-# Word 보고서 생성 함수
+# Word 유틸
+# =========================================================
+
+def set_cell_text(cell, text, bold=False):
+
+    cell.text = ""
+
+    p = cell.paragraphs[0]
+
+    run = p.add_run(
+        str(text)
+    )
+
+    run.bold = bold
+    run.font.name = "Malgun Gothic"
+    run._element.rPr.rFonts.set(
+        qn("w:eastAsia"),
+        "맑은 고딕"
+    )
+
+    run.font.size = Pt(9)
+
+
+def add_section_heading(document, text):
+
+    p = document.add_paragraph()
+
+    run = p.add_run(text)
+
+    run.bold = True
+    run.font.size = Pt(14)
+    run.font.name = "Malgun Gothic"
+    run._element.rPr.rFonts.set(
+        qn("w:eastAsia"),
+        "맑은 고딕"
+    )
+
+    return p
+
+
+# =========================================================
+# Word 생성
 # =========================================================
 
 def create_word_report():
 
     document = Document()
 
+    section = document.sections[0]
 
-    # -----------------------------------------------------
-    # 기본 글꼴
-    # -----------------------------------------------------
-
-    style = (
-        document
-        .styles[
-            "Normal"
-        ]
-    )
+    section.top_margin = Inches(0.65)
+    section.bottom_margin = Inches(0.65)
+    section.left_margin = Inches(0.7)
+    section.right_margin = Inches(0.7)
 
 
-    style.font.name = (
-        "Malgun Gothic"
-    )
+    normal_style = document.styles["Normal"]
 
+    normal_style.font.name = "Malgun Gothic"
+    normal_style.font.size = Pt(10)
 
-    style.font.size = (
-        Pt(10)
-    )
-
-
-    style._element.rPr.rFonts.set(
-        qn(
-            "w:eastAsia"
-        ),
+    normal_style._element.rPr.rFonts.set(
+        qn("w:eastAsia"),
         "맑은 고딕"
     )
 
@@ -869,82 +695,53 @@ def create_word_report():
     # 제목
     # -----------------------------------------------------
 
-    title = (
-        document
-        .add_paragraph()
-    )
+    p = document.add_paragraph()
 
-
-    title.alignment = (
+    p.alignment = (
         WD_ALIGN_PARAGRAPH.CENTER
     )
 
-
-    title_run = title.add_run(
+    run = p.add_run(
         report_title
     )
 
+    run.bold = True
+    run.font.size = Pt(21)
+    run.font.name = "Malgun Gothic"
 
-    title_run.bold = True
-
-
-    title_run.font.size = (
-        Pt(20)
+    run._element.rPr.rFonts.set(
+        qn("w:eastAsia"),
+        "맑은 고딕"
     )
 
-
-    document.add_paragraph(
-        ""
-    )
+    document.add_paragraph("")
 
 
-    # =====================================================
+    # -----------------------------------------------------
     # 1. 조사 개요
-    # =====================================================
+    # -----------------------------------------------------
 
-    document.add_heading(
-        "1. 조사 개요",
-        level=1
+    add_section_heading(
+        document,
+        "1. 조사 개요"
     )
 
 
-    overview_table = (
-        document
-        .add_table(
-            rows=5,
-            cols=2
-        )
+    overview_table = document.add_table(
+        rows=6,
+        cols=2
     )
 
-
-    overview_table.style = (
-        "Table Grid"
-    )
+    overview_table.style = "Table Grid"
 
 
     overview_data = [
-        [
-            "사업장명",
-            company_name
-        ],
-        [
-            "조사기간",
-            survey_period
-        ],
-        [
-            "작성자",
-            writer
-        ],
-        [
-            "총 조사인원",
-            f"{total_count}명"
-        ],
-        [
-            "보고서 작성일",
-            datetime.now().strftime(
-                "%Y-%m-%d"
-            )
-        ]
+        ["사업장명", company_name],
+        ["조사기간", survey_period],
+        ["작성자", writer],
+        ["총 조사인원", f"{total_count}명"],
+        ["증상 경험자", f"{symptom_count}명 ({symptom_rate:.1f}%)"],
+        ["보고서 작성일", datetime.now().strftime("%Y-%m-%d")]
     ]
 
 
@@ -952,49 +749,37 @@ def create_word_report():
         overview_data
     ):
 
-        overview_table.cell(
-            i,
-            0
-        ).text = str(
-            item[0]
+        set_cell_text(
+            overview_table.cell(i, 0),
+            item[0],
+            bold=True
         )
 
-
-        overview_table.cell(
-            i,
-            1
-        ).text = str(
+        set_cell_text(
+            overview_table.cell(i, 1),
             item[1]
         )
 
 
-    document.add_paragraph(
-        ""
+    document.add_paragraph("")
+
+
+    # -----------------------------------------------------
+    # 2. 조사 결과 요약
+    # -----------------------------------------------------
+
+    add_section_heading(
+        document,
+        "2. 조사 결과 요약"
     )
 
 
-    # =====================================================
-    # 2. 최종판정 현황
-    # =====================================================
-
-    document.add_heading(
-        "2. 최종판정 현황",
-        level=1
+    summary_table = document.add_table(
+        rows=2,
+        cols=5
     )
 
-
-    judgment_table = (
-        document
-        .add_table(
-            rows=2,
-            cols=5
-        )
-    )
-
-
-    judgment_table.style = (
-        "Table Grid"
-    )
+    summary_table.style = "Table Grid"
 
 
     headers = [
@@ -1015,51 +800,39 @@ def create_word_report():
     ]
 
 
-    for i in range(
-        len(headers)
-    ):
+    for i, header in enumerate(headers):
 
-        judgment_table.cell(
-            0,
-            i
-        ).text = headers[i]
+        set_cell_text(
+            summary_table.cell(0, i),
+            header,
+            bold=True
+        )
 
-
-        judgment_table.cell(
-            1,
-            i
-        ).text = (
+        set_cell_text(
+            summary_table.cell(1, i),
             f"{values[i]}명"
         )
 
 
-    document.add_paragraph(
-        ""
-    )
+    document.add_paragraph("")
 
 
-    # =====================================================
+    # -----------------------------------------------------
     # 3. 신체부위별 판정 현황
-    # =====================================================
+    # -----------------------------------------------------
 
-    document.add_heading(
-        "3. 신체부위별 판정 현황",
-        level=1
+    add_section_heading(
+        document,
+        "3. 신체부위별 판정 현황"
     )
 
 
-    part_table = (
-        document
-        .add_table(
-            rows=1,
-            cols=6
-        )
+    part_table = document.add_table(
+        rows=1,
+        cols=6
     )
 
-
-    part_table.style = (
-        "Table Grid"
-    )
+    part_table.style = "Table Grid"
 
 
     part_headers = [
@@ -1076,79 +849,45 @@ def create_word_report():
         part_headers
     ):
 
-        part_table.cell(
-            0,
-            i
-        ).text = header
-
-
-    for _, row in (
-        part_summary_df
-        .iterrows()
-    ):
-
-        cells = (
-            part_table
-            .add_row()
-            .cells
+        set_cell_text(
+            part_table.cell(0, i),
+            header,
+            bold=True
         )
 
 
-        cells[0].text = str(
-            row[
-                "신체부위"
-            ]
-        )
+    for _, row in part_summary_df.iterrows():
 
+        cells = part_table.add_row().cells
 
-        cells[1].text = str(
-            row[
-                "정상"
-            ]
-        )
-
-
-        cells[2].text = str(
-            row[
-                "관리대상자"
-            ]
-        )
-
-
-        cells[3].text = str(
-            row[
-                "통증호소자"
-            ]
-        )
-
-
-        cells[4].text = str(
-            row[
-                "유소견계"
-            ]
-        )
-
-
-        cells[5].text = (
+        values = [
+            row["신체부위"],
+            row["정상"],
+            row["관리대상자"],
+            row["통증호소자"],
+            row["유소견계"],
             f'{row["유소견율(%)"]}%'
-        )
+        ]
+
+        for i, value in enumerate(
+            values
+        ):
+
+            set_cell_text(
+                cells[i],
+                value
+            )
 
 
-    document.add_paragraph(
-        ""
-    )
+    document.add_paragraph("")
 
 
-    bodypart_chart = (
-        create_bodypart_chart()
-    )
-
+    body_chart = create_bodypart_chart()
 
     document.add_picture(
-        bodypart_chart,
-        width=Inches(6.5)
+        body_chart,
+        width=Inches(6.4)
     )
-
 
     document.paragraphs[
         -1
@@ -1157,125 +896,33 @@ def create_word_report():
     )
 
 
-    document.add_paragraph(
-        ""
-    )
+    document.add_paragraph("")
 
 
-    # =====================================================
+    # -----------------------------------------------------
     # 4. 부서별 판정 현황
-    # =====================================================
+    # -----------------------------------------------------
 
-    document.add_heading(
-        "4. 부서별 판정 현황",
-        level=1
+    add_section_heading(
+        document,
+        "4. 부서별 판정 현황"
     )
 
 
-    department_summary = []
+    if len(department_summary_df) == 0:
 
-
-    valid_df = df[
-        df[
-            "작업부서"
-        ]
-        .notna()
-    ].copy()
-
-
-    valid_df = valid_df[
-        valid_df[
-            "작업부서"
-        ]
-        .astype(str)
-        .str.strip()
-        != ""
-    ]
-
-
-    for dept in (
-        valid_df[
-            "작업부서"
-        ]
-        .unique()
-    ):
-
-        dept_df = (
-            valid_df[
-                valid_df[
-                    "작업부서"
-                ]
-                == dept
-            ]
+        document.add_paragraph(
+            "부서별 분석 가능한 데이터가 없습니다."
         )
 
+    else:
 
-        dept_total = len(
-            dept_df
+        dept_table = document.add_table(
+            rows=1,
+            cols=6
         )
 
-
-        dept_normal = (
-            dept_df[
-                "최종판정"
-            ]
-            == "정상"
-        ).sum()
-
-
-        dept_manage = (
-            dept_df[
-                "최종판정"
-            ]
-            == "관리대상자"
-        ).sum()
-
-
-        dept_pain = (
-            dept_df[
-                "최종판정"
-            ]
-            == "통증호소자"
-        ).sum()
-
-
-        department_summary.append(
-            [
-                str(
-                    dept
-                ),
-                int(
-                    dept_total
-                ),
-                int(
-                    dept_normal
-                ),
-                int(
-                    dept_manage
-                ),
-                int(
-                    dept_pain
-                )
-            ]
-        )
-
-
-    if len(
-        department_summary
-    ) > 0:
-
-        dept_table = (
-            document
-            .add_table(
-                rows=1,
-                cols=5
-            )
-        )
-
-
-        dept_table.style = (
-            "Table Grid"
-        )
+        dept_table.style = "Table Grid"
 
 
         dept_headers = [
@@ -1283,7 +930,8 @@ def create_word_report():
             "응답자수",
             "정상",
             "관리대상자",
-            "통증호소자"
+            "통증호소자",
+            "유소견율(%)"
         ]
 
 
@@ -1291,14 +939,16 @@ def create_word_report():
             dept_headers
         ):
 
-            dept_table.cell(
-                0,
-                i
-            ).text = header
+            set_cell_text(
+                dept_table.cell(0, i),
+                header,
+                bold=True
+            )
 
 
-        for dept_row in (
-            department_summary
+        for _, row in (
+            department_summary_df
+            .iterrows()
         ):
 
             cells = (
@@ -1307,102 +957,76 @@ def create_word_report():
                 .cells
             )
 
+            values = [
+                row["부서"],
+                row["응답자수"],
+                row["정상"],
+                row["관리대상자"],
+                row["통증호소자"],
+                f'{row["유소견율(%)"]}%'
+            ]
 
             for i, value in enumerate(
-                dept_row
+                values
             ):
 
-                cells[i].text = str(
+                set_cell_text(
+                    cells[i],
                     value
                 )
 
 
-    else:
+        document.add_paragraph("")
 
-        document.add_paragraph(
-            "부서별 분석 가능한 데이터가 없습니다."
+
+        dept_chart = (
+            create_department_chart()
         )
 
+        if dept_chart is not None:
 
-    department_chart = (
-        create_department_chart()
-    )
-
-
-    if department_chart is not None:
-
-        document.add_paragraph(
-            ""
-        )
-
-
-        document.add_picture(
-            department_chart,
-            width=Inches(6.5)
-        )
-
-
-        document.paragraphs[
-            -1
-        ].alignment = (
-            WD_ALIGN_PARAGRAPH.CENTER
-        )
-
-
-    document.add_paragraph(
-        ""
-    )
-
-
-    # =====================================================
-    # 5. 사후관리 대상자
-    # =====================================================
-
-    document.add_heading(
-        "5. 사후관리 대상자",
-        level=1
-    )
-
-
-    target_df = df[
-        df[
-            "최종판정"
-        ]
-        .isin(
-            [
-                "관리대상자",
-                "통증호소자"
-            ]
-        )
-    ].copy()
-
-
-    if len(
-        target_df
-    ) == 0:
-
-        document.add_paragraph(
-            "사후관리 대상자가 없습니다."
-        )
-
-
-    else:
-
-        target_table = (
-            document
-            .add_table(
-                rows=1,
-                cols=5
+            document.add_picture(
+                dept_chart,
+                width=Inches(6.4)
             )
+
+            document.paragraphs[
+                -1
+            ].alignment = (
+                WD_ALIGN_PARAGRAPH.CENTER
+            )
+
+
+    document.add_paragraph("")
+
+
+    # -----------------------------------------------------
+    # 5. 사후관리 대상자
+    # -----------------------------------------------------
+
+    add_section_heading(
+        document,
+        "5. 사후관리 대상자"
+    )
+
+
+    if len(target_df) == 0:
+
+        document.add_paragraph(
+            "현재 관리대상자 또는 통증호소자로 분류된 근로자는 없습니다."
         )
 
+    else:
 
-        target_table.style = (
-            "Table Grid"
+        target_table = document.add_table(
+            rows=1,
+            cols=5
         )
 
+        target_table.style = "Table Grid"
 
-        target_headers = [
+
+        headers = [
             "성명",
             "부서",
             "현재작업",
@@ -1412,41 +1036,34 @@ def create_word_report():
 
 
         for i, header in enumerate(
-            target_headers
+            headers
         ):
 
-            target_table.cell(
-                0,
-                i
-            ).text = header
+            set_cell_text(
+                target_table.cell(0, i),
+                header,
+                bold=True
+            )
 
 
-        for _, row in (
-            target_df
-            .iterrows()
-        ):
+        for _, row in target_df.iterrows():
 
             abnormal_parts = []
 
-
             for part in body_parts:
 
-                part_judgment = (
-                    row.get(
-                        f"{part}_판정",
-                        ""
-                    )
+                judgment = row.get(
+                    f"{part}_판정",
+                    ""
                 )
 
-
-                if part_judgment in [
+                if judgment in [
                     "관리대상자",
                     "통증호소자"
                 ]:
 
                     abnormal_parts.append(
-                        f"{part}"
-                        f"({part_judgment})"
+                        f"{part}({judgment})"
                     )
 
 
@@ -1457,114 +1074,101 @@ def create_word_report():
             )
 
 
-            cells[0].text = str(
-                row.get(
-                    "성명",
-                    ""
+            values = [
+                row.get("성명", ""),
+                row.get("작업부서", ""),
+                row.get("현재작업", ""),
+                ", ".join(abnormal_parts),
+                row.get("최종판정", "")
+            ]
+
+
+            for i, value in enumerate(
+                values
+            ):
+
+                set_cell_text(
+                    cells[i],
+                    value
                 )
-            )
 
 
-            cells[1].text = str(
-                row.get(
-                    "작업부서",
-                    ""
-                )
-            )
+    document.add_paragraph("")
 
 
-            cells[2].text = str(
-                row.get(
-                    "현재작업",
-                    ""
-                )
-            )
+    # -----------------------------------------------------
+    # 6. 종합 분석
+    # -----------------------------------------------------
 
-
-            cells[3].text = (
-                ", ".join(
-                    abnormal_parts
-                )
-            )
-
-
-            cells[4].text = str(
-                row.get(
-                    "최종판정",
-                    ""
-                )
-            )
-
-
-    document.add_paragraph(
-        ""
-    )
-
-
-    # =====================================================
-    # 6. 종합의견
-    # =====================================================
-
-    document.add_heading(
-        "6. 종합의견",
-        level=1
+    add_section_heading(
+        document,
+        "6. 종합 분석"
     )
 
 
     document.add_paragraph(
-        edited_opinion
+        edited_analysis
     )
 
 
-    document.add_paragraph(
-        ""
+    document.add_paragraph("")
+
+
+    # -----------------------------------------------------
+    # 7. 향후 관리계획
+    # -----------------------------------------------------
+
+    add_section_heading(
+        document,
+        "7. 향후 관리계획"
     )
 
 
-    # =====================================================
-    # Word 파일 저장
-    # =====================================================
+    for line in (
+        edited_plan
+        .split("\n")
+    ):
+
+        if line.strip():
+
+            document.add_paragraph(
+                line.strip()
+            )
+
+
+    document.add_paragraph("")
+
+
+    # -----------------------------------------------------
+    # 파일 저장
+    # -----------------------------------------------------
 
     output = BytesIO()
 
+    document.save(output)
 
-    document.save(
-        output
-    )
-
-
-    output.seek(
-        0
-    )
-
+    output.seek(0)
 
     return output
 
 
 # =========================================================
-# Word 다운로드
+# 다운로드
 # =========================================================
 
-st.subheader(
-    "보고서 생성"
-)
-
+st.subheader("보고서 생성")
 
 st.write(
-    "현재 Supabase DB 데이터를 기준으로 "
-    "Word 결과보고서를 생성합니다."
+    "현재 DB 데이터를 기준으로 제출용 Word 결과보고서를 생성합니다."
 )
 
 
 try:
 
-    word_file = (
-        create_word_report()
-    )
-
+    word_file = create_word_report()
 
     st.download_button(
-        label="📄 Word 결과보고서 다운로드",
+        label="📄 제출용 Word 결과보고서 다운로드",
         data=word_file,
         file_name="근골격계_증상조사_결과보고서.docx",
         mime=(
@@ -1573,7 +1177,6 @@ try:
         ),
         width="stretch"
     )
-
 
 except Exception as e:
 
