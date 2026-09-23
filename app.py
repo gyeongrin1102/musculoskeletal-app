@@ -21,23 +21,20 @@ survey_page = st.Page(
     default=True
 )
 
-
 admin_dashboard_page = st.Page(
-    "views/admin_dashboard.py",
+    "pages/views/admin_dashboard.py",
     title="관리자 대시보드",
     icon="📊"
 )
 
-
 report_page = st.Page(
-    "views/report.py",
+    "pages/views/report.py",
     title="결과보고서",
     icon="📄"
 )
 
-
 qr_page = st.Page(
-    "views/qr.py",
+    "pages/views/qr.py",
     title="QR 배포",
     icon="📱"
 )
