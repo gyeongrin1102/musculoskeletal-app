@@ -38,7 +38,19 @@ st.write(
 
 st.divider()
 
-plt.rcParams["font.family"] = "NanumGothic"
+import matplotlib.font_manager as fm
+
+font_candidates = [
+    f.name
+    for f in fm.fontManager.ttflist
+    if "Nanum" in f.name
+]
+
+if font_candidates:
+    plt.rcParams["font.family"] = font_candidates[0]
+else:
+    plt.rcParams["font.family"] = "DejaVu Sans"
+
 plt.rcParams["axes.unicode_minus"] = False
 
 
