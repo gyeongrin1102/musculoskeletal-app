@@ -74,6 +74,11 @@ reba_improvement_page = st.Page(
     title="REBA 개선 전·후 비교",
     icon="🔄"
 )
+data_management_page = st.Page(
+    "pages/views/data_management.py",
+    title="데이터 관리",
+    icon="🗑️"
+)
 
 
 # =========================================================
@@ -93,6 +98,7 @@ if is_admin():
             qr_page,
             ai_reba_page,
             reba_improvement_page,
+            data_management_page,
             login_page
         ]
     }
