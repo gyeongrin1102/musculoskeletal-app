@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import koreanize_matplotlib
 
 from io import BytesIO
 from datetime import datetime
@@ -39,6 +38,7 @@ st.write(
 
 st.divider()
 
+plt.rcParams["font.family"] = "NanumGothic"
 plt.rcParams["axes.unicode_minus"] = False
 
 
