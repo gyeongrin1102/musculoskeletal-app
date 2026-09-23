@@ -12,6 +12,8 @@ from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 
+from auth import require_admin, logout_button
+
 
 # =========================================================
 # 페이지 설정
@@ -23,7 +25,11 @@ st.set_page_config(
     layout="wide"
 )
 
+require_admin()
+
 st.title("📄 근골격계 증상조사 결과보고서")
+
+logout_button()
 
 st.write(
     "Supabase 데이터베이스에 저장된 증상조사 결과를 이용하여 "
