@@ -10,31 +10,42 @@ st.set_page_config(
 )
 
 
+# =========================================================
+# 페이지 정의
+# =========================================================
+
 survey_page = st.Page(
-    "views/survey.py",
+    "pages/views/survey.py",
     title="근골격계 증상조사",
     icon="🩺",
     default=True
 )
 
+
 admin_dashboard_page = st.Page(
-    "views/admin_dashboard.py",
+    "pages/1_관리자_대시보드.py",
     title="관리자 대시보드",
     icon="📊"
 )
 
+
 report_page = st.Page(
-    "views/report.py",
+    "pages/2_결과보고서.py",
     title="결과보고서",
     icon="📄"
 )
 
+
 qr_page = st.Page(
-    "views/qr.py",
+    "pages/3_QR_배포.py",
     title="QR 배포",
     icon="📱"
 )
 
+
+# =========================================================
+# 로그인 상태에 따른 메뉴
+# =========================================================
 
 if is_admin():
 
@@ -42,7 +53,6 @@ if is_admin():
         "근로자": [
             survey_page
         ],
-
         "관리자": [
             admin_dashboard_page,
             report_page,
@@ -58,6 +68,10 @@ else:
         ]
     }
 
+
+# =========================================================
+# 네비게이션 실행
+# =========================================================
 
 pg = st.navigation(
     pages
