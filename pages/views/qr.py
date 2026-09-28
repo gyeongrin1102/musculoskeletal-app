@@ -7,181 +7,157 @@ from auth import require_admin, logout_button
 
 
 # =========================================================
-# 페이지 설정
+# 관리자 인증
 # =========================================================
-
-
 
 require_admin()
 
+
+# =========================================================
+# 화면
+# =========================================================
 
 st.title("📱 근골격계 증상조사 QR 배포")
 
 logout_button()
 
 st.write(
-    "근로자가 휴대폰으로 QR 코드를 촬영하여 "
-    "증상조사 페이지에 바로 접속할 수 있습니다."
+    "근로자가 휴대전화로 QR코드를 촬영하면 "
+    "근골격계 증상조사 웹페이지로 바로 접속할 수 있습니다."
 )
 
 st.divider()
 
 
 # =========================================================
-# 설문 주소
+# 앱 URL 불러오기
 # =========================================================
 
-DEFAULT_URL = (
-    "https://musculoskeletal-app-p9jcorltqgyt7epu7oscwy.streamlit.app"
+try:
+
+    app_url = st.secrets["APP_URL"]
+
+except Exception:
+
+    app_url = ""
+
+
+if not app_url:
+
+    st.error(
+        "APP_URL이 설정되지 않았습니다. "
+        "Streamlit Secrets에 APP_URL을 등록해주세요."
+    )
+
+    st.stop()
+
+
+# =========================================================
+# 웹 주소 표시
+# =========================================================
+
+st.subheader("🌐 설문 웹주소")
+
+st.code(
+    app_url,
+    language=None
 )
 
 
-survey_url = st.text_input(
-    "설문조사 주소",
-    value=DEFAULT_URL,
-    help="근로자가 접속할 실제 설문조사 주소입니다."
+st.link_button(
+    "🌐 설문 웹에서 바로 열기",
+    app_url,
+    type="primary",
+    width="stretch"
 )
 
 
 st.caption(
-    "※ 향후 앱 주소가 변경되면 위 주소만 수정하면 됩니다."
+    "위 버튼을 누르면 실제 근로자용 설문 화면이 새 창에서 열립니다."
+)
+
+st.divider()
+
+
+# =========================================================
+# QR 생성
+# =========================================================
+
+st.subheader("📱 설문 QR코드")
+
+
+qr = qrcode.QRCode(
+    version=1,
+    error_correction=qrcode.constants.ERROR_CORRECT_M,
+    box_size=12,
+    border=4
+)
+
+qr.add_data(
+    app_url
+)
+
+qr.make(
+    fit=True
+)
+
+
+qr_image = qr.make_image(
+    fill_color="black",
+    back_color="white"
+)
+
+
+buffer = BytesIO()
+
+qr_image.save(
+    buffer,
+    format="PNG"
+)
+
+buffer.seek(0)
+
+
+st.image(
+    buffer,
+    caption="근골격계 증상조사 QR코드",
+    width=350
+)
+
+
+st.success(
+    "휴대전화 카메라로 위 QR코드를 촬영하면 "
+    "근골격계 증상조사 페이지가 열립니다."
 )
 
 
 # =========================================================
-# QR 생성 함수
+# QR 다운로드
 # =========================================================
 
-def create_qr(url):
+st.download_button(
+    label="⬇️ QR코드 이미지 다운로드",
+    data=buffer.getvalue(),
+    file_name="근골격계_증상조사_QR.png",
+    mime="image/png",
+    width="stretch"
+)
 
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_M,
-        box_size=10,
-        border=4
-    )
 
-    qr.add_data(url)
-
-    qr.make(
-        fit=True
-    )
-
-    img = qr.make_image(
-        fill_color="black",
-        back_color="white"
-    )
-
-    output = BytesIO()
-
-    img.save(
-        output,
-        format="PNG"
-    )
-
-    output.seek(0)
-
-    return output
+st.divider()
 
 
 # =========================================================
-# QR 출력
+# 사용방법
 # =========================================================
 
-if survey_url.strip() == "":
+st.subheader("사용방법")
 
-    st.warning(
-        "설문조사 주소를 입력해 주세요."
-    )
-
-else:
-
-    qr_image = create_qr(
-        survey_url
-    )
-
-    st.divider()
-
-    st.subheader(
-        "설문 참여 QR 코드"
-    )
-
-    col1, col2 = st.columns(
-        [1, 2]
-    )
-
-
-    with col1:
-
-        st.image(
-            qr_image,
-            width=320
-        )
-
-
-    with col2:
-
-        st.markdown(
-            """
-            ### 이용 방법
-
-            1. 휴대폰 카메라를 실행합니다.  
-            2. QR 코드를 비춥니다.  
-            3. 화면에 나타나는 링크를 누릅니다.  
-            4. 근골격계 증상조사를 작성합니다.  
-            5. 마지막의 **조사 제출** 버튼을 누릅니다.
-            """
-        )
-
-        st.info(
-            "QR 코드는 근로자 설문 참여용으로 사용할 수 있습니다."
-        )
-
-
-    # =====================================================
-    # QR 다운로드
-    # =====================================================
-
-    qr_image.seek(0)
-
-    st.download_button(
-        label="📥 QR 코드 PNG 다운로드",
-        data=qr_image,
-        file_name="근골격계_증상조사_QR.png",
-        mime="image/png",
-        width="stretch"
-    )
-
-
-    st.divider()
-
-
-    # =====================================================
-    # 게시용 안내문
-    # =====================================================
-
-    st.subheader(
-        "현장 게시용 안내문"
-    )
-
-    guide_text = f"""
-근골격계 증상조사 참여 안내
-
-근로자의 근골격계 증상 및 작업 관련 특성을 확인하기 위한 조사입니다.
-
-■ 참여방법
-1. 휴대폰 카메라로 QR 코드를 촬영합니다.
-2. 설문 페이지에 접속합니다.
-3. 문항에 응답합니다.
-4. 조사 제출 버튼을 누릅니다.
-
-설문주소:
-{survey_url}
-"""
-
-
-    st.text_area(
-        "안내문 문구",
-        value=guide_text,
-        height=250
-    )
+st.write(
+    """
+    ① 근로자가 휴대전화 카메라로 QR코드를 촬영합니다.  
+    ② 화면에 표시되는 링크를 누릅니다.  
+    ③ 근골격계 증상조사를 작성합니다.  
+    ④ 제출된 결과는 관리자 대시보드에서 확인할 수 있습니다.
+    """
+)
