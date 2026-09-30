@@ -1,4 +1,6 @@
 from pathlib import Path
+from datetime import datetime
+from io import BytesIO
 
 import cv2
 import numpy as np
@@ -34,7 +36,32 @@ def get_supabase():
 
 
 supabase = get_supabase()
+# =========================================================
+# Supabase Storage 사진 업로드
+# =========================================================
 
+def upload_reba_image(
+    image_bytes,
+    file_name,
+    content_type
+):
+
+    bucket = (
+        supabase
+        .storage
+        .from_("reba-images")
+    )
+
+    bucket.upload(
+        path=file_name,
+        file=image_bytes,
+        file_options={
+            "content-type": content_type,
+            "upsert": "false"
+        }
+    )
+
+    return file_name
 
 # =========================================================
 # 모델 경로
