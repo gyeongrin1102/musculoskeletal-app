@@ -79,6 +79,11 @@ data_management_page = st.Page(
     title="데이터 관리",
     icon="🗑️"
 )
+hazard_report_page = st.Page(
+    "pages/views/hazard_report.py",
+    title="유해요인조사표 자동생성",
+    icon="📋"
+)
 
 
 # =========================================================
