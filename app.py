@@ -103,6 +103,7 @@ if is_admin():
             qr_page,
             ai_reba_page,
             reba_improvement_page,
+            hazard_report_page,
             data_management_page,
             login_page
         ]
