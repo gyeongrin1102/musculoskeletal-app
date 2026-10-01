@@ -1622,7 +1622,76 @@ if (
                 )
             )
 
+        # =====================================================
+        # 사진 Storage 업로드
+        # =====================================================
 
+        timestamp = datetime.now().strftime(
+            "%Y%m%d_%H%M%S_%f"
+        )
+
+        original_image_path = None
+        analyzed_image_path = None
+
+
+        # 원본사진 업로드
+        original_bytes = st.session_state.get(
+            "reba_original_image_bytes"
+        )
+
+        original_content_type = st.session_state.get(
+            "reba_original_content_type",
+            "image/jpeg"
+        )
+
+        original_filename = st.session_state.get(
+            "reba_original_filename",
+            "original.jpg"
+        )
+
+
+        if original_bytes:
+
+            extension = (
+                original_filename
+                .split(".")[-1]
+                .lower()
+            )
+
+            if extension not in [
+                "jpg",
+                "jpeg",
+                "png"
+            ]:
+                extension = "jpg"
+
+            original_image_path = (
+                f"{timestamp}/original.{extension}"
+            )
+
+            upload_reba_image(
+                original_bytes,
+                original_image_path,
+                original_content_type
+            )
+
+
+        # AI 분석사진 업로드
+        analyzed_bytes = st.session_state.get(
+            "reba_analyzed_image_bytes"
+        )
+
+        if analyzed_bytes:
+
+            analyzed_image_path = (
+                f"{timestamp}/analyzed.png"
+            )
+
+            upload_reba_image(
+                analyzed_bytes,
+                analyzed_image_path,
+                "image/png"
+            )
             insert_data = {
 
                 "worker":
@@ -1724,9 +1793,14 @@ if (
                 "action_text":
                     saved_result[
                         "action_text"
-                    ]
-            }
+                    ],
+                "original_image_path":
+                    original_image_path,
 
+                "analyzed_image_path":
+                    analyzed_image_path,
+            }
+            
 
             supabase.table(
                 "reba_results"
