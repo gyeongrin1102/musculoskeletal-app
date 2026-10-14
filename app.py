@@ -98,7 +98,7 @@ if is_admin():
 
     pages = {
         "근로자": [
-            survey_page
+            survey_page,
             worker_camera_page
         ],
 
@@ -118,7 +118,7 @@ else:
 
     pages = {
         "근로자": [
-            survey_page
+            survey_page,
             worker_camera_page
         ],
 
