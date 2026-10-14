@@ -58,28 +58,47 @@ def get_signed_url(path, expires_in=3600):
             )
         )
 
-        if isinstance(response, str):
-            return response
+        signed_url = None
 
-        if isinstance(response, dict):
-            return (
+        if isinstance(response, str):
+            signed_url = response
+
+        elif isinstance(response, dict):
+            signed_url = (
                 response.get("signedURL")
                 or response.get("signedUrl")
                 or response.get("signed_url")
             )
 
-        if hasattr(response, "signedURL"):
-            return response.signedURL
+        elif hasattr(response, "signedURL"):
+            signed_url = response.signedURL
 
-        if hasattr(response, "signed_url"):
-            return response.signed_url
+        elif hasattr(response, "signed_url"):
+            signed_url = response.signed_url
 
-        return None
+
+        if not signed_url:
+            return None
+
+
+        # Supabase가 상대주소로 반환하는 경우
+        if signed_url.startswith("/"):
+            base_url = st.secrets["SUPABASE_URL"].rstrip("/")
+
+            signed_url = (
+                base_url
+                + signed_url
+            )
+
+
+        return signed_url
+
 
     except Exception as e:
-        st.caption(
-            f"사진 URL 생성 실패: {e}"
+        st.warning(
+            f"사진 불러오기 오류: {e}"
         )
+
         return None
 
 
