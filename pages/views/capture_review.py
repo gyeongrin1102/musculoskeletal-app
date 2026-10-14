@@ -1,3 +1,4 @@
+from io import BytesIO
 import streamlit as st
 import pandas as pd
 from supabase import create_client
@@ -452,7 +453,7 @@ c1, c2 = st.columns(2)
 with c1:
     if original_bytes:
         st.image(
-            original_bytes,
+            BytesIO(original_bytes),
             caption="원본 작업사진",
             width="stretch"
         )
@@ -465,7 +466,7 @@ with c1:
 with c2:
     if analyzed_bytes:
         st.image(
-            analyzed_bytes,
+            BytesIO(analyzed_bytes),
             caption="AI 관절선 분석사진",
             width="stretch"
         )
