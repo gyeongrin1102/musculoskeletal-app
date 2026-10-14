@@ -72,6 +72,11 @@ ai_reba_page = st.Page(
     icon="🤖"
 )
 
+capture_review_page = st.Page(
+    "pages/views/capture_review.py",
+    title="촬영 대기자료 검토",
+    icon="📥"
+)
 
 reba_improvement_page = st.Page(
     "pages/views/reba_improvement.py",
@@ -107,6 +112,7 @@ if is_admin():
             report_page,
             qr_page,
             ai_reba_page,
+            capture_review_page,
             reba_improvement_page,
             hazard_report_page,
             data_management_page,
