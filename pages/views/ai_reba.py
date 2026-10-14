@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime
+import hashlib
 
 import cv2
 import numpy as np
@@ -13,29 +14,26 @@ from supabase import create_client
 
 from auth import require_admin, logout_button
 
-
 require_admin()
 
 st.title("🤖 AI 자세·REBA 평가")
 logout_button()
 st.write(
-    "작업사진을 업로드하면 AI가 작업자의 자세를 인식하고 "
-    "REBA 평가를 위한 관절각도와 점수 초안을 제안합니다."
+    "휴대전화 카메라로 현장 작업사진을 바로 촬영하거나, "
+    "기존 사진을 업로드해 AI 자세분석과 REBA 평가를 진행할 수 있습니다."
 )
 st.info(
-    "AI 분석결과는 평가 보조용입니다. 최종 REBA 점수는 실제 작업조건을 "
-    "확인한 평가자가 확정해주세요."
+    "AI 분석결과는 평가 보조용입니다. "
+    "최종 REBA 점수는 실제 작업조건을 확인한 평가자가 확정해주세요."
 )
 st.divider()
-
 
 @st.cache_resource
 def get_supabase():
     return create_client(
         st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"],
+        st.secrets["SUPABASE_KEY"]
     )
-
 
 supabase = get_supabase()
 
@@ -47,10 +45,24 @@ def upload_reba_image(image_bytes, file_name, content_type):
         file=image_bytes,
         file_options={
             "content-type": content_type,
-            "upsert": "false",
-        },
+            "upsert": "false"
+        }
     )
     return file_name
+
+
+def download_storage_file(path):
+    if not path:
+        return None
+    try:
+        data = supabase.storage.from_("reba-images").download(path)
+        if isinstance(data, bytes):
+            return data
+        if hasattr(data, "content"):
+            return data.content
+        return bytes(data)
+    except Exception:
+        return None
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -60,24 +72,16 @@ if not MODEL_PATH.exists():
     st.error(f"MediaPipe 모델파일을 찾을 수 없습니다.\n\n{MODEL_PATH}")
     st.stop()
 
-
 POSE_CONNECTIONS = [
-    (11, 12),
-    (11, 13), (13, 15),
-    (12, 14), (14, 16),
-    (11, 23), (12, 24),
-    (23, 24),
-    (23, 25), (25, 27),
+    (11, 12), (11, 13), (13, 15), (12, 14), (14, 16),
+    (11, 23), (12, 24), (23, 24), (23, 25), (25, 27),
     (24, 26), (26, 28),
 ]
 VISIBILITY_THRESHOLD = 0.35
 
 
 def point_xy(landmark, width, height):
-    return np.array(
-        [landmark.x * width, landmark.y * height],
-        dtype=np.float32,
-    )
+    return np.array([landmark.x * width, landmark.y * height], dtype=np.float32)
 
 
 def calculate_angle(point_a, point_b, point_c):
@@ -98,9 +102,21 @@ def midpoint(point_a, point_b):
     return (np.array(point_a) + np.array(point_b)) / 2
 
 
+def image_signature(image_bytes):
+    return hashlib.sha256(image_bytes).hexdigest()
+
+
+def decode_image(image_bytes):
+    file_bytes = np.asarray(bytearray(image_bytes), dtype=np.uint8)
+    image_bgr = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    if image_bgr is None:
+        return None
+    return cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+
+
 def get_pose_angles(landmarks, width, height):
     pts = {}
-    for index in [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]:
+    for index in [11,12,13,14,15,16,23,24,25,26,27,28]:
         pts[index] = point_xy(landmarks[index], width, height)
 
     left_elbow = calculate_angle(pts[11], pts[13], pts[15])
@@ -109,7 +125,6 @@ def get_pose_angles(landmarks, width, height):
     right_knee = calculate_angle(pts[24], pts[26], pts[28])
     left_upper_arm = calculate_angle(pts[13], pts[11], pts[23])
     right_upper_arm = calculate_angle(pts[14], pts[12], pts[24])
-
     shoulder_mid = midpoint(pts[11], pts[12])
     hip_mid = midpoint(pts[23], pts[24])
     dx = shoulder_mid[0] - hip_mid[0]
@@ -140,7 +155,7 @@ def recommend_reba_from_angles(angles):
 
     upper_angle = max(
         angles.get("left_upper_arm", 0),
-        angles.get("right_upper_arm", 0),
+        angles.get("right_upper_arm", 0)
     )
     if upper_angle <= 20:
         upper_score = 1
@@ -153,9 +168,7 @@ def recommend_reba_from_angles(angles):
 
     left_elbow = angles.get("left_elbow", 90)
     right_elbow = angles.get("right_elbow", 90)
-    lower_score = 1 if (
-        60 <= left_elbow <= 100 and 60 <= right_elbow <= 100
-    ) else 2
+    lower_score = 1 if (60 <= left_elbow <= 100 and 60 <= right_elbow <= 100) else 2
 
     left_knee_flexion = max(0, 180 - angles.get("left_knee", 180))
     right_knee_flexion = max(0, 180 - angles.get("right_knee", 180))
@@ -184,17 +197,13 @@ def draw_pose(image_rgb, landmarks):
         end = landmarks[end_idx]
         start_visibility = getattr(start, "visibility", 1.0)
         end_visibility = getattr(end, "visibility", 1.0)
-        if (
-            start_visibility < VISIBILITY_THRESHOLD
-            or end_visibility < VISIBILITY_THRESHOLD
-        ):
+        if start_visibility < VISIBILITY_THRESHOLD or end_visibility < VISIBILITY_THRESHOLD:
             continue
-
         start_point = (int(start.x * width), int(start.y * height))
         end_point = (int(end.x * width), int(end.y * height))
         cv2.line(output, start_point, end_point, (0, 220, 0), 4)
 
-    for index in [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]:
+    for index in [11,12,13,14,15,16,23,24,25,26,27,28]:
         landmark = landmarks[index]
         visibility = getattr(landmark, "visibility", 1.0)
         if visibility < VISIBILITY_THRESHOLD:
@@ -214,59 +223,86 @@ def analyze_pose(image_rgb):
             num_poses=1,
             min_pose_detection_confidence=0.5,
             min_pose_presence_confidence=0.5,
-            min_tracking_confidence=0.5,
+            min_tracking_confidence=0.5
         )
-
         with vision.PoseLandmarker.create_from_options(options) as landmarker:
-            mp_image = mp.Image(
-                image_format=mp.ImageFormat.SRGB,
-                data=image_rgb,
-            )
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
             result = landmarker.detect(mp_image)
 
         if not result.pose_landmarks:
-            return (
-                None,
-                "작업자의 전신 자세를 인식하지 못했습니다. "
-                "가능하면 머리부터 발끝까지 보이는 사진을 사용해주세요.",
-            )
-
+            return None, "작업자의 전신 자세를 인식하지 못했습니다. 가능하면 머리부터 발끝까지 보이는 사진을 사용해주세요."
         return result.pose_landmarks[0], None
-
     except Exception as e:
         return None, f"AI 자세 분석 오류: {e}"
 
 
+def auto_analyze_image(image_bytes, state_prefix):
+    signature = image_signature(image_bytes)
+    signature_key = f"{state_prefix}_signature"
+
+    if (
+        st.session_state.get(signature_key) == signature
+        and st.session_state.get(f"{state_prefix}_analyzed_bytes")
+    ):
+        return
+
+    image_rgb = decode_image(image_bytes)
+    if image_rgb is None:
+        st.session_state[f"{state_prefix}_error"] = "이미지 파일을 읽을 수 없습니다."
+        return
+
+    landmarks, error = analyze_pose(image_rgb)
+    if error:
+        st.session_state[f"{state_prefix}_error"] = error
+        st.session_state[signature_key] = signature
+        return
+
+    analyzed_image = draw_pose(image_rgb, landmarks)
+    height, width = image_rgb.shape[:2]
+    angles = get_pose_angles(landmarks, width, height)
+    recommendation = recommend_reba_from_angles(angles)
+    analyzed_bgr = cv2.cvtColor(analyzed_image, cv2.COLOR_RGB2BGR)
+    success, encoded_image = cv2.imencode(".png", analyzed_bgr)
+    if not success:
+        st.session_state[f"{state_prefix}_error"] = "AI 분석사진 변환에 실패했습니다."
+        return
+
+    st.session_state[signature_key] = signature
+    st.session_state[f"{state_prefix}_original_bytes"] = image_bytes
+    st.session_state[f"{state_prefix}_analyzed_bytes"] = encoded_image.tobytes()
+    st.session_state[f"{state_prefix}_angles"] = angles
+    st.session_state[f"{state_prefix}_recommendation"] = recommendation
+    st.session_state.pop(f"{state_prefix}_error", None)
+
+
 TABLE_A = {
-    1: {1: [1, 2, 3, 4], 2: [1, 2, 3, 4], 3: [3, 3, 5, 6]},
-    2: {1: [2, 3, 4, 5], 2: [2, 3, 4, 5], 3: [4, 4, 5, 6]},
-    3: {1: [2, 4, 5, 6], 2: [3, 4, 5, 6], 3: [4, 5, 6, 7]},
-    4: {1: [3, 5, 6, 7], 2: [4, 5, 6, 7], 3: [5, 6, 7, 8]},
-    5: {1: [4, 6, 7, 8], 2: [5, 6, 7, 8], 3: [6, 7, 8, 9]},
+    1:{1:[1,2,3,4],2:[1,2,3,4],3:[3,3,5,6]},
+    2:{1:[2,3,4,5],2:[2,3,4,5],3:[4,4,5,6]},
+    3:{1:[2,4,5,6],2:[3,4,5,6],3:[4,5,6,7]},
+    4:{1:[3,5,6,7],2:[4,5,6,7],3:[5,6,7,8]},
+    5:{1:[4,6,7,8],2:[5,6,7,8],3:[6,7,8,9]},
 }
-
 TABLE_B = {
-    1: {1: [1, 2, 2], 2: [1, 2, 3]},
-    2: {1: [1, 2, 3], 2: [2, 3, 4]},
-    3: {1: [3, 4, 5], 2: [4, 5, 5]},
-    4: {1: [4, 5, 5], 2: [5, 6, 7]},
-    5: {1: [6, 7, 8], 2: [7, 8, 8]},
-    6: {1: [7, 8, 8], 2: [8, 9, 9]},
+    1:{1:[1,2,2],2:[1,2,3]},
+    2:{1:[1,2,3],2:[2,3,4]},
+    3:{1:[3,4,5],2:[4,5,5]},
+    4:{1:[4,5,5],2:[5,6,7]},
+    5:{1:[6,7,8],2:[7,8,8]},
+    6:{1:[7,8,8],2:[8,9,9]},
 }
-
 TABLE_C = [
-    [1, 1, 1, 2, 3, 3, 4, 5, 6, 7, 7, 7],
-    [1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 7, 8],
-    [2, 3, 3, 3, 4, 5, 6, 7, 7, 8, 8, 8],
-    [3, 4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9],
-    [4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9, 9],
-    [6, 6, 6, 7, 8, 8, 9, 9, 10, 10, 10, 10],
-    [7, 7, 7, 8, 9, 9, 9, 10, 10, 11, 11, 11],
-    [8, 8, 8, 9, 10, 10, 10, 10, 10, 11, 11, 11],
-    [9, 9, 9, 10, 10, 10, 11, 11, 11, 12, 12, 12],
-    [10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 12],
-    [11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12],
-    [12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12],
+    [1,1,1,2,3,3,4,5,6,7,7,7],
+    [1,2,2,3,4,4,5,6,6,7,7,8],
+    [2,3,3,3,4,5,6,7,7,8,8,8],
+    [3,4,4,4,5,6,7,8,8,9,9,9],
+    [4,4,4,5,6,7,8,8,9,9,9,9],
+    [6,6,6,7,8,8,9,9,10,10,10,10],
+    [7,7,7,8,9,9,9,10,10,11,11,11],
+    [8,8,8,9,10,10,10,10,10,11,11,11],
+    [9,9,9,10,10,10,11,11,11,12,12,12],
+    [10,10,10,11,11,11,11,12,12,12,12,12],
+    [11,11,11,11,12,12,12,12,12,12,12,12],
+    [12,12,12,12,12,12,12,12,12,12,12,12],
 ]
 
 
@@ -295,373 +331,345 @@ def classify_reba(score):
         return "보통 (Medium)", 2, "개선 필요"
     elif score <= 10:
         return "높음 (High)", 3, "빠른 시일 내 개선 필요"
-    return "매우 높음 (Very High)", 4, "즉각적 조치 필요"
-
-
-st.subheader("1. 평가 기본정보")
-col1, col2 = st.columns(2)
-
-with col1:
-    worker = st.text_input("작업자 또는 평가대상")
-    department = st.text_input("공종 / 부서")
-
-with col2:
-    task_name = st.text_input("작업명")
-    evaluator = st.text_input("평가자")
-
-st.divider()
-
-
-st.subheader("2. 작업사진 및 AI 자세분석")
-uploaded_file = st.file_uploader(
-    "평가할 작업사진을 업로드하세요.",
-    type=["jpg", "jpeg", "png"],
-)
-
-if uploaded_file is not None:
-    uploaded_bytes = uploaded_file.getvalue()
-    upload_signature = (uploaded_file.name, len(uploaded_bytes))
-
-    if st.session_state.get("reba_upload_signature") != upload_signature:
-        st.session_state["reba_upload_signature"] = upload_signature
-        st.session_state.pop("reba_analyzed_image_bytes", None)
-        st.session_state.pop("ai_pose_angles", None)
-        st.session_state.pop("ai_reba_recommendation", None)
-
-    st.session_state["reba_original_image_bytes"] = uploaded_bytes
-    st.session_state["reba_original_content_type"] = (
-        uploaded_file.type or "image/jpeg"
-    )
-    st.session_state["reba_original_filename"] = uploaded_file.name
-
-    file_bytes = np.asarray(
-        bytearray(uploaded_bytes),
-        dtype=np.uint8,
-    )
-
-    image_bgr = cv2.imdecode(
-        file_bytes,
-        cv2.IMREAD_COLOR,
-    )
-
-    if image_bgr is None:
-        st.error("이미지 파일을 읽을 수 없습니다.")
     else:
-        image_rgb = cv2.cvtColor(
-            image_bgr,
-            cv2.COLOR_BGR2RGB,
-        )
-
-        st.write("#### 원본 작업사진")
-        st.image(image_rgb, width="stretch")
-
-        if st.button(
-            "🤖 AI 자세 분석 실행",
-            type="primary",
-            width="stretch",
-        ):
-            with st.spinner("작업자의 관절 위치를 분석하고 있습니다..."):
-                landmarks, error = analyze_pose(image_rgb)
-
-            if error:
-                st.error(error)
-            else:
-                analyzed_image = draw_pose(image_rgb, landmarks)
-                height, width = image_rgb.shape[:2]
-                angles = get_pose_angles(landmarks, width, height)
-                recommendation = recommend_reba_from_angles(angles)
-
-                analyzed_bgr = cv2.cvtColor(
-                    analyzed_image,
-                    cv2.COLOR_RGB2BGR,
-                )
-                success, encoded_image = cv2.imencode(
-                    ".png",
-                    analyzed_bgr,
-                )
-
-                if success:
-                    st.session_state["reba_analyzed_image_bytes"] = (
-                        encoded_image.tobytes()
-                    )
-
-                st.session_state["ai_pose_angles"] = angles
-                st.session_state["ai_reba_recommendation"] = recommendation
-                st.session_state["reba_trunk"] = recommendation["trunk_score"]
-                st.session_state["reba_upper_arm"] = recommendation["upper_arm_score"]
-                st.session_state["reba_lower_arm"] = recommendation["lower_arm_score"]
-                st.session_state["reba_legs"] = recommendation["legs_score"]
-
-                st.success("작업자 자세를 인식했습니다.")
-                st.rerun()
+        return "매우 높음 (Very High)", 4, "즉각적 조치 필요"
 
 
-analyzed_bytes = st.session_state.get("reba_analyzed_image_bytes")
-angles = st.session_state.get("ai_pose_angles", {})
-recommendation = st.session_state.get("ai_reba_recommendation", {})
-
-if analyzed_bytes:
-    st.write("#### AI 관절 인식 결과")
-    st.image(analyzed_bytes, width="stretch")
-
-if angles:
-    st.write("#### AI 관절각도")
-    angle_df = pd.DataFrame(
-        [
-            ["왼쪽 팔꿈치", angles.get("left_elbow", "")],
-            ["오른쪽 팔꿈치", angles.get("right_elbow", "")],
-            ["왼쪽 무릎", angles.get("left_knee", "")],
-            ["오른쪽 무릎", angles.get("right_knee", "")],
-            ["왼쪽 위팔", angles.get("left_upper_arm", "")],
-            ["오른쪽 위팔", angles.get("right_upper_arm", "")],
-            ["몸통 기울기", angles.get("trunk_angle", "")],
-        ],
-        columns=["관절/부위", "각도(°)"],
-    )
-    st.dataframe(angle_df, hide_index=True, width="stretch")
-
-if recommendation:
-    st.write("#### AI REBA 추천 초안")
-    rec_df = pd.DataFrame(
-        [
-            ["몸통", recommendation.get("trunk_score")],
-            ["다리", recommendation.get("legs_score")],
-            ["위팔", recommendation.get("upper_arm_score")],
-            ["아래팔", recommendation.get("lower_arm_score")],
-        ],
-        columns=["항목", "AI 추천점수"],
-    )
-    st.dataframe(rec_df, hide_index=True, width="stretch")
-
-st.divider()
-
-
-st.subheader("3. REBA 세부평가")
-st.caption(
-    "AI 추천점수는 초안입니다. 목, 손목, 하중, 결합도, 활동점수와 "
-    "비틀림·측굴·지지상태 등은 실제 작업을 확인하여 평가자가 조정해주세요."
-)
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    neck_score = st.selectbox("목(Neck)", [1, 2, 3], key="reba_neck")
-    trunk_score = st.selectbox(
-        "몸통(Trunk)",
-        [1, 2, 3, 4, 5],
-        key="reba_trunk",
-    )
-    legs_score = st.selectbox(
-        "다리(Legs)",
-        [1, 2, 3, 4],
-        key="reba_legs",
-    )
-
-with c2:
-    upper_arm_score = st.selectbox(
-        "위팔(Upper Arm)",
-        [1, 2, 3, 4, 5, 6],
-        key="reba_upper_arm",
-    )
-    lower_arm_score = st.selectbox(
-        "아래팔(Lower Arm)",
-        [1, 2],
-        key="reba_lower_arm",
-    )
-    wrist_score = st.selectbox(
-        "손목(Wrist)",
-        [1, 2, 3],
-        key="reba_wrist",
-    )
-
-with c3:
-    load_score = st.selectbox(
-        "하중/힘(Load)",
-        [0, 1, 2, 3],
-        key="reba_load",
-    )
-    coupling_score = st.selectbox(
-        "결합도(Coupling)",
-        [0, 1, 2, 3],
-        key="reba_coupling",
-    )
-    activity_score = st.selectbox(
-        "활동점수(Activity)",
-        [0, 1, 2, 3],
-        key="reba_activity",
-    )
-
-
-score_a = get_score_a(
-    trunk_score,
-    neck_score,
-    legs_score,
-    load_score,
-)
-
-score_b = get_score_b(
-    upper_arm_score,
-    lower_arm_score,
-    wrist_score,
-    coupling_score,
-)
-
-table_c_score = get_table_c_score(score_a, score_b)
-final_reba = min(table_c_score + activity_score, 15)
-risk_level, action_level, action_text = classify_reba(final_reba)
-
-st.divider()
-
-
-st.subheader("4. REBA 평가결과")
-r1, r2, r3, r4 = st.columns(4)
-
-with r1:
-    st.metric("Score A", score_a)
-with r2:
-    st.metric("Score B", score_b)
-with r3:
-    st.metric("Table C", table_c_score)
-with r4:
-    st.metric("최종 REBA", final_reba)
-
-st.write(f"**위험등급:** {risk_level}")
-st.write(f"**조치수준:** {action_level}")
-st.write(f"**조치권고:** {action_text}")
-
-saved_result = {
-    "worker": worker,
-    "department": department,
-    "task_name": task_name,
-    "evaluator": evaluator,
-    "neck_score": neck_score,
-    "trunk_score": trunk_score,
-    "legs_score": legs_score,
-    "load_score": load_score,
-    "upper_arm_score": upper_arm_score,
-    "lower_arm_score": lower_arm_score,
-    "wrist_score": wrist_score,
-    "coupling_score": coupling_score,
-    "activity_score": activity_score,
-    "score_a": score_a,
-    "score_b": score_b,
-    "table_c_score": table_c_score,
-    "final_reba": final_reba,
-    "risk_level": risk_level,
-    "action_level": action_level,
-    "action_text": action_text,
-}
-
-st.session_state["latest_reba_result"] = saved_result
-
-st.divider()
-
-
-st.subheader("5. REBA 평가결과 저장")
-save_disabled = (
-    not worker.strip()
-    or not task_name.strip()
-)
-
-if save_disabled:
-    st.warning(
-        "저장하려면 작업자 또는 평가대상과 작업명을 입력해주세요."
-    )
-
-if st.button(
-    "💾 REBA 평가결과 저장",
-    type="primary",
-    width="stretch",
-    disabled=save_disabled,
-):
+def load_reba_results():
     try:
-        pose_angles = st.session_state.get("ai_pose_angles", {})
-        ai_recommendation = st.session_state.get(
-            "ai_reba_recommendation",
-            {},
+        response = (
+            supabase
+            .table("reba_results")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return response.data or []
+    except Exception as e:
+        st.error(f"기존 REBA 결과 조회 오류: {e}")
+        return []
+
+
+mode = st.radio(
+    "작업할 기능을 선택하세요.",
+    ["📷 새 REBA 평가", "🖼️ 기존 REBA 평가에 사진만 연결"],
+    horizontal=True
+)
+st.divider()
+
+
+if mode == "📷 새 REBA 평가":
+    st.subheader("1. 평가 기본정보")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        worker = st.text_input("작업자 또는 평가대상", key="new_worker")
+        department = st.text_input("공종 / 부서", key="new_department")
+    with col2:
+        task_name = st.text_input("작업명", key="new_task_name")
+        evaluator = st.text_input("평가자", key="new_evaluator")
+
+    st.divider()
+    st.subheader("2. 현장사진 촬영")
+
+    source = st.radio(
+        "사진 입력방법",
+        ["📷 카메라 촬영", "🖼️ 사진 업로드"],
+        horizontal=True,
+        key="new_source"
+    )
+
+    if source == "📷 카메라 촬영":
+        photo = st.camera_input(
+            "작업자 전신이 보이도록 촬영해주세요.",
+            key="new_camera"
+        )
+    else:
+        photo = st.file_uploader(
+            "작업사진을 선택하세요.",
+            type=["jpg", "jpeg", "png"],
+            key="new_upload"
         )
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        original_image_path = None
-        analyzed_image_path = None
+    if photo is not None:
+        image_bytes = photo.getvalue()
+        st.image(image_bytes, caption="촬영/업로드 사진", width="stretch")
 
-        original_bytes = st.session_state.get(
-            "reba_original_image_bytes"
-        )
-        original_content_type = st.session_state.get(
-            "reba_original_content_type",
-            "image/jpeg",
-        )
-        original_filename = st.session_state.get(
-            "reba_original_filename",
-            "original.jpg",
-        )
+        with st.spinner("AI가 자세를 자동 분석하고 있습니다..."):
+            auto_analyze_image(image_bytes, "new_reba")
 
-        if original_bytes:
-            extension = original_filename.split(".")[-1].lower()
+        error = st.session_state.get("new_reba_error")
+        if error:
+            st.error(error)
+
+        analyzed_bytes = st.session_state.get("new_reba_analyzed_bytes")
+        angles = st.session_state.get("new_reba_angles", {})
+        recommendation = st.session_state.get("new_reba_recommendation", {})
+
+        if analyzed_bytes:
+            st.success("AI 자세분석이 완료되었습니다.")
+            st.image(analyzed_bytes, caption="AI 관절선 분석사진", width="stretch")
+
+        if angles:
+            angle_df = pd.DataFrame(
+                [
+                    ["왼쪽 팔꿈치", angles.get("left_elbow", "")],
+                    ["오른쪽 팔꿈치", angles.get("right_elbow", "")],
+                    ["왼쪽 무릎", angles.get("left_knee", "")],
+                    ["오른쪽 무릎", angles.get("right_knee", "")],
+                    ["왼쪽 위팔", angles.get("left_upper_arm", "")],
+                    ["오른쪽 위팔", angles.get("right_upper_arm", "")],
+                    ["몸통 기울기", angles.get("trunk_angle", "")],
+                ],
+                columns=["관절/부위", "각도(°)"]
+            )
+            st.dataframe(angle_df, hide_index=True, width="stretch")
+
+        if recommendation:
+            defaults = {
+                "new_trunk": recommendation["trunk_score"],
+                "new_legs": recommendation["legs_score"],
+                "new_upper_arm": recommendation["upper_arm_score"],
+                "new_lower_arm": recommendation["lower_arm_score"],
+            }
+            for key, value in defaults.items():
+                if key not in st.session_state:
+                    st.session_state[key] = value
+
+    st.divider()
+    st.subheader("3. REBA 점수 확인/수정")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        neck_score = st.selectbox("목(Neck)", [1,2,3], key="new_neck")
+        trunk_score = st.selectbox("몸통(Trunk)", [1,2,3,4,5], key="new_trunk")
+        legs_score = st.selectbox("다리(Legs)", [1,2,3,4], key="new_legs")
+    with c2:
+        upper_arm_score = st.selectbox("위팔(Upper Arm)", [1,2,3,4,5,6], key="new_upper_arm")
+        lower_arm_score = st.selectbox("아래팔(Lower Arm)", [1,2], key="new_lower_arm")
+        wrist_score = st.selectbox("손목(Wrist)", [1,2,3], key="new_wrist")
+    with c3:
+        load_score = st.selectbox("하중/힘(Load)", [0,1,2,3], key="new_load")
+        coupling_score = st.selectbox("결합도(Coupling)", [0,1,2,3], key="new_coupling")
+        activity_score = st.selectbox("활동점수(Activity)", [0,1,2,3], key="new_activity")
+
+    score_a = get_score_a(trunk_score, neck_score, legs_score, load_score)
+    score_b = get_score_b(upper_arm_score, lower_arm_score, wrist_score, coupling_score)
+    table_c_score = get_table_c_score(score_a, score_b)
+    final_reba = min(table_c_score + activity_score, 15)
+    risk_level, action_level, action_text = classify_reba(final_reba)
+
+    r1, r2, r3, r4 = st.columns(4)
+    with r1:
+        st.metric("Score A", score_a)
+    with r2:
+        st.metric("Score B", score_b)
+    with r3:
+        st.metric("Table C", table_c_score)
+    with r4:
+        st.metric("최종 REBA", final_reba)
+
+    st.write(f"**위험등급:** {risk_level}")
+    st.write(f"**조치권고:** {action_text}")
+    st.divider()
+
+    save_disabled = (
+        not worker.strip()
+        or not task_name.strip()
+        or photo is None
+    )
+
+    if st.button(
+        "💾 REBA 평가 + 사진 저장",
+        type="primary",
+        width="stretch",
+        disabled=save_disabled
+    ):
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            original_bytes = photo.getvalue()
+            original_name = getattr(photo, "name", "camera.jpg")
+            content_type = getattr(photo, "type", None) or "image/jpeg"
+            extension = original_name.split(".")[-1].lower()
             if extension not in ["jpg", "jpeg", "png"]:
                 extension = "jpg"
 
-            original_image_path = (
-                f"{timestamp}/original.{extension}"
+            original_path = f"{timestamp}/original.{extension}"
+            upload_reba_image(original_bytes, original_path, content_type)
+
+            analyzed_bytes = st.session_state.get("new_reba_analyzed_bytes")
+            analyzed_path = None
+            if analyzed_bytes:
+                analyzed_path = f"{timestamp}/analyzed.png"
+                upload_reba_image(analyzed_bytes, analyzed_path, "image/png")
+
+            insert_data = {
+                "worker": worker,
+                "department": department,
+                "task_name": task_name,
+                "evaluator": evaluator,
+                "pose_angles": st.session_state.get("new_reba_angles", {}),
+                "ai_recommendation": st.session_state.get("new_reba_recommendation", {}),
+                "neck_score": neck_score,
+                "trunk_score": trunk_score,
+                "legs_score": legs_score,
+                "load_score": load_score,
+                "upper_arm_score": upper_arm_score,
+                "lower_arm_score": lower_arm_score,
+                "wrist_score": wrist_score,
+                "coupling_score": coupling_score,
+                "activity_score": activity_score,
+                "score_a": score_a,
+                "score_b": score_b,
+                "final_reba": final_reba,
+                "risk_level": risk_level,
+                "action_level": action_level,
+                "action_text": action_text,
+                "original_image_path": original_path,
+                "analyzed_image_path": analyzed_path,
+            }
+
+            supabase.table("reba_results").insert(insert_data).execute()
+            st.success("✅ REBA 평가와 사진이 저장되었습니다.")
+
+        except Exception as e:
+            st.error(f"저장 오류: {e}")
+
+
+else:
+    st.subheader("기존 REBA 평가에 사진만 연결")
+    st.info(
+        "이 기능은 기존 REBA 점수를 전혀 바꾸지 않습니다. "
+        "기존 평가에 원본사진과 AI 관절선 사진만 추가합니다."
+    )
+
+    rows = load_reba_results()
+    if not rows:
+        st.warning("저장된 REBA 평가결과가 없습니다.")
+        st.stop()
+
+    options = {}
+    for row in rows:
+        label = (
+            f"#{row.get('id', '')} | "
+            f"{row.get('department', '')} | "
+            f"{row.get('task_name', '')} | "
+            f"{row.get('worker', '')} | "
+            f"REBA {row.get('final_reba', '')}"
+        )
+        options[label] = row
+
+    selected_label = st.selectbox(
+        "사진을 연결할 기존 평가를 선택하세요.",
+        list(options.keys())
+    )
+    selected = options[selected_label]
+
+    m1, m2, m3 = st.columns(3)
+    with m1:
+        st.metric("기존 REBA", selected.get("final_reba", ""))
+    with m2:
+        st.metric("위험등급", selected.get("risk_level", ""))
+    with m3:
+        st.metric("작업명", selected.get("task_name", ""))
+
+    existing_original = download_storage_file(selected.get("original_image_path"))
+    existing_analyzed = download_storage_file(selected.get("analyzed_image_path"))
+
+    if existing_original or existing_analyzed:
+        st.write("#### 현재 연결된 사진")
+        ec1, ec2 = st.columns(2)
+        with ec1:
+            if existing_original:
+                st.image(existing_original, caption="기존 원본사진", width="stretch")
+        with ec2:
+            if existing_analyzed:
+                st.image(existing_analyzed, caption="기존 AI 분석사진", width="stretch")
+
+    st.divider()
+
+    old_source = st.radio(
+        "새로 연결할 사진 입력방법",
+        ["📷 카메라 촬영", "🖼️ 사진 업로드"],
+        horizontal=True,
+        key="existing_source"
+    )
+
+    if old_source == "📷 카메라 촬영":
+        existing_photo = st.camera_input(
+            "작업자 전신이 보이도록 촬영해주세요.",
+            key="existing_camera"
+        )
+    else:
+        existing_photo = st.file_uploader(
+            "기존 평가에 연결할 사진을 선택하세요.",
+            type=["jpg", "jpeg", "png"],
+            key="existing_upload"
+        )
+
+    if existing_photo is not None:
+        existing_bytes = existing_photo.getvalue()
+        st.image(existing_bytes, caption="새로 연결할 원본사진", width="stretch")
+
+        with st.spinner("사진의 관절선을 자동 분석하고 있습니다..."):
+            auto_analyze_image(existing_bytes, "existing_reba")
+
+        error = st.session_state.get("existing_reba_error")
+        if error:
+            st.warning(
+                "원본사진은 연결할 수 있지만 AI 분석사진은 만들지 못했습니다: "
+                f"{error}"
             )
 
-            upload_reba_image(
-                original_bytes,
-                original_image_path,
-                original_content_type,
+        existing_new_analyzed = st.session_state.get("existing_reba_analyzed_bytes")
+        if existing_new_analyzed:
+            st.image(
+                existing_new_analyzed,
+                caption="새 AI 관절선 분석사진",
+                width="stretch"
             )
 
-        analyzed_image_bytes = st.session_state.get(
-            "reba_analyzed_image_bytes"
+        st.warning(
+            "아래 버튼을 눌러도 기존 REBA 점수, 위험등급, 평가내용은 변경되지 않습니다."
         )
 
-        if analyzed_image_bytes:
-            analyzed_image_path = f"{timestamp}/analyzed.png"
-            upload_reba_image(
-                analyzed_image_bytes,
-                analyzed_image_path,
-                "image/png",
-            )
+        if st.button(
+            "📎 기존 평가에 사진만 저장",
+            type="primary",
+            width="stretch"
+        ):
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                original_name = getattr(existing_photo, "name", "camera.jpg")
+                content_type = getattr(existing_photo, "type", None) or "image/jpeg"
+                extension = original_name.split(".")[-1].lower()
+                if extension not in ["jpg", "jpeg", "png"]:
+                    extension = "jpg"
 
-        insert_data = {
-            "worker": saved_result["worker"],
-            "department": saved_result["department"],
-            "task_name": saved_result["task_name"],
-            "evaluator": saved_result["evaluator"],
-            "pose_angles": pose_angles,
-            "ai_recommendation": ai_recommendation,
-            "neck_score": saved_result["neck_score"],
-            "trunk_score": saved_result["trunk_score"],
-            "legs_score": saved_result["legs_score"],
-            "load_score": saved_result["load_score"],
-            "upper_arm_score": saved_result["upper_arm_score"],
-            "lower_arm_score": saved_result["lower_arm_score"],
-            "wrist_score": saved_result["wrist_score"],
-            "coupling_score": saved_result["coupling_score"],
-            "activity_score": saved_result["activity_score"],
-            "score_a": saved_result["score_a"],
-            "score_b": saved_result["score_b"],
-            "final_reba": saved_result["final_reba"],
-            "risk_level": saved_result["risk_level"],
-            "action_level": saved_result["action_level"],
-            "action_text": saved_result["action_text"],
-            "original_image_path": original_image_path,
-            "analyzed_image_path": analyzed_image_path,
-        }
+                original_path = f"{timestamp}/original.{extension}"
+                upload_reba_image(existing_bytes, original_path, content_type)
 
-        (
-            supabase
-            .table("reba_results")
-            .insert(insert_data)
-            .execute()
-        )
+                analyzed_path = None
+                if existing_new_analyzed:
+                    analyzed_path = f"{timestamp}/analyzed.png"
+                    upload_reba_image(existing_new_analyzed, analyzed_path, "image/png")
 
-        st.success(
-            "✅ REBA 평가결과와 작업사진이 저장되었습니다."
-        )
+                update_data = {
+                    "original_image_path": original_path,
+                    "analyzed_image_path": analyzed_path,
+                }
 
-    except Exception as e:
-        st.error(
-            f"REBA 평가결과 저장 오류: {e}"
-        )
+                (
+                    supabase
+                    .table("reba_results")
+                    .update(update_data)
+                    .eq("id", selected["id"])
+                    .execute()
+                )
+
+                st.success(
+                    "✅ 기존 REBA 점수는 그대로 유지하고 사진만 연결했습니다."
+                )
+
+            except Exception as e:
+                st.error(f"사진 연결 오류: {e}")
