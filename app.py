@@ -24,7 +24,11 @@ survey_page = st.Page(
     icon="🩺",
     default=True
 )
-
+worker_camera_page = st.Page(
+    "views/worker_camera.py",
+    title="작업자세 촬영",
+    icon="📷"
+)
 
 # =========================================================
 # 관리자 로그인
@@ -95,6 +99,7 @@ if is_admin():
     pages = {
         "근로자": [
             survey_page
+            worker_camera_page
         ],
 
         "관리자": [
@@ -114,6 +119,7 @@ else:
     pages = {
         "근로자": [
             survey_page
+            worker_camera_page
         ],
 
         "관리자": [
