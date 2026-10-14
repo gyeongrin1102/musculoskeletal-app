@@ -1,6 +1,8 @@
-from io import BytesIO
 import streamlit as st
 import pandas as pd
+import cv2
+import numpy as np
+
 from supabase import create_client
 
 from auth import require_admin, logout_button
@@ -62,6 +64,33 @@ def download_storage_file(path):
             return data.content
 
         return bytes(data)
+
+    except Exception:
+        return None
+
+
+def bytes_to_image(image_bytes):
+    if not image_bytes:
+        return None
+
+    try:
+        image_array = np.frombuffer(
+            image_bytes,
+            dtype=np.uint8
+        )
+
+        image_bgr = cv2.imdecode(
+            image_array,
+            cv2.IMREAD_COLOR
+        )
+
+        if image_bgr is None:
+            return None
+
+        return cv2.cvtColor(
+            image_bgr,
+            cv2.COLOR_BGR2RGB
+        )
 
     except Exception:
         return None
@@ -174,8 +203,7 @@ def get_score_a(
     )
 
     return min(
-        base_score
-        + load_score,
+        base_score + load_score,
         12
     )
 
@@ -197,8 +225,7 @@ def get_score_b(
     )
 
     return min(
-        base_score
-        + coupling_score,
+        base_score + coupling_score,
         12
     )
 
@@ -208,18 +235,12 @@ def get_table_c_score(
     score_b
 ):
     a_index = min(
-        max(
-            score_a,
-            1
-        ),
+        max(score_a, 1),
         12
     ) - 1
 
     b_index = min(
-        max(
-            score_b,
-            1
-        ),
+        max(score_b, 1),
         12
     ) - 1
 
@@ -272,14 +293,8 @@ try:
         supabase
         .table("reba_capture_queue")
         .select("*")
-        .eq(
-            "status",
-            "대기"
-        )
-        .order(
-            "created_at",
-            desc=False
-        )
+        .eq("status", "대기")
+        .order("created_at", desc=False)
         .execute()
     )
 
@@ -303,33 +318,15 @@ if not rows:
 # 촬영자료 선택
 # =========================================================
 
-st.subheader(
-    "1. 검토할 촬영자료 선택"
-)
-
+st.subheader("1. 검토할 촬영자료 선택")
 
 options = {}
 
 for row in rows:
-    company = (
-        row.get("company")
-        or "업체미입력"
-    )
-
-    department = (
-        row.get("department")
-        or ""
-    )
-
-    task_name = (
-        row.get("task_name")
-        or "작업미입력"
-    )
-
-    worker = (
-        row.get("worker")
-        or "이름없음"
-    )
+    company = row.get("company") or "업체미입력"
+    department = row.get("department") or ""
+    task_name = row.get("task_name") or "작업미입력"
+    worker = row.get("worker") or "이름없음"
 
     label = (
         f"#{row.get('id', '')} | "
@@ -344,17 +341,10 @@ for row in rows:
 
 selected_label = st.selectbox(
     "자료를 선택하세요.",
-    list(
-        options.keys()
-    )
+    list(options.keys())
 )
 
-
-selected = (
-    options[
-        selected_label
-    ]
-)
+selected = options[selected_label]
 
 
 # =========================================================
@@ -362,48 +352,32 @@ selected = (
 # =========================================================
 
 company = str(
-    selected.get(
-        "company",
-        ""
-    )
+    selected.get("company", "")
     or ""
 )
 
 department = str(
-    selected.get(
-        "department",
-        ""
-    )
+    selected.get("department", "")
     or ""
 )
 
 task_name = str(
-    selected.get(
-        "task_name",
-        ""
-    )
+    selected.get("task_name", "")
     or ""
 )
 
 worker = str(
-    selected.get(
-        "worker",
-        ""
-    )
+    selected.get("worker", "")
     or ""
 )
 
 pose_angles = (
-    selected.get(
-        "pose_angles"
-    )
+    selected.get("pose_angles")
     or {}
 )
 
 ai_recommendation = (
-    selected.get(
-        "ai_recommendation"
-    )
+    selected.get("ai_recommendation")
     or {}
 )
 
@@ -441,38 +415,43 @@ analyzed_bytes = download_storage_file(
     )
 )
 
-
-st.write(
-    "#### 작업사진"
+original_image = bytes_to_image(
+    original_bytes
 )
 
+analyzed_image = bytes_to_image(
+    analyzed_bytes
+)
+
+
+st.write("#### 작업사진")
 
 c1, c2 = st.columns(2)
 
 
 with c1:
-    if original_bytes:
+    if original_image is not None:
         st.image(
-            BytesIO(original_bytes),
+            original_image,
             caption="원본 작업사진",
             width="stretch"
         )
     else:
         st.warning(
-            "원본사진 없음"
+            "원본사진을 불러오지 못했습니다."
         )
 
 
 with c2:
-    if analyzed_bytes:
+    if analyzed_image is not None:
         st.image(
-            BytesIO(analyzed_bytes),
+            analyzed_image,
             caption="AI 관절선 분석사진",
             width="stretch"
         )
     else:
         st.warning(
-            "AI 분석사진 없음"
+            "AI 분석사진을 불러오지 못했습니다."
         )
 
 
@@ -481,9 +460,7 @@ with c2:
 # =========================================================
 
 if pose_angles:
-    st.write(
-        "#### AI 관절각도"
-    )
+    st.write("#### AI 관절각도")
 
     angle_df = pd.DataFrame(
         [
@@ -557,9 +534,7 @@ st.divider()
 # 최종 REBA 평가
 # =========================================================
 
-st.subheader(
-    "2. REBA 최종점수 확정"
-)
+st.subheader("2. REBA 최종점수 확정")
 
 st.info(
     "몸통·다리·위팔·아래팔은 AI 초안을 불러옵니다. "
@@ -614,31 +589,23 @@ with c1:
         index=0
     )
 
-    trunk_values = [
-        1, 2, 3, 4, 5
-    ]
+    trunk_values = [1, 2, 3, 4, 5]
 
     trunk_score = st.selectbox(
         "몸통(Trunk)",
         trunk_values,
-        index=(
-            trunk_values.index(
-                default_trunk
-            )
+        index=trunk_values.index(
+            default_trunk
         )
     )
 
-    legs_values = [
-        1, 2, 3, 4
-    ]
+    legs_values = [1, 2, 3, 4]
 
     legs_score = st.selectbox(
         "다리(Legs)",
         legs_values,
-        index=(
-            legs_values.index(
-                default_legs
-            )
+        index=legs_values.index(
+            default_legs
         )
     )
 
@@ -648,31 +615,21 @@ with c2:
         1, 2, 3, 4, 5, 6
     ]
 
-    upper_arm_score = (
-        st.selectbox(
-            "위팔(Upper Arm)",
-            upper_values,
-            index=(
-                upper_values.index(
-                    default_upper
-                )
-            )
+    upper_arm_score = st.selectbox(
+        "위팔(Upper Arm)",
+        upper_values,
+        index=upper_values.index(
+            default_upper
         )
     )
 
-    lower_values = [
-        1, 2
-    ]
+    lower_values = [1, 2]
 
-    lower_arm_score = (
-        st.selectbox(
-            "아래팔(Lower Arm)",
-            lower_values,
-            index=(
-                lower_values.index(
-                    default_lower
-                )
-            )
+    lower_arm_score = st.selectbox(
+        "아래팔(Lower Arm)",
+        lower_values,
+        index=lower_values.index(
+            default_lower
         )
     )
 
@@ -710,7 +667,6 @@ score_a = get_score_a(
     load_score
 )
 
-
 score_b = get_score_b(
     upper_arm_score,
     lower_arm_score,
@@ -718,21 +674,16 @@ score_b = get_score_b(
     coupling_score
 )
 
-
-table_c_score = (
-    get_table_c_score(
-        score_a,
-        score_b
-    )
+table_c_score = get_table_c_score(
+    score_a,
+    score_b
 )
-
 
 final_reba = min(
     table_c_score
     + activity_score,
     15
 )
-
 
 (
     risk_level,
@@ -743,9 +694,7 @@ final_reba = min(
 )
 
 
-r1, r2, r3, r4 = (
-    st.columns(4)
-)
+r1, r2, r3, r4 = st.columns(4)
 
 
 with r1:
@@ -754,20 +703,17 @@ with r1:
         score_a
     )
 
-
 with r2:
     st.metric(
         "Score B",
         score_b
     )
 
-
 with r3:
     st.metric(
         "Table C",
         table_c_score
     )
-
 
 with r4:
     st.metric(
@@ -797,9 +743,7 @@ evaluator = st.text_input(
 
 st.divider()
 
-st.subheader(
-    "3. 최종 확정"
-)
+st.subheader("3. 최종 확정")
 
 
 if st.button(
@@ -897,31 +841,22 @@ if st.button(
 
         (
             supabase
-            .table(
-                "reba_results"
-            )
-            .insert(
-                insert_data
-            )
+            .table("reba_results")
+            .insert(insert_data)
             .execute()
         )
 
         (
             supabase
-            .table(
-                "reba_capture_queue"
-            )
+            .table("reba_capture_queue")
             .update(
                 {
-                    "status":
-                        "완료"
+                    "status": "완료"
                 }
             )
             .eq(
                 "id",
-                selected[
-                    "id"
-                ]
+                selected["id"]
             )
             .execute()
         )
