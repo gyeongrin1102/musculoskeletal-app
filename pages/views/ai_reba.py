@@ -16,53 +16,9 @@ from auth import require_admin, logout_button
 
 require_admin()
 
-st.markdown(
-    """
-    <style>
-    .stApp { background: #f6fafb; color: #183247; }
-    [data-testid="stHeader"] { background: rgba(246, 250, 251, 0.94); }
-    h1, h2, h3 { color: #15364a; }
-    [data-testid="stCameraInput"], [data-testid="stFileUploader"] {
-        border: 1px solid #c9dce0;
-        border-radius: 10px;
-        background: #ffffff;
-        padding: 0.4rem;
-    }
-    [data-testid="stMetric"] {
-        border-left: 3px solid #168b88;
-        background: #ffffff;
-        padding: 0.65rem 0.8rem;
-        border-radius: 4px;
-    }
-    .stButton > button[kind="primary"] {
-        background: #087e80;
-        border-color: #087e80;
-        min-height: 2.8rem;
-        font-weight: 650;
-    }
-    .stButton > button { min-height: 2.6rem; border-radius: 7px; }
-    @media (max-width: 700px) {
-        .block-container { padding: 1rem 0.8rem 2rem; }
-        [data-testid="stHorizontalBlock"] { flex-wrap: wrap; gap: 0.6rem; }
-        [data-testid="column"] { min-width: 100% !important; }
-        [data-testid="stImage"] img { max-height: 62vh; object-fit: contain; }
-        .stButton > button { width: 100%; }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-st.title("🤖 AI 자세·REBA 평가")
+st.title("AI 자세·REBA 평가")
 logout_button()
-st.write(
-    "휴대전화 카메라로 현장 작업사진을 바로 촬영하거나, "
-    "기존 사진을 업로드해 AI 자세분석과 REBA 평가를 진행할 수 있습니다."
-)
-st.info(
-    "AI 분석결과는 평가 보조용입니다. "
-    "최종 REBA 점수는 실제 작업조건을 확인한 평가자가 확정해주세요."
-)
+st.caption("작업 사진과 AI 분석을 확인한 뒤 평가자가 REBA 점수를 확정합니다.")
 st.divider()
 
 @st.cache_resource

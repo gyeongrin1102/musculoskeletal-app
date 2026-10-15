@@ -22,14 +22,11 @@ from auth import require_admin, logout_button
 
 require_admin()
 
-st.title("📄 근골격계 · REBA · 개선효과 통합 결과보고서")
+st.title("통합 결과보고서")
 
 logout_button()
 
-st.write(
-    "근골격계 증상조사, REBA 작업자세 평가 및 "
-    "개선 전·후 비교결과를 통합하여 Word 보고서를 생성합니다."
-)
+st.caption("증상조사, REBA 평가와 개선효과를 모아 Word 보고서로 출력합니다.")
 
 st.divider()
 
@@ -1336,6 +1333,13 @@ company_name = st.text_input(
 )
 
 
+site_start_date = st.text_input(
+    "현장 신설일",
+    value="",
+    placeholder="예: 2020-01-01"
+)
+
+
 survey_period = st.text_input(
     "조사 및 평가기간",
     placeholder=(
@@ -2157,7 +2161,7 @@ def create_word_report():
 
 
     table = document.add_table(
-        rows=8,
+        rows=9,
         cols=2
     )
 
@@ -2170,6 +2174,10 @@ def create_word_report():
         [
             "사업장명",
             company_name
+        ],
+        [
+            "현장 신설일",
+            site_start_date
         ],
         [
             "조사·평가기간",

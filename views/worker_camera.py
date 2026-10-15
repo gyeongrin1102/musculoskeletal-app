@@ -12,17 +12,8 @@ from mediapipe.tasks.python import vision
 from supabase import create_client
 
 
-st.title("📷 근로자 작업자세 촬영")
-
-st.write(
-    "작업자 전신이 보이도록 사진을 촬영하면 "
-    "AI 자세분석 후 자동으로 저장됩니다."
-)
-
-st.info(
-    "사진 촬영 후 별도의 저장 버튼을 누르지 않아도 자동 저장됩니다. "
-    "AI 분석결과는 관리자 확인용 초안입니다."
-)
+st.title("작업자세 촬영")
+st.caption("업체와 작업 정보를 입력한 뒤 촬영하세요. 사진은 AI 초안과 함께 관리자 검토 대기함에 저장됩니다.")
 
 st.divider()
 
@@ -69,6 +60,19 @@ def upload_image(image_bytes, path, content_type):
         )
     )
     return path
+
+
+def start_new_capture():
+    st.session_state["worker_capture_revision"] = (
+        st.session_state.get("worker_capture_revision", 0) + 1
+    )
+    for key in (
+        "worker_capture_last_original",
+        "worker_capture_last_analyzed",
+        "worker_capture_last_angles",
+        "worker_capture_last_recommendation",
+    ):
+        st.session_state.pop(key, None)
 
 
 POSE_CONNECTIONS = [
@@ -364,7 +368,7 @@ def analyze_pose(image_rgb):
         )
 
 
-st.subheader("1. 작업정보 입력")
+st.subheader("1. 작업정보")
 
 company = st.text_input(
     "업체명",
@@ -389,14 +393,15 @@ worker = st.text_input(
 st.divider()
 
 
-st.subheader("2. 현장사진 촬영")
+st.subheader("2. 작업사진")
 
 st.caption(
     "가능하면 작업자의 머리부터 발끝까지 한 화면에 나오게 촬영해주세요."
 )
 
 photo = st.camera_input(
-    "📷 작업자세 촬영"
+    "📷 작업자세 촬영",
+    key=f"worker_camera_{st.session_state.get('worker_capture_revision', 0)}"
 )
 
 
@@ -642,5 +647,11 @@ if last_original:
     st.info(
         "최종 REBA 평가는 관리자가 목·손목·하중·결합도·활동점수 등 "
         "실제 작업조건을 확인한 후 확정합니다."
+    )
+
+    st.button(
+        "재촬영",
+        on_click=start_new_capture,
+        width="stretch"
     )
 

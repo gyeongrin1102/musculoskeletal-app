@@ -12,14 +12,11 @@ from auth import require_admin, logout_button
 
 require_admin()
 
-st.title("📥 촬영 대기자료 검토")
+st.title("촬영 대기자료 검토")
 
 logout_button()
 
-st.write(
-    "근로자가 휴대폰에서 촬영한 작업사진을 확인하고 "
-    "REBA 최종점수를 확정해 저장합니다."
-)
+st.caption("원본·AI 사진을 확인하고 수동 REBA 점수를 확정합니다.")
 
 st.divider()
 

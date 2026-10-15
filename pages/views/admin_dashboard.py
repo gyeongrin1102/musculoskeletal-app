@@ -306,6 +306,23 @@ def load_improvement_data():
     return pd.DataFrame(rows)
 
 
+@st.cache_data(ttl=30)
+def load_capture_queue():
+
+    try:
+        response = (
+            supabase
+            .table("reba_capture_queue")
+            .select("*")
+            .execute()
+        )
+        rows = response.data or []
+    except Exception:
+        rows = []
+
+    return pd.DataFrame(rows)
+
+
 # =========================================================
 # Excel 다운로드
 # =========================================================
@@ -446,74 +463,11 @@ def format_datetime_column(
 # 페이지 시작
 # =========================================================
 
-st.title(
-    "📊 관리자 통합 대시보드"
-)
-
-st.markdown(
-    """
-    <style>
-    :root {
-        --dashboard-navy: #16324f;
-        --dashboard-teal: #167d88;
-        --dashboard-ink: #263746;
-        --dashboard-line: #dce5eb;
-        --dashboard-surface: #ffffff;
-    }
-    [data-testid="stAppViewContainer"] {
-        background: #f5f8fa;
-        color: var(--dashboard-ink);
-    }
-    [data-testid="stHeader"] {
-        background: rgba(255, 255, 255, 0.92);
-    }
-    [data-testid="stMetric"] {
-        background: var(--dashboard-surface);
-        border: 1px solid var(--dashboard-line);
-        border-top: 3px solid var(--dashboard-teal);
-        border-radius: 6px;
-        padding: 0.8rem 1rem;
-    }
-    [data-testid="stMetricLabel"] p {
-        color: var(--dashboard-navy);
-        font-weight: 650;
-    }
-    [data-testid="stMetricValue"] {
-        color: var(--dashboard-ink);
-    }
-    [data-baseweb="tab-list"] {
-        gap: 0.4rem;
-        border-bottom: 1px solid var(--dashboard-line);
-    }
-    [data-baseweb="tab"] {
-        color: var(--dashboard-navy);
-    }
-    [data-baseweb="tab-highlight"] {
-        background: var(--dashboard-teal);
-    }
-    @media (max-width: 700px) {
-        section.main > div {
-            padding-left: 0.8rem;
-            padding-right: 0.8rem;
-        }
-        [data-testid="stMetric"] {
-            padding: 0.65rem;
-        }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+st.title("관리자 통합 대시보드")
 
 logout_button()
 
-st.write(
-    "근골격계 증상조사와 "
-    "AI REBA 작업자세 평가 결과를 "
-    "통합 관리합니다."
-)
-
-st.divider()
+st.caption("업체별 조사 응답, REBA 평가와 개선조치 현황")
 
 
 # =========================================================
@@ -523,10 +477,12 @@ st.divider()
 survey_df = load_survey_data()
 reba_df = load_reba_data()
 improvement_df = load_improvement_data()
+capture_queue_df = load_capture_queue()
 
 survey_records = survey_df.to_dict(orient="records")
 reba_records = reba_df.to_dict(orient="records")
 improvement_records = improvement_df.to_dict(orient="records")
+capture_queue_records = capture_queue_df.to_dict(orient="records")
 
 known_companies = {
     company
@@ -534,6 +490,7 @@ known_companies = {
         (survey_records, False),
         (reba_records, True),
         (improvement_records, True),
+        (capture_queue_records, False),
     )
     for row in records
     if (company := resolve_company_name(row, allow_department_prefix))
@@ -545,6 +502,7 @@ has_unclassified_records = any(
         (survey_records, False),
         (reba_records, True),
         (improvement_records, True),
+        (capture_queue_records, False),
     )
     for row in records
 )
@@ -582,6 +540,13 @@ improvement_df = pd.DataFrame(
         allow_department_prefix=True
     ),
     columns=improvement_df.columns
+)
+capture_queue_df = pd.DataFrame(
+    filter_company_records(
+        capture_queue_records,
+        selected_company
+    ),
+    columns=capture_queue_df.columns
 )
 
 if selected_company != "전체 업체" and survey_df.empty:
@@ -690,6 +655,40 @@ else:
 
     high_risk_count = 0
 
+pending_review_count = int(
+    capture_queue_df.get(
+        "status",
+        pd.Series(dtype=str)
+    )
+    .fillna("")
+    .eq("대기")
+    .sum()
+)
+
+if not reba_df.empty and "final_reba" in reba_df.columns:
+    high_risk_rows = reba_df.loc[reba_numeric >= 8]
+
+    def work_key(row):
+        return (
+            str(row.get("department") or "").strip().casefold(),
+            str(row.get("task_name") or "").strip().casefold(),
+        )
+
+    improved_work_keys = {
+        work_key(row)
+        for row in improvement_df.to_dict(orient="records")
+    }
+    unaddressed_work_keys = {
+        work_key(row)
+        for row in high_risk_rows.to_dict(orient="records")
+        if work_key(row) not in improved_work_keys
+    }
+    needs_supplement_count = len(high_risk_rows)
+    unaddressed_count = len(unaddressed_work_keys)
+else:
+    needs_supplement_count = 0
+    unaddressed_count = 0
+
 
 m1, m2, m3, m4, m5 = (
     st.columns(5)
@@ -732,6 +731,25 @@ with m5:
         "개선조치 기록",
         f"{len(improvement_df)}건"
     )
+
+
+st.subheader("주요 업무 처리")
+status_columns = st.columns(3)
+status_columns[0].metric(
+    "검토 대기",
+    f"{pending_review_count}건",
+    help="촬영 대기함에서 관리자 검토를 기다리는 항목입니다."
+)
+status_columns[1].metric(
+    "보완 필요",
+    f"{needs_supplement_count}건",
+    help="REBA 8점 이상으로 개선 검토가 필요한 평가입니다."
+)
+status_columns[2].metric(
+    "미조치 고위험 작업",
+    f"{unaddressed_count}건",
+    help="REBA 8점 이상이며 같은 공종·작업의 개선 이력이 없는 건수입니다."
+)
 
 
 st.divider()

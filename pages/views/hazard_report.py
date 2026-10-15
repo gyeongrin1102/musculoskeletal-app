@@ -1,6 +1,5 @@
 from pathlib import Path
 from io import BytesIO
-from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -14,9 +13,9 @@ from auth import require_admin, logout_button
 
 require_admin()
 
-st.title("📋 근골격계 유해요인조사표 자동생성")
+st.title("근골격계 유해요인조사표")
 logout_button()
-st.write("저장된 REBA 평가결과와 작업사진을 불러와 근골격계 유해요인조사표 Word 파일을 자동 생성합니다.")
+st.caption("저장된 REBA 평가와 작업사진으로 조사표 Word 파일을 작성합니다.")
 st.divider()
 
 @st.cache_resource
@@ -238,11 +237,12 @@ c1, c2 = st.columns(2)
 with c1:
     survey_type = st.selectbox(
         "조사구분",
-        ["수시조사", "정기조사"]
+        ["최초조사", "정기조사", "수시조사"]
     )
     survey_date = st.text_input(
         "조사일시",
-        value=datetime.now().strftime("%Y-%m-%d %H:%M")
+        value="",
+        placeholder="예: 2026-10-15"
     )
     investigator = st.text_input(
         "조사자",
