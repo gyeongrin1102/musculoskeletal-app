@@ -55,7 +55,9 @@ def safe_int(value, default=0):
 
 def download_storage_file(path):
     if not path:
+        st.warning("사진 저장 경로가 없습니다.")
         return None
+
     try:
         data = (
             supabase
@@ -63,12 +65,27 @@ def download_storage_file(path):
             .from_("reba-images")
             .download(path)
         )
+
         if isinstance(data, bytes):
-            return data
-        if hasattr(data, "content"):
-            return data.content
-        return bytes(data)
-    except Exception:
+            image_bytes = data
+        elif hasattr(data, "content"):
+            image_bytes = data.content
+        else:
+            image_bytes = bytes(data)
+
+        if not image_bytes:
+            st.warning("사진 파일이 비어 있습니다.")
+            return None
+
+        return image_bytes
+
+    except Exception as e:
+        # 실제 근로자 정보, 파일 경로, 인증정보가
+        # 오류 메시지에 노출되지 않도록 처리
+        st.error(
+            "사진을 불러오지 못했습니다. "
+            "Storage 파일 존재 여부와 접근권한을 확인해주세요."
+        )
         return None
 
 def replace_in_paragraph(paragraph, replacements):
@@ -120,6 +137,7 @@ def find_paragraph_containing(document, text):
 
 def add_photo_to_cell(cell, image_bytes, caption):
     cell.text = ""
+
     title_p = cell.paragraphs[0]
     title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_run = title_p.add_run(caption)
@@ -132,32 +150,67 @@ def add_photo_to_cell(cell, image_bytes, caption):
         return
 
     try:
+        from PIL import Image, ImageOps
+
+        # 원본 사진은 변경하지 않고
+        # Word 삽입용 이미지만 메모리에서 축소
+        with Image.open(BytesIO(image_bytes)) as source:
+            image = ImageOps.exif_transpose(source)
+            image.thumbnail((1400, 1400))
+
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+
+            optimized = BytesIO()
+            image.save(
+                optimized,
+                format="JPEG",
+                quality=85,
+                optimize=True
+            )
+            optimized.seek(0)
+
         p = cell.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run()
-        run.add_picture(
-            BytesIO(image_bytes),
+        p.add_run().add_picture(
+            optimized,
             width=Inches(2.45)
         )
+
     except Exception:
         p = cell.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run("사진 삽입 실패")
 
-def insert_photo_section(document, original_image_bytes, analyzed_image_bytes):
-    if not original_image_bytes and not analyzed_image_bytes:
-        return
 
+def insert_photo_section(
+    document,
+    original_image_bytes,
+    analyzed_image_bytes
+):
     target = find_paragraph_containing(
         document,
         "라. 작업조건 조사"
     )
+
     if target is None:
+        st.warning(
+            "Word 템플릿에서 사진 삽입 위치를 찾지 못했습니다."
+        )
         return
 
-    heading = target.insert_paragraph_before("작업자세 사진")
+    heading = target.insert_paragraph_before(
+        "작업자세 사진"
+    )
+
     if heading.runs:
         heading.runs[0].bold = True
+
+    if not original_image_bytes and not analyzed_image_bytes:
+        msg = target.insert_paragraph_before(
+            "저장된 작업사진이 없습니다."
+        )
+        return
 
     table = document.add_table(rows=1, cols=2)
     table.style = "Table Grid"
@@ -167,75 +220,15 @@ def insert_photo_section(document, original_image_bytes, analyzed_image_bytes):
         original_image_bytes,
         "원본 작업사진"
     )
+
     add_photo_to_cell(
         table.cell(0, 1),
         analyzed_image_bytes,
         "AI 관절선 분석사진"
     )
 
-    target._p.addprevious(table._tbl)
-
-st.subheader("1. REBA 평가 선택")
-
-options = {}
-for _, row in reba_df.iterrows():
-    label = (
-        f"#{row.get('id', '')} | "
-        f"{row.get('department', '')} | "
-        f"{row.get('task_name', '')} | "
-        f"{row.get('worker', '')} | "
-        f"REBA {row.get('final_reba', '')}"
-    )
-    options[label] = row.to_dict()
-
-selected_label = st.selectbox(
-    "유해요인조사표를 생성할 평가를 선택하세요.",
-    list(options.keys())
-)
-selected = options[selected_label]
-
-final_reba = safe_int(selected.get("final_reba"))
-risk_level = str(selected.get("risk_level", "") or "")
-action_text = str(selected.get("action_text", "") or "")
-
-st.success(
-    f"선택된 작업: {selected.get('task_name', '')} / REBA {final_reba}점"
-)
-
-original_image_path = selected.get("original_image_path")
-analyzed_image_path = selected.get("analyzed_image_path")
-
-original_image_bytes = download_storage_file(original_image_path)
-analyzed_image_bytes = download_storage_file(analyzed_image_path)
-
-if original_image_bytes or analyzed_image_bytes:
-    st.write("#### 저장된 작업사진")
-    p1, p2 = st.columns(2)
-
-    with p1:
-        if original_image_bytes:
-            st.image(
-                original_image_bytes,
-                caption="원본 작업사진",
-                width="stretch"
-            )
-        else:
-            st.info("원본사진 없음")
-
-    with p2:
-        if analyzed_image_bytes:
-            st.image(
-                analyzed_image_bytes,
-                caption="AI 관절선 분석사진",
-                width="stretch"
-            )
-        else:
-            st.info("AI 분석사진 없음")
-else:
-    st.info(
-        "이 REBA 평가에는 저장된 작업사진이 없습니다. "
-        "사진 저장 기능 적용 이후 평가부터 Word에 사진이 들어갑니다."
-    )
+    # 표를 제목 바로 아래로 이동
+    heading._p.addnext(table._tbl)
 
 st.divider()
 st.subheader("2. 조사 개요")
