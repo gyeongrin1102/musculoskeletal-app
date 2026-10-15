@@ -16,6 +16,43 @@ from auth import require_admin, logout_button
 
 require_admin()
 
+st.markdown(
+    """
+    <style>
+    .stApp { background: #f6fafb; color: #183247; }
+    [data-testid="stHeader"] { background: rgba(246, 250, 251, 0.94); }
+    h1, h2, h3 { color: #15364a; }
+    [data-testid="stCameraInput"], [data-testid="stFileUploader"] {
+        border: 1px solid #c9dce0;
+        border-radius: 10px;
+        background: #ffffff;
+        padding: 0.4rem;
+    }
+    [data-testid="stMetric"] {
+        border-left: 3px solid #168b88;
+        background: #ffffff;
+        padding: 0.65rem 0.8rem;
+        border-radius: 4px;
+    }
+    .stButton > button[kind="primary"] {
+        background: #087e80;
+        border-color: #087e80;
+        min-height: 2.8rem;
+        font-weight: 650;
+    }
+    .stButton > button { min-height: 2.6rem; border-radius: 7px; }
+    @media (max-width: 700px) {
+        .block-container { padding: 1rem 0.8rem 2rem; }
+        [data-testid="stHorizontalBlock"] { flex-wrap: wrap; gap: 0.6rem; }
+        [data-testid="column"] { min-width: 100% !important; }
+        [data-testid="stImage"] img { max-height: 62vh; object-fit: contain; }
+        .stButton > button { width: 100%; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("🤖 AI 자세·REBA 평가")
 logout_button()
 st.write(
@@ -104,6 +141,53 @@ def midpoint(point_a, point_b):
 
 def image_signature(image_bytes):
     return hashlib.sha256(image_bytes).hexdigest()
+
+
+def submission_signature(image_bytes, values):
+    payload = "\x1f".join(str(value) for value in values)
+    return hashlib.sha256(
+        image_bytes + payload.encode("utf-8")
+    ).hexdigest()
+
+
+def resolve_company(row):
+    company = row.get("company") or row.get("company_name")
+    if company:
+        return str(company).strip()
+    department = str(row.get("department") or "").strip()
+    return department.split(" / ", 1)[0].strip() if " / " in department else ""
+
+
+def resolve_department(row):
+    department = str(row.get("department") or "").strip()
+    if " / " in department:
+        return department.split(" / ", 1)[1].strip()
+    return department
+
+
+def reset_new_capture():
+    st.session_state["new_capture_revision"] = st.session_state.get("new_capture_revision", 0) + 1
+    for key in (
+        "new_reba_signature", "new_reba_original_bytes",
+        "new_reba_analyzed_bytes", "new_reba_angles",
+        "new_reba_recommendation", "new_reba_error",
+        "new_saving_signature", "new_trunk", "new_legs",
+        "new_upper_arm", "new_lower_arm",
+    ):
+        st.session_state.pop(key, None)
+
+
+def cancel_new_evaluation():
+    reset_new_capture()
+    for key in (
+        "new_worker", "new_company_choice", "new_company_custom",
+        "new_department_choice", "new_department_custom",
+        "new_task_choice", "new_task_custom", "new_evaluator",
+        "new_neck", "new_trunk", "new_legs", "new_upper_arm",
+        "new_lower_arm", "new_wrist", "new_load", "new_coupling",
+        "new_activity",
+    ):
+        st.session_state.pop(key, None)
 
 
 def decode_image(image_bytes):
@@ -361,12 +445,60 @@ st.divider()
 if mode == "📷 새 REBA 평가":
     st.subheader("1. 평가 기본정보")
 
+    previous_rows = load_reba_results()
+    company_options = sorted({
+        resolve_company(row)
+        for row in previous_rows
+        if resolve_company(row)
+    })
+
+    company_choice = st.selectbox(
+        "업체 빠른 선택",
+        ["직접 입력"] + company_options,
+        key="new_company_choice"
+    )
+    if company_choice == "직접 입력":
+        company = st.text_input("업체명", placeholder="예: ○○건설", key="new_company_custom")
+    else:
+        company = company_choice
+
+    department_options = sorted({
+        resolve_department(row)
+        for row in previous_rows
+        if resolve_department(row)
+        and (not company or resolve_company(row) == company)
+    })
+    department_choice = st.selectbox(
+        "공종 빠른 선택",
+        ["직접 입력"] + department_options,
+        key="new_department_choice"
+    )
+    if department_choice == "직접 입력":
+        department = st.text_input("공종 / 부서", placeholder="예: 철근팀", key="new_department_custom")
+    else:
+        department = department_choice
+
+    task_options = sorted({
+        str(row.get("task_name")).strip()
+        for row in previous_rows
+        if row.get("task_name")
+        and (not company or resolve_company(row) == company)
+        and (not department or resolve_department(row) == department)
+    })
+    task_choice = st.selectbox(
+        "작업명 빠른 선택",
+        ["직접 입력"] + task_options,
+        key="new_task_choice"
+    )
+    if task_choice == "직접 입력":
+        task_name = st.text_input("작업명", placeholder="예: 철근 결속", key="new_task_custom")
+    else:
+        task_name = task_choice
+
     col1, col2 = st.columns(2)
     with col1:
         worker = st.text_input("작업자 또는 평가대상", key="new_worker")
-        department = st.text_input("공종 / 부서", key="new_department")
     with col2:
-        task_name = st.text_input("작업명", key="new_task_name")
         evaluator = st.text_input("평가자", key="new_evaluator")
 
     st.divider()
@@ -374,21 +506,22 @@ if mode == "📷 새 REBA 평가":
 
     source = st.radio(
         "사진 입력방법",
-        ["📷 카메라 촬영", "🖼️ 사진 업로드"],
+        ["📷 스마트폰 촬영", "🖼️ 사진 업로드"],
         horizontal=True,
         key="new_source"
     )
 
-    if source == "📷 카메라 촬영":
+    capture_revision = st.session_state.get("new_capture_revision", 0)
+    if source == "📷 스마트폰 촬영":
         photo = st.camera_input(
             "작업자 전신이 보이도록 촬영해주세요.",
-            key="new_camera"
+            key=f"new_camera_{capture_revision}"
         )
     else:
         photo = st.file_uploader(
             "작업사진을 선택하세요.",
             type=["jpg", "jpeg", "png"],
-            key="new_upload"
+            key=f"new_upload_{capture_revision}"
         )
 
     if photo is not None:
@@ -410,20 +543,26 @@ if mode == "📷 새 REBA 평가":
             st.success("AI 자세분석이 완료되었습니다.")
             st.image(analyzed_bytes, caption="AI 관절선 분석사진", width="stretch")
 
-        if angles:
-            angle_df = pd.DataFrame(
-                [
-                    ["왼쪽 팔꿈치", angles.get("left_elbow", "")],
-                    ["오른쪽 팔꿈치", angles.get("right_elbow", "")],
-                    ["왼쪽 무릎", angles.get("left_knee", "")],
-                    ["오른쪽 무릎", angles.get("right_knee", "")],
-                    ["왼쪽 위팔", angles.get("left_upper_arm", "")],
-                    ["오른쪽 위팔", angles.get("right_upper_arm", "")],
-                    ["몸통 기울기", angles.get("trunk_angle", "")],
-                ],
-                columns=["관절/부위", "각도(°)"]
-            )
-            st.dataframe(angle_df, hide_index=True, width="stretch")
+        if angles or recommendation:
+            with st.expander("AI 분석 참고값", expanded=bool(recommendation)):
+                st.caption("AI 결과는 참고용이며, 최종 점수는 아래 평가 항목에서 평가자가 확인·수정합니다.")
+                if angles:
+                    angle_df = pd.DataFrame(
+                        [
+                            ["왼쪽 팔꿈치", angles.get("left_elbow", "")],
+                            ["오른쪽 팔꿈치", angles.get("right_elbow", "")],
+                            ["왼쪽 무릎", angles.get("left_knee", "")],
+                            ["오른쪽 무릎", angles.get("right_knee", "")],
+                            ["왼쪽 위팔", angles.get("left_upper_arm", "")],
+                            ["오른쪽 위팔", angles.get("right_upper_arm", "")],
+                            ["몸통 기울기", angles.get("trunk_angle", "")],
+                        ],
+                        columns=["관절/부위", "각도(°)"]
+                    )
+                    st.dataframe(angle_df, hide_index=True, width="stretch")
+                if recommendation:
+                    st.write("AI 권고 점수")
+                    st.json(recommendation)
 
         if recommendation:
             defaults = {
@@ -439,18 +578,25 @@ if mode == "📷 새 REBA 평가":
     st.divider()
     st.subheader("3. REBA 점수 확인/수정")
 
-    c1, c2, c3 = st.columns(3)
+    st.markdown("**AI 권고 기반 항목**")
+    st.caption("AI 추천값으로 시작하며, 각 점수는 평가자가 직접 확정하거나 수정할 수 있습니다.")
+    c1, c2 = st.columns(2)
     with c1:
-        neck_score = st.selectbox("목(Neck)", [1,2,3], key="new_neck")
         trunk_score = st.selectbox("몸통(Trunk)", [1,2,3,4,5], key="new_trunk")
         legs_score = st.selectbox("다리(Legs)", [1,2,3,4], key="new_legs")
     with c2:
         upper_arm_score = st.selectbox("위팔(Upper Arm)", [1,2,3,4,5,6], key="new_upper_arm")
         lower_arm_score = st.selectbox("아래팔(Lower Arm)", [1,2], key="new_lower_arm")
+    st.markdown("**평가자 수동 판단 항목**")
+    st.caption("목·손목·하중·결합도·활동 점수는 현장 조건을 확인해 입력해주세요.")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        neck_score = st.selectbox("목(Neck)", [1,2,3], key="new_neck")
         wrist_score = st.selectbox("손목(Wrist)", [1,2,3], key="new_wrist")
-    with c3:
+    with c2:
         load_score = st.selectbox("하중/힘(Load)", [0,1,2,3], key="new_load")
         coupling_score = st.selectbox("결합도(Coupling)", [0,1,2,3], key="new_coupling")
+    with c3:
         activity_score = st.selectbox("활동점수(Activity)", [0,1,2,3], key="new_activity")
 
     score_a = get_score_a(trunk_score, neck_score, legs_score, load_score)
@@ -473,10 +619,36 @@ if mode == "📷 새 REBA 평가":
     st.write(f"**조치권고:** {action_text}")
     st.divider()
 
+    saved_values = (
+        worker.strip(),
+        company.strip(),
+        department.strip(),
+        task_name.strip(),
+        evaluator.strip(),
+        neck_score, trunk_score, legs_score, load_score,
+        upper_arm_score, lower_arm_score, wrist_score,
+        coupling_score, activity_score,
+    )
+    current_signature = (
+        submission_signature(photo.getvalue(), saved_values)
+        if photo is not None
+        else None
+    )
+    already_saved = (
+        current_signature is not None
+        and current_signature in st.session_state.get("new_saved_signatures", set())
+    )
+    if already_saved:
+        st.success("저장 완료: 같은 사진과 평가내용은 중복 저장되지 않습니다.")
+
     save_disabled = (
         not worker.strip()
+        or not company.strip()
+        or not department.strip()
         or not task_name.strip()
         or photo is None
+        or already_saved
+        or st.session_state.get("new_saving_signature") == current_signature
     )
 
     if st.button(
@@ -486,6 +658,7 @@ if mode == "📷 새 REBA 평가":
         disabled=save_disabled
     ):
         try:
+            st.session_state["new_saving_signature"] = current_signature
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             original_bytes = photo.getvalue()
             original_name = getattr(photo, "name", "camera.jpg")
@@ -505,7 +678,11 @@ if mode == "📷 새 REBA 평가":
 
             insert_data = {
                 "worker": worker,
-                "department": department,
+                "department": (
+                    f"{company.strip()} / {department.strip()}"
+                    if department.strip()
+                    else company.strip()
+                ),
                 "task_name": task_name,
                 "evaluator": evaluator,
                 "pose_angles": st.session_state.get("new_reba_angles", {}),
@@ -530,10 +707,33 @@ if mode == "📷 새 REBA 평가":
             }
 
             supabase.table("reba_results").insert(insert_data).execute()
-            st.success("✅ REBA 평가와 사진이 저장되었습니다.")
+            saved_signatures = set(st.session_state.get("new_saved_signatures", set()))
+            saved_signatures.add(current_signature)
+            st.session_state["new_saved_signatures"] = saved_signatures
+            st.session_state.pop("new_saving_signature", None)
+            success_message = "저장 성공: REBA 평가와 원본사진이 저장되었습니다."
+            if analyzed_path:
+                success_message += " AI 분석사진도 함께 저장되었습니다."
+            st.success(success_message)
 
         except Exception as e:
+            st.session_state.pop("new_saving_signature", None)
             st.error(f"저장 오류: {e}")
+
+    action_columns = st.columns(2)
+    with action_columns[0]:
+        st.button(
+            "🔄 재촬영",
+            width="stretch",
+            on_click=reset_new_capture,
+            disabled=photo is None
+        )
+    with action_columns[1]:
+        st.button(
+            "취소",
+            width="stretch",
+            on_click=cancel_new_evaluation
+        )
 
 
 else:
