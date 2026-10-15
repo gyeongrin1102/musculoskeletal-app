@@ -93,6 +93,11 @@ st.subheader("근무 정보")
 col1, col2 = st.columns(2)
 
 with col1:
+    company = st.text_input(
+        "업체명 (선택)",
+        placeholder="예: OO 사업장"
+    )
+
     department = st.text_input(
         "작업부서",
         placeholder="예: 정형외과병동"
@@ -510,6 +515,7 @@ if st.button(
         "성별": gender,
         "연령": age,
         "결혼여부": marriage,
+        "업체명": company.strip(),
         "작업부서": department,
         "라인/세부부서": line,
         "현직장_근무년": career_year,

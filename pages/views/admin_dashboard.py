@@ -7,6 +7,135 @@ from supabase import create_client
 from auth import require_admin, logout_button
 
 
+UNKNOWN_COMPANY_LABEL = "업체 미분류"
+
+
+def normalize_symptom_response(value):
+
+    text = "" if value is None else str(value).strip().casefold()
+    compact = "".join(text.split())
+
+    if not compact:
+        return "미응답"
+
+    if compact in {"아니오", "아니요", "no", "n", "false", "0", "없", "없음", "없다"}:
+        return "아니오"
+
+    if compact in {"예", "yes", "y", "true", "1", "있", "있음", "있다"}:
+        return "예"
+
+    if "아니" in compact or "없" in compact:
+        return "아니오"
+
+    if "있" in compact or compact.startswith("예"):
+        return "예"
+
+    return "미응답"
+
+
+def survey_statistics(records):
+
+    worker_responses = {}
+    response_counts = {
+        "예": 0,
+        "아니오": 0,
+        "미응답": 0
+    }
+
+    for row in records:
+        response = row.get("symptom_exists")
+
+        if response is None or not str(response).strip():
+            response = row.get("근골격계증상여부")
+
+        normalized = normalize_symptom_response(response)
+        response_counts[normalized] += 1
+
+        name = str(
+            row.get("name")
+            or row.get("성명")
+            or ""
+        ).strip().casefold()
+
+        if not name:
+            continue
+
+        identity = tuple(
+            str(value or "").strip().casefold()
+            for value in (
+                name,
+                row.get("gender") or row.get("성별"),
+                row.get("age") or row.get("연령"),
+                row.get("department") or row.get("작업부서"),
+                row.get("sub_department") or row.get("라인/세부부서"),
+            )
+        )
+
+        worker_responses[identity] = (
+            worker_responses.get(identity, False)
+            or normalized == "예"
+        )
+
+    worker_count = len(worker_responses)
+    symptomatic_workers = sum(worker_responses.values())
+
+    return {
+        "response_count": sum(response_counts.values()),
+        "worker_count": worker_count,
+        "symptom_responses": response_counts["예"],
+        "no_symptom_responses": response_counts["아니오"],
+        "unanswered_responses": response_counts["미응답"],
+        "symptomatic_workers": symptomatic_workers,
+        "symptom_rate": (
+            symptomatic_workers / worker_count * 100
+            if worker_count
+            else 0
+        ),
+    }
+
+
+def resolve_company_name(row, allow_department_prefix=False):
+
+    for key in ("company", "company_name", "업체명", "사업장명"):
+        value = str(row.get(key) or "").strip()
+
+        if value:
+            return value
+
+    if allow_department_prefix:
+        department = str(row.get("department") or "").strip()
+
+        if " / " in department:
+            return department.split(" / ", 1)[0].strip()
+
+    return ""
+
+
+def filter_company_records(records, selected_company, allow_department_prefix=False):
+
+    if selected_company == "전체 업체":
+        return list(records)
+
+    if selected_company == UNKNOWN_COMPANY_LABEL:
+        return [
+            row
+            for row in records
+            if not resolve_company_name(
+                row,
+                allow_department_prefix
+            )
+        ]
+
+    return [
+        row
+        for row in records
+        if resolve_company_name(
+            row,
+            allow_department_prefix
+        ) == selected_company
+    ]
+
+
 # =========================================================
 # 관리자 인증
 # =========================================================
@@ -62,6 +191,9 @@ def load_survey_data():
             {}
         ) or {}
 
+        if not isinstance(survey_json, dict):
+            survey_json = {}
+
         merged = dict(survey_json)
 
         merged["id"] = row.get("id")
@@ -105,6 +237,16 @@ def load_survey_data():
             "final_judgment"
         )
 
+        merged["company"] = (
+            row.get("company")
+            or row.get("company_name")
+            or merged.get("company")
+            or merged.get("company_name")
+            or merged.get("업체명")
+            or merged.get("사업장명")
+            or ""
+        )
+
         merged_rows.append(
             merged
         )
@@ -141,13 +283,37 @@ def load_reba_data():
     )
 
 
+@st.cache_data(ttl=30)
+def load_improvement_data():
+
+    try:
+        response = (
+            supabase
+            .table("reba_improvements")
+            .select("*")
+            .order(
+                "created_at",
+                desc=True
+            )
+            .execute()
+        )
+
+        rows = response.data or []
+
+    except Exception:
+        rows = []
+
+    return pd.DataFrame(rows)
+
+
 # =========================================================
 # Excel 다운로드
 # =========================================================
 
 def make_excel(
     survey_df,
-    reba_df
+    reba_df,
+    improvement_df=None
 ):
 
     output = io.BytesIO()
@@ -222,6 +388,26 @@ def make_excel(
                 index=False
             )
 
+
+        if improvement_df is not None and not improvement_df.empty:
+
+            improvement_excel = improvement_df.copy()
+
+            for column in improvement_excel.columns:
+                improvement_excel[column] = improvement_excel[column].apply(
+                    lambda value: (
+                        str(value)
+                        if isinstance(value, (dict, list))
+                        else value
+                    )
+                )
+
+            improvement_excel.to_excel(
+                writer,
+                sheet_name="REBA 개선조치",
+                index=False
+            )
+
     output.seek(0)
 
     return output
@@ -264,6 +450,61 @@ st.title(
     "📊 관리자 통합 대시보드"
 )
 
+st.markdown(
+    """
+    <style>
+    :root {
+        --dashboard-navy: #16324f;
+        --dashboard-teal: #167d88;
+        --dashboard-ink: #263746;
+        --dashboard-line: #dce5eb;
+        --dashboard-surface: #ffffff;
+    }
+    [data-testid="stAppViewContainer"] {
+        background: #f5f8fa;
+        color: var(--dashboard-ink);
+    }
+    [data-testid="stHeader"] {
+        background: rgba(255, 255, 255, 0.92);
+    }
+    [data-testid="stMetric"] {
+        background: var(--dashboard-surface);
+        border: 1px solid var(--dashboard-line);
+        border-top: 3px solid var(--dashboard-teal);
+        border-radius: 6px;
+        padding: 0.8rem 1rem;
+    }
+    [data-testid="stMetricLabel"] p {
+        color: var(--dashboard-navy);
+        font-weight: 650;
+    }
+    [data-testid="stMetricValue"] {
+        color: var(--dashboard-ink);
+    }
+    [data-baseweb="tab-list"] {
+        gap: 0.4rem;
+        border-bottom: 1px solid var(--dashboard-line);
+    }
+    [data-baseweb="tab"] {
+        color: var(--dashboard-navy);
+    }
+    [data-baseweb="tab-highlight"] {
+        background: var(--dashboard-teal);
+    }
+    @media (max-width: 700px) {
+        section.main > div {
+            padding-left: 0.8rem;
+            padding-right: 0.8rem;
+        }
+        [data-testid="stMetric"] {
+            padding: 0.65rem;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 logout_button()
 
 st.write(
@@ -281,6 +522,73 @@ st.divider()
 
 survey_df = load_survey_data()
 reba_df = load_reba_data()
+improvement_df = load_improvement_data()
+
+survey_records = survey_df.to_dict(orient="records")
+reba_records = reba_df.to_dict(orient="records")
+improvement_records = improvement_df.to_dict(orient="records")
+
+known_companies = {
+    company
+    for records, allow_department_prefix in (
+        (survey_records, False),
+        (reba_records, True),
+        (improvement_records, True),
+    )
+    for row in records
+    if (company := resolve_company_name(row, allow_department_prefix))
+}
+
+has_unclassified_records = any(
+    not resolve_company_name(row, allow_department_prefix)
+    for records, allow_department_prefix in (
+        (survey_records, False),
+        (reba_records, True),
+        (improvement_records, True),
+    )
+    for row in records
+)
+
+company_filter_options = [
+    "전체 업체",
+    *sorted(known_companies),
+]
+
+if has_unclassified_records:
+    company_filter_options.append(UNKNOWN_COMPANY_LABEL)
+
+selected_company = st.selectbox(
+    "업체별 조사 현황",
+    company_filter_options,
+    key="admin_company_filter"
+)
+
+survey_df = pd.DataFrame(
+    filter_company_records(survey_records, selected_company),
+    columns=survey_df.columns
+)
+reba_df = pd.DataFrame(
+    filter_company_records(
+        reba_records,
+        selected_company,
+        allow_department_prefix=True
+    ),
+    columns=reba_df.columns
+)
+improvement_df = pd.DataFrame(
+    filter_company_records(
+        improvement_records,
+        selected_company,
+        allow_department_prefix=True
+    ),
+    columns=improvement_df.columns
+)
+
+if selected_company != "전체 업체" and survey_df.empty:
+    st.caption(
+        "선택 업체로 식별할 수 있는 증상조사 자료가 없습니다. "
+        "업체 정보가 없는 과거 설문은 업체별 통계에 포함하지 않습니다."
+    )
 
 
 # =========================================================
@@ -310,14 +618,15 @@ with col_download:
 
     excel_file = make_excel(
         survey_df,
-        reba_df
+        reba_df,
+        improvement_df
     )
 
     st.download_button(
-        "📥 전체 데이터 Excel 다운로드",
+        f"📥 {selected_company} 범위 Excel 다운로드",
         data=excel_file,
         file_name=(
-            "근골격계_REBA_통합관리.xlsx"
+            "근골격계_REBA_선택업체_통합관리.xlsx"
         ),
         mime=(
             "application/"
@@ -341,9 +650,12 @@ st.subheader(
 )
 
 
-total_survey = len(
-    survey_df
+survey_summary = survey_statistics(
+    survey_df.to_dict(orient="records")
 )
+
+total_survey = survey_summary["response_count"]
+total_workers = survey_summary["worker_count"]
 
 
 total_reba = len(
@@ -379,15 +691,15 @@ else:
     high_risk_count = 0
 
 
-m1, m2, m3, m4 = (
-    st.columns(4)
+m1, m2, m3, m4, m5 = (
+    st.columns(5)
 )
 
 
 with m1:
 
     st.metric(
-        "근골격계 조사",
+        "증상조사 응답",
         f"{total_survey}건"
     )
 
@@ -395,33 +707,30 @@ with m1:
 with m2:
 
     st.metric(
-        "REBA 평가",
-        f"{total_reba}건"
+        "확인된 고유 근로자",
+        f"{total_workers}명"
     )
 
 
 with m3:
 
-    if total_reba > 0:
-
-        st.metric(
-            "평균 REBA",
-            f"{average_reba:.1f}점"
-        )
-
-    else:
-
-        st.metric(
-            "평균 REBA",
-            "-"
-        )
-
+    st.metric(
+        "REBA 평가",
+        f"{total_reba}건"
+    )
 
 with m4:
 
     st.metric(
         "REBA 8점 이상",
         f"{high_risk_count}건"
+    )
+
+with m5:
+
+    st.metric(
+        "개선조치 기록",
+        f"{len(improvement_df)}건"
     )
 
 
@@ -466,45 +775,13 @@ with survey_tab:
         # 요약
         # =================================================
 
-        total = len(
-            survey_df
-        )
-
-
-        if (
-            "symptom_exists"
-            in survey_df.columns
-        ):
-
-            symptom_series = (
-                survey_df[
-                    "symptom_exists"
-                ]
-                .fillna("")
-                .astype(str)
-            )
-
-            symptom_count = (
-                symptom_series
-                .str.contains(
-                    "있",
-                    na=False
-                )
-                .sum()
-            )
-
-        else:
-
-            symptom_count = 0
-
-
-        symptom_rate = (
-            symptom_count
-            / total
-            * 100
-            if total
-            else 0
-        )
+        total = survey_summary["response_count"]
+        worker_count = survey_summary["worker_count"]
+        symptom_count = survey_summary["symptomatic_workers"]
+        symptom_responses = survey_summary["symptom_responses"]
+        no_symptom_responses = survey_summary["no_symptom_responses"]
+        unanswered_responses = survey_summary["unanswered_responses"]
+        symptom_rate = survey_summary["symptom_rate"]
 
 
         judgment_series = (
@@ -549,28 +826,36 @@ with survey_tab:
         )
 
 
-        a, b, c, d, e = (
-            st.columns(5)
+        a, b, c, d = (
+            st.columns(4)
         )
 
 
         with a:
 
             st.metric(
-                "총 응답자",
-                f"{total}명"
+                "설문 응답 건수",
+                f"{total}건"
             )
 
 
         with b:
 
             st.metric(
-                "증상 경험자",
-                f"{symptom_count}명"
+                "추정 고유 근로자",
+                f"{worker_count}명"
             )
 
 
         with c:
+
+            st.metric(
+                "증상 경험 근로자",
+                f"{symptom_count}명"
+            )
+
+
+        with d:
 
             st.metric(
                 "증상 경험률",
@@ -578,19 +863,50 @@ with survey_tab:
             )
 
 
-        with d:
+        st.caption(
+            "고유 근로자는 성명·성별·연령·부서·세부부서가 같은 응답을 묶은 추정치입니다. "
+            "이름 미입력 응답은 응답 건수에는 포함하고 고유 인원 계산에서는 제외합니다."
+        )
+
+        response_a, response_b, response_c, response_d, response_e = st.columns(5)
+
+        with response_a:
 
             st.metric(
-                "관리대상자",
-                f"{management_count}명"
+                "예 응답",
+                f"{symptom_responses}건"
             )
 
 
-        with e:
+        with response_b:
 
             st.metric(
-                "통증호소자",
-                f"{pain_count}명"
+                "아니오 응답",
+                f"{no_symptom_responses}건"
+            )
+
+
+        with response_c:
+
+            st.metric(
+                "빈 값/미분류",
+                f"{unanswered_responses}건"
+            )
+
+
+        with response_d:
+
+            st.metric(
+                "관리대상자 응답",
+                f"{management_count}건"
+            )
+
+
+        with response_e:
+
+            st.metric(
+                "통증호소자 응답",
+                f"{pain_count}건"
             )
 
 
