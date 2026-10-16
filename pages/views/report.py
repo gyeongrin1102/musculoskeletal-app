@@ -1369,10 +1369,12 @@ if (
 
 REBA_SELECTION_STATE_KEY = "report_selected_reba_ids"
 REBA_CHECKBOX_PREFIX = "report_reba_checkbox_"
+REPORT_IMAGE_CACHE_STATE_KEY = "report_selected_image_cache"
 
 
 def clear_report_reba_selection():
     st.session_state[REBA_SELECTION_STATE_KEY] = []
+    st.session_state.pop(REPORT_IMAGE_CACHE_STATE_KEY, None)
 
     for key in list(st.session_state.keys()):
         if key.startswith(REBA_CHECKBOX_PREFIX):
@@ -1446,6 +1448,27 @@ def prepare_selected_report_data(
         )
 
     return selected_records, selected_images
+
+
+def get_cached_report_image(path, image_cache, image_loader):
+    if path not in image_cache:
+        image_cache[path] = image_loader(path)
+
+    return image_cache[path]
+
+
+def retain_selected_report_images(image_cache, selected_records):
+    selected_paths = {
+        record.get(path_key)
+        for record in selected_records
+        for path_key in ("original_image_path", "analyzed_image_path")
+        if isinstance(record.get(path_key), str)
+        and record[path_key].strip()
+    }
+
+    for path in list(image_cache):
+        if path not in selected_paths:
+            image_cache.pop(path, None)
 
 
 def build_selected_reba_word_scope(records):
@@ -1695,10 +1718,22 @@ else:
     selected_ids = set(
         st.session_state.get(REBA_SELECTION_STATE_KEY, [])
     )
+    report_image_cache = st.session_state.setdefault(
+        REPORT_IMAGE_CACHE_STATE_KEY,
+        {}
+    )
     selected_reba_records, selected_report_images = prepare_selected_report_data(
         evaluation_entries,
         selected_ids,
-        download_report_image
+        lambda path: get_cached_report_image(
+            path,
+            report_image_cache,
+            download_report_image
+        )
+    )
+    retain_selected_report_images(
+        report_image_cache,
+        selected_reba_records
     )
 
     st.write(f"선택 평가: **{len(selected_reba_records)}건**")
