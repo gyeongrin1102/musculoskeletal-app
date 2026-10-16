@@ -11,8 +11,10 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from supabase import create_client
 from session_query_cache import clear_session_query_cache
+from ui_theme import apply_theme
 
 
+apply_theme()
 st.title("작업자세 촬영")
 st.caption("업체와 작업 정보를 입력한 뒤 촬영하세요. 사진은 AI 초안과 함께 관리자 검토 대기함에 저장됩니다.")
 

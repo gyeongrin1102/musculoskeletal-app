@@ -5,6 +5,7 @@ import streamlit as st
 
 from auth import require_admin, logout_button, get_authenticated_supabase
 from session_query_cache import get_cached_query, clear_session_query_cache
+from ui_theme import apply_theme
 
 
 UNKNOWN_COMPANY_LABEL = "업체 미분류"
@@ -141,6 +142,7 @@ def filter_company_records(records, selected_company, allow_department_prefix=Fa
 # =========================================================
 
 require_admin()
+apply_theme()
 
 
 # =========================================================

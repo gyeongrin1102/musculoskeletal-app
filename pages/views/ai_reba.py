@@ -14,8 +14,10 @@ from supabase import create_client
 
 from auth import require_admin, logout_button
 from session_query_cache import clear_session_query_cache
+from ui_theme import apply_theme
 
 require_admin()
+apply_theme()
 
 st.title("AI 자세·REBA 평가")
 logout_button()

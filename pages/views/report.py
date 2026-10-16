@@ -13,6 +13,7 @@ from docx.oxml.ns import qn
 
 from auth import require_admin, logout_button, get_authenticated_supabase
 from session_query_cache import get_cached_query, clear_session_query_cache
+from ui_theme import apply_theme
 
 
 # =========================================================
@@ -20,6 +21,7 @@ from session_query_cache import get_cached_query, clear_session_query_cache
 # =========================================================
 
 require_admin()
+apply_theme()
 
 st.title("통합 결과보고서")
 
@@ -2518,6 +2520,29 @@ def create_word_report():
             item[1]
         )
 
+
+    document.add_paragraph("")
+
+    add_heading(
+        document,
+        "조사 방법 및 평가 해석"
+    )
+
+    survey_evidence = (
+        f"보고서에 포함된 실제 증상조사 자료는 {total_count}건입니다."
+        if total_count
+        else "보고서 범위에 포함된 증상조사 자료가 없습니다."
+    )
+    add_text(
+        document,
+        "「산업안전보건기준에 관한 규칙」 제657조·제658조 및 "
+        "근골격계부담작업 관련 고시를 참고하여 검토합니다. "
+        f"{survey_evidence} 작업별 실제 수행시간, 반복동작, 작업자세, "
+        "취급 중량과 빈도는 확인된 작업조건 자료가 있는 경우에만 근거로 삼습니다. "
+        "자료가 없거나 확인되지 않은 사항은 판단을 확정하거나 비해당으로 간주하지 않습니다. "
+        "REBA는 법정 필수 평가방법이 아니라 작업자세 위험요인을 시각적으로 설명하는 "
+        "보조평가입니다. 이 안내 문구만으로 법정 조사 의무 이행이 보장되는 것은 아닙니다."
+    )
 
     document.add_paragraph("")
 
