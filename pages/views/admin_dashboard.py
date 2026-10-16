@@ -3,8 +3,8 @@ import io
 import pandas as pd
 import streamlit as st
 
-from supabase import create_client
-from auth import require_admin, logout_button
+from auth import require_admin, logout_button, get_authenticated_supabase
+from session_query_cache import get_cached_query, clear_session_query_cache
 
 
 UNKNOWN_COMPANY_LABEL = "업체 미분류"
@@ -147,37 +147,28 @@ require_admin()
 # Supabase 연결
 # =========================================================
 
-@st.cache_resource
-def get_supabase():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-
-supabase = get_supabase()
+supabase = get_authenticated_supabase()
 
 
 # =========================================================
 # 데이터 불러오기
 # =========================================================
 
-@st.cache_data(ttl=30)
 def load_survey_data():
 
     try:
-        response = (
-            supabase
-            .table("survey_results")
-            .select("*")
-            .order(
-                "created_at",
-                desc=True
+        rows = get_cached_query(
+            "survey_results",
+            lambda: (
+                supabase
+                .table("survey_results")
+                .select("*")
+                .order("created_at", desc=True)
+                .execute()
+                .data
+                or []
             )
-            .execute()
         )
-
-        rows = response.data or []
 
     except Exception:
         rows = []
@@ -256,26 +247,23 @@ def load_survey_data():
     )
 
 
-@st.cache_data(ttl=30)
 def load_reba_data():
 
     try:
-
-        response = (
-            supabase
-            .table("reba_results")
-            .select("*")
-            .order(
-                "created_at",
-                desc=True
+        rows = get_cached_query(
+            "reba_results",
+            lambda: (
+                supabase
+                .table("reba_results")
+                .select("*")
+                .order("created_at", desc=True)
+                .execute()
+                .data
+                or []
             )
-            .execute()
         )
 
-        rows = response.data or []
-
     except Exception:
-
         rows = []
 
     return pd.DataFrame(
@@ -283,22 +271,21 @@ def load_reba_data():
     )
 
 
-@st.cache_data(ttl=30)
 def load_improvement_data():
 
     try:
-        response = (
-            supabase
-            .table("reba_improvements")
-            .select("*")
-            .order(
-                "created_at",
-                desc=True
+        rows = get_cached_query(
+            "reba_improvements",
+            lambda: (
+                supabase
+                .table("reba_improvements")
+                .select("*")
+                .order("created_at", desc=True)
+                .execute()
+                .data
+                or []
             )
-            .execute()
         )
-
-        rows = response.data or []
 
     except Exception:
         rows = []
@@ -306,17 +293,20 @@ def load_improvement_data():
     return pd.DataFrame(rows)
 
 
-@st.cache_data(ttl=30)
 def load_capture_queue():
 
     try:
-        response = (
-            supabase
-            .table("reba_capture_queue")
-            .select("*")
-            .execute()
+        rows = get_cached_query(
+            "reba_capture_queue",
+            lambda: (
+                supabase
+                .table("reba_capture_queue")
+                .select("*")
+                .execute()
+                .data
+                or []
+            )
         )
-        rows = response.data or []
     except Exception:
         rows = []
 
@@ -574,7 +564,7 @@ with col_refresh:
         width="stretch"
     ):
 
-        st.cache_data.clear()
+        clear_session_query_cache()
 
         st.rerun()
 

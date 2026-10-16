@@ -12,6 +12,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 
 from auth import require_admin, logout_button, get_authenticated_supabase
+from session_query_cache import get_cached_query, clear_session_query_cache
 
 
 # =========================================================
@@ -25,6 +26,12 @@ st.title("통합 결과보고서")
 logout_button()
 
 st.caption("증상조사, REBA 평가와 개선효과를 모아 Word 보고서로 출력합니다.")
+st.button(
+    "데이터 새로고침",
+    key="report_refresh_data",
+    on_click=clear_session_query_cache,
+    width="content"
+)
 
 st.divider()
 
@@ -60,17 +67,17 @@ supabase = get_authenticated_supabase()
 
 try:
 
-    survey_response = (
-        supabase
-        .table("survey_results")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    survey_rows = (
-        survey_response.data
-        or []
+    survey_rows = get_cached_query(
+        "survey_results",
+        lambda: (
+            supabase
+            .table("survey_results")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+            .data
+            or []
+        )
     )
 
 except Exception as e:
@@ -88,17 +95,17 @@ except Exception as e:
 
 try:
 
-    reba_response = (
-        supabase
-        .table("reba_results")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    reba_rows = (
-        reba_response.data
-        or []
+    reba_rows = get_cached_query(
+        "reba_results",
+        lambda: (
+            supabase
+            .table("reba_results")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+            .data
+            or []
+        )
     )
 
 except Exception as e:
@@ -116,17 +123,17 @@ except Exception as e:
 
 try:
 
-    improvement_response = (
-        supabase
-        .table("reba_improvements")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    improvement_rows = (
-        improvement_response.data
-        or []
+    improvement_rows = get_cached_query(
+        "reba_improvements",
+        lambda: (
+            supabase
+            .table("reba_improvements")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+            .data
+            or []
+        )
     )
 
 except Exception as e:
