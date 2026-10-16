@@ -13,6 +13,7 @@ from mediapipe.tasks.python import vision
 from supabase import create_client
 
 from auth import require_admin, logout_button
+from session_query_cache import clear_session_query_cache
 
 require_admin()
 
@@ -663,6 +664,7 @@ if mode == "📷 새 REBA 평가":
             }
 
             supabase.table("reba_results").insert(insert_data).execute()
+            clear_session_query_cache()
             saved_signatures = set(st.session_state.get("new_saved_signatures", set()))
             saved_signatures.add(current_signature)
             st.session_state["new_saved_signatures"] = saved_signatures
@@ -822,6 +824,7 @@ else:
                     .eq("id", selected["id"])
                     .execute()
                 )
+                clear_session_query_cache()
 
                 st.success(
                     "✅ 기존 REBA 점수는 그대로 유지하고 사진만 연결했습니다."

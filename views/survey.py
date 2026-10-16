@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+from session_query_cache import clear_session_query_cache
 def classify_body_part(
     symptom,
     duration,
@@ -666,6 +667,7 @@ if st.button(
                 .insert(db_data)
                 .execute()
             )
+            clear_session_query_cache()
 
             st.success(
                 "근골격계 증상조사가 정상적으로 저장되었습니다."

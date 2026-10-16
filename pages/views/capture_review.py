@@ -4,6 +4,7 @@ import pandas as pd
 from supabase import create_client
 
 from auth import require_admin, logout_button
+from session_query_cache import clear_session_query_cache
 
 
 # =========================================================
@@ -963,6 +964,7 @@ if st.button(
             )
             .execute()
         )
+        clear_session_query_cache()
 
         st.success(
             "✅ 최종 REBA 평가가 저장되었습니다. "

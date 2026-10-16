@@ -3,6 +3,7 @@ import streamlit as st
 
 from supabase import create_client
 from auth import require_admin, logout_button
+from session_query_cache import clear_session_query_cache
 
 
 # =========================================================
@@ -570,7 +571,7 @@ if st.button(
         ).execute()
 
 
-        st.cache_data.clear()
+        clear_session_query_cache()
 
 
         st.success(

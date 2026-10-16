@@ -570,27 +570,28 @@ with col_refresh:
 
 
 with col_download:
-
-    excel_file = make_excel(
-        survey_df,
-        reba_df,
-        improvement_df
-    )
-
-    st.download_button(
-        f"📥 {selected_company} 범위 Excel 다운로드",
-        data=excel_file,
-        file_name=(
-            "근골격계_REBA_선택업체_통합관리.xlsx"
-        ),
-        mime=(
-            "application/"
-            "vnd.openxmlformats-"
-            "officedocument."
-            "spreadsheetml.sheet"
-        ),
+    excel_file = None
+    if st.button(
+        "Excel 파일 생성",
+        key="create_dashboard_excel",
         width="stretch"
-    )
+    ):
+        with st.spinner("Excel 파일을 생성하고 있습니다..."):
+            excel_file = make_excel(
+                survey_df,
+                reba_df,
+                improvement_df
+            )
+
+    if excel_file is not None:
+        st.download_button(
+            f"📥 {selected_company} 범위 Excel 다운로드",
+            data=excel_file,
+            file_name="근골격계_REBA_선택업체_통합관리.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            width="stretch",
+            on_click="ignore"
+        )
 
 
 st.divider()

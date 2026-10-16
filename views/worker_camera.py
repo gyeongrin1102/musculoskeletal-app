@@ -10,6 +10,7 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from supabase import create_client
+from session_query_cache import clear_session_query_cache
 
 
 st.title("작업자세 촬영")
@@ -550,6 +551,7 @@ if photo is not None:
                     .insert(insert_data)
                     .execute()
                 )
+                clear_session_query_cache()
 
                 st.session_state[
                     "worker_capture_saved_signature"

@@ -23,6 +23,7 @@ def _session_scope():
 def get_cached_query(cache_key, loader, ttl_seconds=CACHE_TTL_SECONDS):
     scope = _session_scope()
     if scope is None:
+        clear_session_query_cache()
         return loader()
 
     if (

@@ -3595,38 +3595,26 @@ st.subheader(
 )
 
 
-st.write(
-    "현재 DB에 저장된 증상조사, REBA 평가 및 "
-    "개선 전·후 비교결과를 Word 보고서로 생성합니다."
-)
+st.write("선택한 조사·REBA·개선 데이터를 Word 보고서로 생성합니다.")
 
+word_file = None
+if st.button(
+    "Word 보고서 생성",
+    type="primary",
+    key="generate_integrated_word_report"
+):
+    try:
+        with st.spinner("Word 보고서와 차트를 생성하고 있습니다..."):
+            word_file = create_word_report()
+    except Exception as e:
+        st.error(f"보고서 생성 중 오류가 발생했습니다: {e}")
 
-try:
-
-    word_file = (
-        create_word_report()
-    )
-
-
+if word_file is not None:
     st.download_button(
-        label=(
-            "📄 최종 통합 Word "
-            "결과보고서 다운로드"
-        ),
+        label="📄 최종 통합 Word 결과보고서 다운로드",
         data=word_file,
-        file_name=(
-            "근골격계_REBA_개선효과_통합결과보고서.docx"
-        ),
-        mime=(
-            "application/vnd.openxmlformats-"
-            "officedocument.wordprocessingml.document"
-        ),
-        width="stretch"
-    )
-
-
-except Exception as e:
-
-    st.error(
-        f"보고서 생성 중 오류가 발생했습니다: {e}"
+        file_name="근골격계_REBA_개선효과_통합결과보고서.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        width="stretch",
+        on_click="ignore"
     )
