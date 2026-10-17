@@ -88,6 +88,62 @@ h2, h3 { font-weight: 650; }
 .stButton > button[kind="primary"]:hover { background: var(--ehs-navy); color: #FFFFFF; }
 input, textarea { border-radius: 5px !important; }
 [data-baseweb="select"] > div { border-radius: 5px; }
+[data-testid="stMain"] [data-testid="stWidgetLabel"],
+[data-testid="stMain"] [data-testid="stWidgetLabel"] p,
+[data-testid="stMain"] [data-testid="stRadio"] label,
+[data-testid="stMain"] [data-testid="stCheckbox"] label,
+[data-testid="stMain"] [data-testid="stCaptionContainer"],
+[data-testid="stMain"] [data-testid="stCaptionContainer"] p,
+[data-testid="stMain"] [data-testid="stMarkdownContainer"] > p {
+    color: var(--ehs-navy) !important;
+}
+[data-testid="stMain"] [data-testid="stRadio"] label,
+[data-testid="stMain"] [data-testid="stCheckbox"] label {
+    background-color: transparent !important;
+}
+[data-testid="stMain"] [data-testid="stTextInput"] [data-baseweb="input"],
+[data-testid="stMain"] [data-testid="stNumberInput"] [data-baseweb="input"],
+[data-testid="stMain"] [data-testid="stDateInput"] [data-baseweb="input"],
+[data-testid="stMain"] [data-testid="stTextArea"] [data-baseweb="textarea"] {
+    background-color: #FFFFFF !important;
+    color: var(--ehs-navy) !important;
+    border-color: var(--ehs-border) !important;
+}
+[data-testid="stMain"] [data-testid="stTextInput"] input,
+[data-testid="stMain"] [data-testid="stNumberInput"] input,
+[data-testid="stMain"] [data-testid="stDateInput"] input,
+[data-testid="stMain"] [data-testid="stTextArea"] textarea,
+[data-testid="stMain"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+[data-testid="stMain"] [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+    background-color: #FFFFFF !important;
+    color: var(--ehs-navy) !important;
+    border-color: var(--ehs-border) !important;
+}
+[data-testid="stMain"] input::placeholder,
+[data-testid="stMain"] textarea::placeholder {
+    color: #526A7A !important;
+    opacity: 1;
+}
+[data-testid="stMain"] input:focus,
+[data-testid="stMain"] textarea:focus,
+[data-testid="stMain"] [data-baseweb="select"]:focus-within > div {
+    border-color: var(--ehs-primary) !important;
+    box-shadow: 0 0 0 1px var(--ehs-primary) !important;
+    outline: none;
+}
+[data-testid="stMain"] input[type="radio"],
+[data-testid="stMain"] input[type="checkbox"] {
+    accent-color: var(--ehs-primary);
+}
+[data-baseweb="popover"] [role="listbox"],
+[data-baseweb="popover"] [role="option"] {
+    background-color: #FFFFFF;
+    color: var(--ehs-navy);
+}
+[data-baseweb="popover"] [role="option"][aria-selected="true"] {
+    background-color: #EAF3F7;
+    color: var(--ehs-navy);
+}
 [data-testid="stCameraInput"], [data-testid="stFileUploader"] {
     border: 1px solid var(--ehs-border);
     border-radius: 7px;
