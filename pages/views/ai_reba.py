@@ -10,9 +10,7 @@ import mediapipe as mp
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from supabase import create_client
-
-from auth import require_admin, logout_button
+from auth import require_admin, logout_button, get_authenticated_supabase
 from session_query_cache import clear_session_query_cache
 from ui_theme import apply_theme
 
@@ -24,14 +22,7 @@ logout_button()
 st.caption("작업 사진과 AI 분석을 확인한 뒤 평가자가 REBA 점수를 확정합니다.")
 st.divider()
 
-@st.cache_resource
-def get_supabase():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-supabase = get_supabase()
+supabase = get_authenticated_supabase()
 
 
 def upload_reba_image(image_bytes, file_name, content_type):

@@ -7,9 +7,7 @@ import streamlit as st
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from supabase import create_client
-
-from auth import require_admin, logout_button
+from auth import require_admin, logout_button, get_authenticated_supabase
 
 require_admin()
 
@@ -18,14 +16,7 @@ logout_button()
 st.caption("저장된 REBA 평가와 작업사진으로 조사표 Word 파일을 작성합니다.")
 st.divider()
 
-@st.cache_resource
-def get_supabase():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-supabase = get_supabase()
+supabase = get_authenticated_supabase()
 
 try:
     response = (
