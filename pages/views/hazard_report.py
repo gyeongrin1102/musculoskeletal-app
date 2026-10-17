@@ -37,6 +37,36 @@ if not reba_rows:
 
 reba_df = pd.DataFrame(reba_rows)
 
+evaluation_options = {}
+
+for row_index, row in reba_df.iterrows():
+    record = row.to_dict()
+    evaluation_id = record.get("id") or row_index
+    label = (
+        f"#{evaluation_id} | "
+        f"{record.get('department', '')} | "
+        f"{record.get('task_name', '')} | "
+        f"{record.get('worker', '')} | "
+        f"{record.get('created_at', '')} | "
+        f"REBA {record.get('final_reba', '')}"
+    )
+    evaluation_options[label] = record
+
+selection_prompt = "조사자료를 선택하세요"
+selected_label = st.selectbox(
+    "조사자료 선택",
+    [selection_prompt, *evaluation_options.keys()],
+    key="hazard_report_evaluation"
+)
+
+if selected_label == selection_prompt:
+    st.info("조사표를 생성할 REBA 평가자료를 먼저 선택해주세요.")
+    st.stop()
+
+selected = evaluation_options[selected_label]
+
+
+
 def safe_int(value, default=0):
     try:
         return int(value or 0)
@@ -77,6 +107,14 @@ def download_storage_file(path):
             "Storage 파일 존재 여부와 접근권한을 확인해주세요."
         )
         return None
+
+original_image_bytes = download_storage_file(
+    selected.get("original_image_path")
+)
+
+analyzed_image_bytes = download_storage_file(
+    selected.get("analyzed_image_path")
+)
 
 def replace_in_paragraph(paragraph, replacements):
     if not paragraph.runs:
@@ -237,7 +275,7 @@ with c1:
     )
     investigator = st.text_input(
         "조사자",
-        value=str(selected.get("evaluator", "") or "")
+        value=str(selected.get("evaluator") or "")
     )
 
 with c2:
@@ -359,6 +397,9 @@ coupling_score = safe_int(selected.get("coupling_score"))
 activity_score = safe_int(selected.get("activity_score"))
 score_a = safe_int(selected.get("score_a"))
 score_b = safe_int(selected.get("score_b"))
+final_reba = safe_int(selected.get("final_reba"))
+risk_level = str(selected.get("risk_level") or "미입력")
+action_text = str(selected.get("action_text") or "")
 table_c_score = max(final_reba - activity_score, 0)
 
 reba_preview = pd.DataFrame(
