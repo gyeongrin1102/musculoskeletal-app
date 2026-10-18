@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import datetime
 import hashlib
+import copy
 
 import cv2
 import numpy as np
