@@ -274,6 +274,9 @@ def auto_analyze_image(image_bytes, state_prefix):
     signature = image_signature(image_bytes)
     signature_key = f"{state_prefix}_signature"
 
+    if st.session_state.get(signature_key) != signature:
+        st.session_state.pop(f"{state_prefix}_landmarks", None)
+
     if (
         st.session_state.get(signature_key) == signature
         and st.session_state.get(f"{state_prefix}_analyzed_bytes")
@@ -290,6 +293,9 @@ def auto_analyze_image(image_bytes, state_prefix):
         st.session_state[f"{state_prefix}_error"] = error
         st.session_state[signature_key] = signature
         return
+
+    st.session_state[f"{state_prefix}_landmarks"] = copy.deepcopy(landmarks)
+
 
     analyzed_image = draw_pose(image_rgb, landmarks)
     height, width = image_rgb.shape[:2]
@@ -492,6 +498,67 @@ if mode == "📷 새 REBA 평가":
         if analyzed_bytes:
             st.success("AI 자세분석이 완료되었습니다.")
             st.image(analyzed_bytes, caption="AI 관절선 분석사진", width="stretch")
+        if analyzed_bytes and st.session_state.get("new_reba_landmarks"):
+            with st.expander("✏️ AI 관절 위치 수동 보정"):
+                joint_names = {
+                    11: "왼쪽 어깨", 12: "오른쪽 어깨",
+                    13: "왼쪽 팔꿈치", 14: "오른쪽 팔꿈치",
+                    15: "왼쪽 손목", 16: "오른쪽 손목",
+                    23: "왼쪽 엉덩이", 24: "오른쪽 엉덩이",
+                    25: "왼쪽 무릎", 26: "오른쪽 무릎",
+                    27: "왼쪽 발목", 28: "오른쪽 발목",
+                }
+
+                joint = st.selectbox(
+                    "수정할 관절",
+                    list(joint_names),
+                    format_func=lambda idx: joint_names[idx],
+                    key="new_reba_joint",
+                )
+
+                landmarks = st.session_state["new_reba_landmarks"]
+                point = landmarks[joint]
+
+                with st.form("new_reba_correction_form"):
+                    x = st.slider(
+                        "좌우 위치 (%)", 0, 100,
+                        int(max(0, min(100, point.x * 100)))
+                    )
+                    y = st.slider(
+                        "상하 위치 (%)", 0, 100,
+                        int(max(0, min(100, point.y * 100)))
+                    )
+                    submitted = st.form_submit_button("보정 적용")
+
+                if submitted:
+                    corrected = copy.deepcopy(landmarks)
+                    corrected[joint].x = x / 100
+                    corrected[joint].y = y / 100
+                    corrected[joint].visibility = 1.0
+
+                    original_rgb = decode_image(
+                        st.session_state["new_reba_original_bytes"]
+                    )
+                    if original_rgb is None:
+                        st.error("원본사진을 읽을 수 없습니다.")
+                    else:
+                        output = draw_pose(original_rgb, corrected)
+                        output_bgr = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
+                        ok, encoded = cv2.imencode(".png", output_bgr)
+
+                        if ok:
+                            height, width = original_rgb.shape[:2]
+                            angles = get_pose_angles(corrected, width, height)
+
+                            st.session_state["new_reba_landmarks"] = corrected
+                            st.session_state["new_reba_analyzed_bytes"] = encoded.tobytes()
+                            st.session_state["new_reba_angles"] = angles
+                            st.session_state["new_reba_recommendation"] = (
+                                recommend_reba_from_angles(angles)
+                            )
+                            st.rerun()
+                        else:
+                            st.error("보정 사진 생성에 실패했습니다.")
 
         if angles or recommendation:
             with st.expander("AI 분석 참고값", expanded=bool(recommendation)):
@@ -817,6 +884,7 @@ else:
                     .eq("id", selected["id"])
                     .execute()
                 )
+
                 clear_session_query_cache()
 
                 st.success(
