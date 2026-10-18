@@ -148,6 +148,29 @@ def decode_image(image_bytes):
         return None
     return cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
 
+def display_photo(image_bytes, caption):
+    """화면 표시용으로만 사진 축소"""
+    try:
+        image = decode_image(image_bytes)
+        if image is None:
+            st.warning(f"{caption}: 이미지를 읽을 수 없습니다.")
+            return
+
+        height, width = image.shape[:2]
+        max_width = 1200
+
+        if width > max_width:
+            scale = max_width / width
+            image = cv2.resize(
+                image,
+                (max_width, max(1, int(height * scale))),
+                interpolation=cv2.INTER_AREA,
+            )
+
+        st.image(image, caption=caption, width="stretch")
+
+    except Exception as e:
+        st.error(f"사진 표시 오류: {e}")
 
 def get_pose_angles(landmarks, width, height):
     pts = {}
@@ -483,7 +506,7 @@ if mode == "📷 새 REBA 평가":
 
     if photo is not None:
         image_bytes = photo.getvalue()
-        st.image(image_bytes, caption="촬영/업로드 사진", width="stretch")
+        display_photo(image_bytes, "촬영/업로드 사진")
 
         with st.spinner("AI가 자세를 자동 분석하고 있습니다..."):
             auto_analyze_image(image_bytes, "new_reba")
@@ -498,7 +521,7 @@ if mode == "📷 새 REBA 평가":
 
         if analyzed_bytes:
             st.success("AI 자세분석이 완료되었습니다.")
-            st.image(analyzed_bytes, caption="AI 관절선 분석사진", width="stretch")
+            display_photo(analyzed_bytes, "AI 관절선 분석사진")
         if analyzed_bytes and st.session_state.get("new_reba_landmarks"):
             with st.expander("✏️ AI 관절 위치 수동 보정"):
                 joint_names = {
