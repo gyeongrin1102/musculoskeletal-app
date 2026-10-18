@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 6px 2px 10px;
+    font-family: sans-serif;
+    background: transparent;
+    color: #17384c;
+  }
+  .help { font-size: 13px; margin-bottom: 8px; }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #b8cbd5;
+    touch-action: none;
+    cursor: crosshair;
+  }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 9px;
+    flex-wrap: wrap;
+  }
+  button {
+    border: 1px solid #05507d;
+    border-radius: 7px;
+    padding: 9px 15px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #save { background: #05507d; color: white; }
+  #reset { background: white; color: #05507d; }
+  #status { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="help">초록색 점을 잡아 이동하세요. 파란색 점은 현재 선택한 관절입니다.</div>
+<canvas id="canvas"></canvas>
+<div class="toolbar">
+  <button id="save">✅ 보정 적용</button>
+  <button id="reset">원래 위치로 되돌리기</button>
+  <span id="status">관절점을 선택하세요.</span>
+</div>
+<script>
+(function () {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const status = document.getElementById("status");
+  const img = new Image();
+
+  const labels = {
+    11:"왼쪽 어깨",12:"오른쪽 어깨",
+    13:"왼쪽 팔꿈치",14:"오른쪽 팔꿈치",
+    15:"왼쪽 손목",16:"오른쪽 손목",
+    23:"왼쪽 엉덩이",24:"오른쪽 엉덩이",
+    25:"왼쪽 무릎",26:"오른쪽 무릎",
+    27:"왼쪽 발목",28:"오른쪽 발목"
+  };
+
+  const connections = [
+    [11,12],[11,13],[13,15],[12,14],[14,16],
+    [11,23],[12,24],[23,24],[23,25],[25,27],
+    [24,26],[26,28]
+  ];
+
+  let points = [];
+  let original = [];
+  let active = null;
+  let loaded = false;
+
+  function send(type, extra) {
+    window.parent.postMessage(
+      Object.assign({isStreamlitMessage:true, type:type}, extra || {}),
+      "*"
+    );
+  }
+
+  function frameHeight() {
+    send("streamlit:setFrameHeight", {
+      height: Math.ceil(document.body.scrollHeight) + 8
+    });
+  }
+
+  function position(p) {
+    return {x:p.x*canvas.width, y:p.y*canvas.height};
+  }
+
+  function draw() {
+    if (!loaded) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+
+    const byId = Object.fromEntries(points.map(p=>[p.id,p]));
+
+    ctx.lineWidth = Math.max(2,canvas.width/260);
+    ctx.strokeStyle = "#00e04f";
+    connections.forEach(([a,b])=>{
+      if (!byId[a] || !byId[b]) return;
+      const p=position(byId[a]), q=position(byId[b]);
+      ctx.beginPath();
+      ctx.moveTo(p.x,p.y);
+      ctx.lineTo(q.x,q.y);
+      ctx.stroke();
+    });
+
+    points.forEach(p=>{
+      const q=position(p);
+      ctx.beginPath();
+      ctx.arc(q.x,q.y,Math.max(6,canvas.width/130),0,Math.PI*2);
+      ctx.fillStyle = p.id === active ? "#008bff" : "#00f15c";
+      ctx.fill();
+      ctx.strokeStyle="#ffffff";
+      ctx.lineWidth=2;
+      ctx.stroke();
+    });
+  }
+
+  function pointerPosition(e) {
+    const r=canvas.getBoundingClientRect();
+    return {
+      x:(e.clientX-r.left)/r.width,
+      y:(e.clientY-r.top)/r.height
+    };
+  }
+
+  function nearestPoint(pos) {
+    let best=null, distance=Infinity;
+    points.forEach(p=>{
+      const d=Math.hypot(
+        (p.x-pos.x)*canvas.width,
+        (p.y-pos.y)*canvas.height
+      );
+      if(d<distance){best=p;distance=d;}
+    });
+    return distance < Math.max(28,canvas.width/25) ? best : null;
+  }
+
+  canvas.addEventListener("pointerdown",e=>{
+    if(!loaded)return;
+    const p=nearestPoint(pointerPosition(e));
+    if(!p)return;
+    active=p.id;
+    status.textContent=labels[active] + " 위치 조정 중";
+    canvas.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    draw();
+  });
+
+  canvas.addEventListener("pointermove",e=>{
+    if(active===null)return;
+    const p=points.find(p=>p.id===active);
+    if(!p)return;
+    const q=pointerPosition(e);
+    p.x=Math.max(0,Math.min(1,q.x));
+    p.y=Math.max(0,Math.min(1,q.y));
+    e.preventDefault();
+    draw();
+  });
+
+  function endDrag() {
+    if(active!==null){
+      status.textContent=labels[active]+" 위치 수정됨";
+      active=null;
+      draw();
+    }
+  }
+  canvas.addEventListener("pointerup",endDrag);
+  canvas.addEventListener("pointercancel",endDrag);
+  canvas.addEventListener("lostpointercapture",endDrag);
+
+  document.getElementById("reset").onclick=()=>{
+    points=original.map(p=>({...p}));
+    active=null;
+    status.textContent="AI 최초 관절 위치로 되돌렸습니다.";
+    draw();
+  };
+
+  document.getElementById("save").onclick=()=>{
+    if(!loaded)return;
+    send("streamlit:setComponentValue",{
+      value:{
+        action:"apply",
+        revision:String(Date.now())+"-"+String(Math.random()),
+        points:points.map(p=>({...p}))
+      },
+      dataType:"json"
+    });
+    status.textContent="보정 내용을 적용하는 중입니다.";
+  };
+
+  window.addEventListener("message",e=>{
+    if(!e.data || e.data.type!=="streamlit:render")return;
+    const args=e.data.args || {};
+    if(!args.image || !Array.isArray(args.points))return;
+
+    original=args.points.map(p=>({
+      id:Number(p.id),
+      x:Number(p.x),
+      y:Number(p.y)
+    }));
+    points=original.map(p=>({...p}));
+    loaded=false;
+
+    img.onload=()=>{
+      canvas.width=img.naturalWidth;
+      canvas.height=img.naturalHeight;
+      loaded=true;
+      draw();
+      frameHeight();
+    };
+    img.src="data:image/jpeg;base64,"+args.image;
+  });
+
+  send("streamlit:componentReady",{apiVersion:1});
+  frameHeight();
+  window.addEventListener("resize",frameHeight);
+})();
+</script>
+</body>
+</html>

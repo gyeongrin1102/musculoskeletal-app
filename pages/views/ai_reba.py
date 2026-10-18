@@ -15,6 +15,8 @@ from auth import require_admin, logout_button, get_authenticated_supabase
 from session_query_cache import clear_session_query_cache
 from ui_theme import apply_theme
 
+from joint_drag_editor import joint_drag_editor
+
 require_admin()
 apply_theme()
 
@@ -523,66 +525,87 @@ if mode == "📷 새 REBA 평가":
             st.success("AI 자세분석이 완료되었습니다.")
             display_photo(analyzed_bytes, "AI 관절선 분석사진")
         if analyzed_bytes and st.session_state.get("new_reba_landmarks"):
-            with st.expander("✏️ AI 관절 위치 수동 보정"):
-                joint_names = {
-                    11: "왼쪽 어깨", 12: "오른쪽 어깨",
-                    13: "왼쪽 팔꿈치", 14: "오른쪽 팔꿈치",
-                    15: "왼쪽 손목", 16: "오른쪽 손목",
-                    23: "왼쪽 엉덩이", 24: "오른쪽 엉덩이",
-                    25: "왼쪽 무릎", 26: "오른쪽 무릎",
-                    27: "왼쪽 발목", 28: "오른쪽 발목",
-                }
-
-                joint = st.selectbox(
-                    "수정할 관절",
-                    list(joint_names),
-                    format_func=lambda idx: joint_names[idx],
-                    key="new_reba_joint",
+            with st.expander("✏️ 사진에서 관절점 직접 이동", expanded=False):
+                st.caption(
+                    "초록색 관절점을 잡아서 실제 관절 위치로 옮긴 뒤 "
+                    "'보정 적용'을 누르세요. 최종 REBA 점수는 자동 변경되지 않습니다."
                 )
 
-                landmarks = st.session_state["new_reba_landmarks"]
-                point = landmarks[joint]
+                current_landmarks = st.session_state["new_reba_landmarks"]
+                joint_indices = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 
-                with st.form("new_reba_correction_form"):
-                    x = st.slider(
-                        "좌우 위치 (%)", 0, 100,
-                        int(max(0, min(100, point.x * 100)))
-                    )
-                    y = st.slider(
-                        "상하 위치 (%)", 0, 100,
-                        int(max(0, min(100, point.y * 100)))
-                    )
-                    submitted = st.form_submit_button("보정 적용")
+                joint_points = [
+                    {
+                        "id": idx,
+                        "x": float(current_landmarks[idx].x),
+                        "y": float(current_landmarks[idx].y),
+                    }
+                    for idx in joint_indices
+                ]
 
-                if submitted:
-                    corrected = copy.deepcopy(landmarks)
-                    corrected[joint].x = x / 100
-                    corrected[joint].y = y / 100
-                    corrected[joint].visibility = 1.0
+                correction = joint_drag_editor(
+                    st.session_state["new_reba_original_bytes"],
+                    joint_points,
+                    key=f"joint_drag_{image_signature(image_bytes)}",
+                )
 
-                    original_rgb = decode_image(
-                        st.session_state["new_reba_original_bytes"]
-                    )
-                    if original_rgb is None:
-                        st.error("원본사진을 읽을 수 없습니다.")
-                    else:
-                        output = draw_pose(original_rgb, corrected)
-                        output_bgr = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
-                        ok, encoded = cv2.imencode(".png", output_bgr)
+                if isinstance(correction, dict) and correction.get("action") == "apply":
+                    revision = str(correction.get("revision", ""))
+                    revision_key = "new_reba_drag_revision"
 
-                        if ok:
-                            height, width = original_rgb.shape[:2]
-                            angles = get_pose_angles(corrected, width, height)
+                    if revision and st.session_state.get(revision_key) != revision:
+                        st.session_state[revision_key] = revision
 
-                            st.session_state["new_reba_landmarks"] = corrected
-                            st.session_state["new_reba_analyzed_bytes"] = encoded.tobytes()
-                            st.session_state["new_reba_angles"] = angles
-                            st.session_state["new_reba_recommendation"] = (
-                                recommend_reba_from_angles(angles)
+                        points_by_id = {
+                            int(p["id"]): p
+                            for p in correction.get("points", [])
+                            if isinstance(p, dict)
+                            and all(k in p for k in ("id", "x", "y"))
+                        }
+
+                        if set(joint_indices).issubset(points_by_id):
+                            corrected = copy.deepcopy(current_landmarks)
+
+                            for idx in joint_indices:
+                                p = points_by_id[idx]
+                                corrected[idx].x = max(0.0, min(1.0, float(p["x"])))
+                                corrected[idx].y = max(0.0, min(1.0, float(p["y"])))
+                                corrected[idx].visibility = 1.0
+
+                            original_rgb = decode_image(
+                                st.session_state["new_reba_original_bytes"]
                             )
-                            st.rerun()
+
+                            if original_rgb is not None:
+                                output = draw_pose(original_rgb, corrected)
+                                output_bgr = cv2.cvtColor(
+                                    output, cv2.COLOR_RGB2BGR
+                                )
+                                ok, encoded = cv2.imencode(".png", output_bgr)
+
+                                if ok:
+                                    height, width = original_rgb.shape[:2]
+                                    corrected_angles = get_pose_angles(
+                                        corrected, width, height
+                                    )
+
+                                    st.session_state["new_reba_landmarks"] = corrected
+                                    st.session_state["new_reba_analyzed_bytes"] = (
+                                        encoded.tobytes()
+                                    )
+                                    st.session_state["new_reba_angles"] = (
+                                        corrected_angles
+                                    )
+                                    st.session_state["new_reba_recommendation"] = (
+                                        recommend_reba_from_angles(corrected_angles)
+                                    )
+                                    st.rerun()
+                                else:
+                                    st.error("보정 사진 생성에 실패했습니다.")
+                            else:
+                                st.error("원본사진을 불러오지 못했습니다.")
                         else:
-                            st.error("보정 사진 생성에 실패했습니다.")
+                            st.error("관절 좌표가 불완전하여 보정하지 않았습니다.")
 
         if angles or recommendation:
             with st.expander("AI 분석 참고값", expanded=bool(recommendation)):
