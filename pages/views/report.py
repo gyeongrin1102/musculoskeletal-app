@@ -2443,82 +2443,59 @@ def create_word_report():
     )
 
 
-    table = document.add_table(
-        rows=10,
-        cols=2
-    )
 
-    table.style = (
-        "Table Grid"
-    )
+    # 조사 현황을 한눈에 보여주는 요약 영역
+    document.add_paragraph("")
 
+    summary_table = document.add_table(rows=2, cols=3)
+    summary_table.style = "Table Grid"
 
-    overview = [
-        [
-            "사업장명",
-            company_name
-        ],
-        [
-            "현장 신설일",
-            site_start_date
-        ],
-        [
-            "조사·평가기간",
-            survey_period
-        ],
-        [
-            "작성자",
-            writer
-        ],
-        [
-            "근골격계 조사인원",
-            f"{total_count}명"
-        ],
-        [
-            "근골격계 유소견",
-            f"{abnormal_total}명"
-        ],
-        [
-            "REBA 평가건수",
-            f"{total_reba}건"
-        ],
-        [
-            "상세 수록 평가",
-            f"{len(selected_reba_records)}건"
-        ],
-        [
-            "개선 전·후 비교",
-            f"{total_improvement}건"
-        ],
-        [
-            "보고서 작성일",
-            datetime.now().strftime(
-                "%Y-%m-%d"
-            )
-        ]
+    summary_items = [
+        ("조사대상", f"{total_count}명"),
+        ("근골격계 유소견 현황", f"{abnormal_total}명"),
+        ("평가건수 현황", f"{total_reba}건"),
     ]
 
+    for col, (label, value) in enumerate(summary_items):
+        set_cell_text(summary_table.cell(0, col), label, True)
+        set_cell_text(summary_table.cell(1, col), value, True)
 
-    for i, item in enumerate(
-        overview
-    ):
+    document.add_paragraph("")
 
-        set_cell_text(
-            table.cell(
-                i,
-                0
-            ),
-            item[0],
-            True
-        )
+    # 세부 조사 개요를 한 줄에 두 항목씩 배치
+    overview = [
+        ("사업장명", company_name),
+        ("현장 신설일", site_start_date),
+        ("조사·평가기간", survey_period),
+        ("작성자", writer),
+        ("근골격계 조사인원", f"{total_count}명"),
+        ("근골격계 유소견", f"{abnormal_total}명"),
+        ("REBA 평가건수", f"{total_reba}건"),
+        ("상세 수록 평가", f"{len(selected_reba_records)}건"),
+        ("개선 전·후 비교", f"{total_improvement}건"),
+        ("보고서 작성일", datetime.now().strftime("%Y-%m-%d")),
+    ]
 
-        set_cell_text(
-            table.cell(
-                i,
-                1
-            ),
-            item[1]
-        )
+    table = document.add_table(rows=5, cols=4)
+    table.style = "Table Grid"
+
+    for row_index in range(5):
+        left_label, left_value = overview[row_index * 2]
+        right_label, right_value = overview[row_index * 2 + 1]
+
+        for column, value, is_label in (
+            (0, left_label, True),
+            (1, left_value, False),
+            (2, right_label, True),
+            (3, right_value, False),
+        ):
+            set_cell_text(
+                table.cell(row_index, column),
+                value,
+                is_label
+            )
+
+    document.add_paragraph("")
 
 
     document.add_paragraph("")
@@ -3604,6 +3581,20 @@ def create_word_report():
 
     from pages.views.report_word_style import apply_corporate_report_style
     apply_corporate_report_style(document)
+    from docx.shared import RGBColor
+
+    # 첫 페이지 핵심 수치 강조 (데이터 내용은 변경하지 않음)
+    for summary_row in summary_table.rows[1:2]:
+        for cell in summary_row.cells:
+            for paragraph in cell.paragraphs:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                paragraph.paragraph_format.space_before = Pt(7)
+                paragraph.paragraph_format.space_after = Pt(7)
+                for run in paragraph.runs:
+                    run.bold = True
+                    run.font.size = Pt(18)
+                    run.font.color.rgb = RGBColor(23, 61, 115)
+
 
     document.save(
         output
