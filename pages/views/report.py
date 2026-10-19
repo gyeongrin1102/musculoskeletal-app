@@ -3602,6 +3602,9 @@ def create_word_report():
 
     output = BytesIO()
 
+    from pages.views.report_word_style import apply_corporate_report_style
+    apply_corporate_report_style(document)
+
     document.save(
         output
     )
