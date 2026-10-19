@@ -1437,7 +1437,7 @@ def prepare_selected_report_data(
 
         selected_records.append(record)
         original_path = record.get("original_image_path")
-        analyzed_path = (record.get("bold_analyzed_image_path") or record.get("analyzed_image_path"))
+        analyzed_path = record.get("analyzed_image_path")
         selected_images.append(
             {
                 "record": record,
