@@ -241,7 +241,7 @@ def apply_corporate_report_style(document):
     for table in document.tables:
         format_table(table)
 
-    return finalize_corporate_report_v3(apply_corporate_report_style_v2(document))
+    return final_report_cleanup_v4(finalize_corporate_report_v3(apply_corporate_report_style_v2(document)))
 
 
 def finalize_corporate_report_v3(document):
@@ -373,5 +373,131 @@ def finalize_corporate_report_v3(document):
                     for run in p.runs:
                         run.bold = True
                         run.font.color.rgb = navy
+
+    return document
+
+
+def final_report_cleanup_v4(document):
+    """기존 데이터와 사진을 보존하면서 Word 레이아웃 마무리."""
+    import re
+    from docx.shared import Pt, RGBColor
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    navy = RGBColor(23, 61, 115)
+    dark = RGBColor(34, 34, 34)
+
+    # 실제 보고서의 장 제목만 남색으로 표시
+    main_titles = {
+        "조사 및 평가 개요",
+        "근골격계 조사 결과 요약",
+        "신체부위별 판정 현황",
+        "부서별 근골격계 판정 현황",
+        "근골격계 사후관리 대상자",
+        "근골격계 종합 분석",
+        "근골격계 향후 관리계획",
+        "REBA 작업자세 평가 결과 요약",
+        "공종별 REBA 평가 현황",
+        "작업별 REBA 평가 현황",
+        "REBA 고위험 작업 관리대상",
+        "REBA 종합 분석",
+        "REBA 향후 관리계획",
+        "REBA 개선 전·후 비교 결과",
+        "전체 개선조치 관리현황",
+        "개선효과 종합 분석",
+    }
+
+    for p in document.paragraphs:
+        text = p.text.strip()
+        if not text:
+            continue
+
+        match = re.match(
+            r"^(\d{1,2})(?:\.)\s+(.+)$",
+            text
+        )
+
+        is_main = bool(
+            match
+            and match.group(2).strip() in main_titles
+        )
+
+        # 11-1 등 소제목
+        is_sub = bool(
+            re.match(r"^\d{1,2}-\d{1,2}\.\s+", text)
+        )
+
+        # 제목이나 관리계획에 붙은 실제 Word 글머리표 제거
+        if is_main or is_sub or match:
+            ppr = p._p.get_or_add_pPr()
+            numpr = ppr.find(qn("w:numPr"))
+
+            if numpr is not None:
+                ppr.remove(numpr)
+
+        # 일반 번호 목록은 검은색 본문으로 처리
+        if match and not is_main:
+            ppr = p._p.get_or_add_pPr()
+            border = ppr.find(qn("w:pBdr"))
+
+            if border is not None:
+                ppr.remove(border)
+
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(4)
+            p.paragraph_format.keep_with_next = False
+
+            for run in p.runs:
+                run.font.size = Pt(9)
+                run.font.color.rgb = dark
+                run.bold = False
+
+        elif is_main:
+            p.paragraph_format.keep_with_next = True
+            p.paragraph_format.space_before = Pt(10)
+            p.paragraph_format.space_after = Pt(6)
+
+            for run in p.runs:
+                run.font.size = Pt(11)
+                run.font.color.rgb = navy
+                run.bold = True
+
+        elif is_sub:
+            p.paragraph_format.keep_with_next = True
+
+            for run in p.runs:
+                run.font.size = Pt(10)
+                run.font.color.rgb = navy
+                run.bold = True
+
+    # 표 한 행이 페이지 사이에서 잘리는 것 방지
+    def fix_table(table):
+        for row_index, row in enumerate(table.rows):
+            trpr = row._tr.get_or_add_trPr()
+
+            if trpr.find(qn("w:cantSplit")) is None:
+                trpr.append(OxmlElement("w:cantSplit"))
+
+            # 다음 페이지로 넘어갈 때 첫 행 반복
+            if row_index == 0:
+                if trpr.find(qn("w:tblHeader")) is None:
+                    header = OxmlElement("w:tblHeader")
+                    header.set(qn("w:val"), "true")
+                    trpr.append(header)
+
+            for cell in row.cells:
+                for p in cell.paragraphs:
+                    p.paragraph_format.space_after = Pt(1)
+                    p.paragraph_format.space_before = Pt(1)
+
+                for nested in cell.tables:
+                    fix_table(nested)
+
+    for table in document.tables:
+        fix_table(table)
+
+    # 사진은 기존 크기와 비율 유지
+    # 사진을 포함한 표 행만 페이지 중간 분리 방지
+    # 사진의 데이터·경로·REBA 점수는 수정하지 않음
 
     return document
