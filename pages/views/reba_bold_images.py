@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 
-def make_bold_reba_image(original_bytes, analyzed_bytes, thickness=5):
+def make_bold_reba_image(original_bytes, analyzed_bytes, thickness=9):
     original = cv2.imdecode(
         np.frombuffer(original_bytes, dtype=np.uint8),
         cv2.IMREAD_COLOR
