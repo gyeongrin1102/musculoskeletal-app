@@ -1442,6 +1442,23 @@ def prepare_selected_report_data(
         selected_records.append(record)
         original_path = record.get("original_image_path")
         analyzed_path = record.get("analyzed_image_path")
+        bold_path = record.get("bold_analyzed_image_path")
+
+        # 굵은 사진을 정상적으로 다운로드한 경우에만 사용
+        analyzed_image = (
+            image_loader(bold_path)
+            if isinstance(bold_path, str) and bold_path.strip()
+            else None
+        )
+
+        # 굵은 사진이 없거나 다운로드 실패하면 기존 사진 사용
+        if not analyzed_image:
+            analyzed_image = (
+                image_loader(analyzed_path)
+                if isinstance(analyzed_path, str)
+                and analyzed_path.strip()
+                else None
+            )
         selected_images.append(
             {
                 "record": record,
@@ -1451,12 +1468,7 @@ def prepare_selected_report_data(
                     and original_path.strip()
                     else None
                 ),
-                "analyzed": (
-                    image_loader(analyzed_path)
-                    if isinstance(analyzed_path, str)
-                    and analyzed_path.strip()
-                    else None
-                ),
+                "analyzed": analyzed_image,
             }
         )
 
