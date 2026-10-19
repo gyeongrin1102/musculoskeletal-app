@@ -1163,6 +1163,121 @@ else:
                 width="stretch"
             )
 
+
+        # 기존 평가에 새로운 사진을 연결할 때도 관절점 직접 지정 가능
+        with st.expander("📍 사진에서 관절점 직접 찍기 / 위치 보정"):
+            existing_landmarks = st.session_state.get(
+                "existing_reba_landmarks"
+            )
+
+            joint_indices = [
+                11, 12, 13, 14, 15, 16,
+                23, 24, 25, 26, 27, 28
+            ]
+
+            if not existing_landmarks:
+                st.info(
+                    "AI가 자세를 인식하지 못했어도 괜찮습니다. "
+                    "아래 편집기에서 '관절점 직접 찍기'를 누르세요."
+                )
+
+            joint_points = [
+                {
+                    "id": idx,
+                    "x": float(existing_landmarks[idx].x),
+                    "y": float(existing_landmarks[idx].y),
+                }
+                for idx in joint_indices
+            ] if existing_landmarks else []
+
+            correction = joint_drag_editor(
+                existing_bytes,
+                joint_points,
+                key="existing_link_manual_editor",
+            )
+
+            if (
+                isinstance(correction, dict)
+                and correction.get("action") == "apply"
+            ):
+                revision = str(correction.get("revision", ""))
+
+                if (
+                    revision
+                    and st.session_state.get("existing_link_revision") != revision
+                ):
+                    points_by_id = {
+                        int(p["id"]): p
+                        for p in correction.get("points", [])
+                        if isinstance(p, dict)
+                        and all(k in p for k in ("id", "x", "y"))
+                    }
+
+                    if not set(joint_indices).issubset(points_by_id):
+                        st.error("관절점 12개를 모두 지정해야 합니다.")
+                    else:
+                        corrected = (
+                            copy.deepcopy(existing_landmarks)
+                            if existing_landmarks
+                            else make_manual_landmarks()
+                        )
+
+                        for idx in joint_indices:
+                            point = points_by_id[idx]
+                            corrected[idx].x = max(
+                                0.0, min(1.0, float(point["x"]))
+                            )
+                            corrected[idx].y = max(
+                                0.0, min(1.0, float(point["y"]))
+                            )
+                            corrected[idx].visibility = 1.0
+
+                        original_rgb = decode_image(existing_bytes)
+
+                        if original_rgb is None:
+                            st.error("원본사진을 읽지 못했습니다.")
+                        else:
+                            output = draw_pose(original_rgb, corrected)
+                            output_bgr = cv2.cvtColor(
+                                output, cv2.COLOR_RGB2BGR
+                            )
+                            ok, encoded = cv2.imencode(
+                                ".png", output_bgr
+                            )
+
+                            if ok:
+                                height, width = original_rgb.shape[:2]
+
+                                manual_angles = get_pose_angles(
+                                    corrected, width, height
+                                )
+
+                                st.session_state[
+                                    "existing_reba_landmarks"
+                                ] = corrected
+                                st.session_state[
+                                    "existing_reba_analyzed_bytes"
+                                ] = encoded.tobytes()
+                                st.session_state[
+                                    "existing_reba_angles"
+                                ] = manual_angles
+                                st.session_state[
+                                    "existing_reba_recommendation"
+                                ] = recommend_reba_from_angles(
+                                    manual_angles
+                                )
+                                st.session_state[
+                                    "existing_link_revision"
+                                ] = revision
+
+                                st.success(
+                                    "✅ 관절점 보정 완료! "
+                                    "아래 저장 버튼을 눌러 연결하세요."
+                                )
+                                st.rerun()
+                            else:
+                                st.error("관절선 사진 생성에 실패했습니다.")
+
         st.warning(
             "아래 버튼을 눌러도 기존 REBA 점수, 위험등급, 평가내용은 변경되지 않습니다."
         )
