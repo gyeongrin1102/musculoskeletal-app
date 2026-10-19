@@ -563,10 +563,81 @@ def render_bold_reba_preview():
             "이 사진은 저장하면 안 됩니다."
         )
 
-        st.info(
-            "현재 단계는 미리보기 전용입니다. "
-            "Supabase 사진이나 평가 기록은 수정되지 않습니다."
+        st.caption(
+            "변환본은 새 파일로 저장합니다. "
+            "기존 원본·분석사진과 REBA 점수는 유지됩니다."
         )
+
+        if selected.get("bold_analyzed_image_path"):
+            st.info(
+                "이 평가에는 이미 굵은 분석사진이 저장되어 "
+                "있습니다. 중복 저장하지 않습니다."
+            )
+            return
+
+        confirmed = st.checkbox(
+            "기존 사진과 비교하여 관절선 위치가 "
+            "동일하고 배경에 이상이 없음을 확인했습니다.",
+            key=f"bold_save_confirm_{selected_id}"
+        )
+
+        if st.button(
+            "💾 확인한 굵은 사진 저장",
+            disabled=not confirmed,
+            key=f"bold_save_button_{selected_id}"
+        ):
+            from uuid import uuid4
+
+            new_path = (
+                "bold-reba/"
+                + uuid4().hex
+                + "/analyzed_bold.png"
+            )
+
+            try:
+                # 기존 저장 함수와 관리자 인증을 그대로 사용
+                upload_reba_image(
+                    bold,
+                    new_path,
+                    "image/png"
+                )
+
+                # 다른 사용자가 갱신했다면 덮어쓰지 않음
+                result = (
+                    supabase
+                    .table("reba_results")
+                    .update({
+                        "bold_analyzed_image_path": new_path
+                    })
+                    .eq("id", selected["id"])
+                    .eq(
+                        "analyzed_image_path",
+                        selected["analyzed_image_path"]
+                    )
+                    .is_("bold_analyzed_image_path", "null")
+                    .execute()
+                )
+
+                if not result.data:
+                    raise RuntimeError(
+                        "평가 기록이 변경되었거나 권한이 없어 "
+                        "DB 연결을 완료하지 못했습니다. "
+                        "페이지를 새로고침하여 확인하세요."
+                    )
+
+                clear_session_query_cache()
+                st.success(
+                    "굵은 관절선 사진 저장 완료! "
+                    "Word 보고서에 사용할 수 있습니다."
+                )
+                st.rerun()
+
+            except Exception as exc:
+                st.error(
+                    "저장 또는 DB 연결에 실패했습니다. "
+                    "기존 분석사진과 점수는 변경하지 않았습니다. "
+                    f"상세 오류: {exc}"
+                )
 
 
 render_bold_reba_preview()
