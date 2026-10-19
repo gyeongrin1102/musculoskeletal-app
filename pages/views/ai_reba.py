@@ -276,24 +276,70 @@ def draw_pose(image_rgb, landmarks):
     output = image_rgb.copy()
     height, width = output.shape[:2]
 
+    # 관절선/관절점 스타일 통일
+    line_color = (0, 255, 50)          # 진한 형광초록 느낌
+    point_color = (0, 255, 50)
+    point_border_color = (255, 255, 255)
+
+    line_thickness = 6                 # 선 굵기
+    point_radius = 8                   # 점 크기
+    point_border_thickness = 2         # 점 테두리
+
+    joint_indices = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
+
     for start_idx, end_idx in POSE_CONNECTIONS:
         start = landmarks[start_idx]
         end = landmarks[end_idx]
+
         start_visibility = getattr(start, "visibility", 1.0)
         end_visibility = getattr(end, "visibility", 1.0)
-        if start_visibility < VISIBILITY_THRESHOLD or end_visibility < VISIBILITY_THRESHOLD:
+
+        if (
+            start_visibility < VISIBILITY_THRESHOLD
+            or end_visibility < VISIBILITY_THRESHOLD
+        ):
             continue
+
         start_point = (int(start.x * width), int(start.y * height))
         end_point = (int(end.x * width), int(end.y * height))
-        cv2.line(output, start_point, end_point, (0, 220, 0), 4)
 
-    for index in [11,12,13,14,15,16,23,24,25,26,27,28]:
+        cv2.line(
+            output,
+            start_point,
+            end_point,
+            line_color,
+            line_thickness,
+            lineType=cv2.LINE_AA
+        )
+
+    for index in joint_indices:
         landmark = landmarks[index]
         visibility = getattr(landmark, "visibility", 1.0)
+
         if visibility < VISIBILITY_THRESHOLD:
             continue
+
         point = (int(landmark.x * width), int(landmark.y * height))
-        cv2.circle(output, point, 7, (0, 255, 0), -1)
+
+        # 흰색 테두리
+        cv2.circle(
+            output,
+            point,
+            point_radius + 2,
+            point_border_color,
+            -1,
+            lineType=cv2.LINE_AA
+        )
+
+        # 초록색 본체
+        cv2.circle(
+            output,
+            point,
+            point_radius,
+            point_color,
+            -1,
+            lineType=cv2.LINE_AA
+        )
 
     return output
 
