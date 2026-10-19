@@ -241,4 +241,137 @@ def apply_corporate_report_style(document):
     for table in document.tables:
         format_table(table)
 
-    return apply_corporate_report_style_v2(document)
+    return finalize_corporate_report_v3(apply_corporate_report_style_v2(document))
+
+
+def finalize_corporate_report_v3(document):
+    """종합보고서의 제목, 표, 사진 배치를 마무리한다."""
+    import re
+    from docx.shared import Pt, RGBColor, Cm
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    navy = RGBColor(23, 61, 115)
+    dark = RGBColor(34, 34, 34)
+
+    # 보고서에서 실제로 사용하는 주요 장 제목
+    main_titles = (
+        "조사 및 평가 개요",
+        "근골격계 조사 결과 요약",
+        "신체부위별 판정 현황",
+        "부서별 근골격계 판정 현황",
+        "근골격계 사후관리 대상자",
+        "근골격계 종합 분석",
+        "근골격계 향후 관리계획",
+        "REBA 작업자세 평가 결과 요약",
+        "공종별 REBA 평가 현황",
+        "작업별 REBA 평가 현황",
+        "REBA 고위험 작업 관리대상",
+    )
+
+    for p in document.paragraphs:
+        text = p.text.strip()
+
+        if not text:
+            continue
+
+        match = re.match(r"^(\\d{1,2})\\.\\s+(.+)$", text)
+
+        is_main = (
+            bool(match)
+            and any(title in match.group(2) for title in main_titles)
+        )
+
+        is_sub = bool(
+            re.match(r"^\\d{1,2}-\\d{1,2}\\.\\s+", text)
+        )
+
+        # 이전 스타일에서 모든 번호 문장을 제목으로
+        # 취급했던 문제를 수정한다.
+        if match and not is_main:
+            ppr = p._p.get_or_add_pPr()
+            border = ppr.find(qn("w:pBdr"))
+
+            if border is not None:
+                ppr.remove(border)
+
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(4)
+            p.paragraph_format.keep_with_next = False
+
+            for run in p.runs:
+                run.font.color.rgb = dark
+                run.font.size = Pt(9)
+                run.bold = False
+
+        elif is_main:
+            p.paragraph_format.space_before = Pt(11)
+            p.paragraph_format.space_after = Pt(6)
+            p.paragraph_format.keep_with_next = True
+
+            for run in p.runs:
+                run.font.color.rgb = navy
+                run.font.size = Pt(11)
+                run.bold = True
+
+        elif is_sub:
+            p.paragraph_format.space_before = Pt(7)
+            p.paragraph_format.space_after = Pt(4)
+            p.paragraph_format.keep_with_next = True
+
+            for run in p.runs:
+                run.font.color.rgb = navy
+                run.font.size = Pt(10)
+                run.bold = True
+
+    # 표 행이 페이지 경계에서 반으로 분리되지 않게 한다.
+    # 첫 번째 행은 다음 페이지에서도 머리글로 반복한다.
+    def arrange_table(table):
+        for row_index, row in enumerate(table.rows):
+            trpr = row._tr.get_or_add_trPr()
+
+            if trpr.find(qn("w:cantSplit")) is None:
+                trpr.append(OxmlElement("w:cantSplit"))
+
+            if row_index == 0:
+                if trpr.find(qn("w:tblHeader")) is None:
+                    head = OxmlElement("w:tblHeader")
+                    head.set(qn("w:val"), "true")
+                    trpr.append(head)
+
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    paragraph.paragraph_format.space_before = Pt(1)
+                    paragraph.paragraph_format.space_after = Pt(1)
+
+                for nested in cell.tables:
+                    arrange_table(nested)
+
+    for table in document.tables:
+        arrange_table(table)
+
+    # 사진은 비율을 유지하며 너무 넓은 사진만 축소.
+    # 사진의 순서와 원본 데이터는 변경하지 않는다.
+    for shape in document.inline_shapes:
+        if shape.width > Cm(17.0):
+            ratio = Cm(17.0) / shape.width
+            shape.width = Cm(17.0)
+            shape.height = int(shape.height * ratio)
+
+    # 첫 장의 조사 개요 표는 제목·항목명을 더 명확히 표시
+    # 실제 조사 수치와 입력된 값은 변경하지 않는다.
+    for table in document.tables[:1]:
+        if not table.rows:
+            continue
+
+        for row in table.rows:
+            if row.cells:
+                first = row.cells[0]
+                shade_cell(first, "E5EDF5")
+
+                for p in first.paragraphs:
+                    for run in p.runs:
+                        run.bold = True
+                        run.font.color.rgb = navy
+
+    return document
