@@ -26,36 +26,32 @@ st.caption("작업 사진과 AI 분석을 확인한 뒤 평가자가 REBA 점수
 st.divider()
 
 supabase = get_authenticated_supabase()
-# 임시 진단: 인증 토큰 값은 표시하지 않음
-from auth import ACCESS_TOKEN_KEY
-
-session_token = st.session_state.get(ACCESS_TOKEN_KEY, "")
-storage_client = getattr(supabase.storage, "_client", None)
-client_headers = getattr(storage_client, "headers", {}) or {}
-
-authorization = client_headers.get("Authorization", "")
-
-st.caption(
-    "Storage 인증 확인: "
-    + (
-        "관리자 토큰 사용"
-        if session_token and authorization == f"Bearer {session_token}"
-        else "인증 헤더 확인 필요"
-    )
-)
-
 def upload_reba_image(image_bytes, file_name, content_type):
+    """관리자 인증을 유지한 채 새 이미지를 업로드한다."""
     bucket = supabase.storage.from_("reba-images")
-    bucket.upload(
-        path=file_name,
-        file=image_bytes,
-        file_options={
-            "content-type": content_type,
-            "upsert": "false"
-        }
-    )
-    return file_name
 
+    try:
+        bucket.upload(
+            path=file_name,
+            file=image_bytes,
+            file_options={
+                "content-type": content_type
+            }
+        )
+    except Exception as exc:
+        message = str(exc)
+        if (
+            "row-level security" in message.lower()
+            or "unauthorized" in message.lower()
+            or "403" in message
+        ):
+            raise RuntimeError(
+                "Supabase Storage에서 관리자 사진 업로드를 거부했습니다. "
+                "RLS 정책과 실제 요청 인증 상태를 확인해야 합니다."
+            ) from exc
+        raise
+
+    return file_name
 
 def download_storage_file(path):
     if not path:
