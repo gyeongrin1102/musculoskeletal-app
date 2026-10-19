@@ -851,6 +851,229 @@ else:
             if existing_analyzed:
                 st.image(existing_analyzed, caption="기존 AI 분석사진", width="stretch")
 
+    # 기존 저장사진의 관절점을 직접 보정하는 기능
+    if existing_original:
+        st.divider()
+        st.subheader("✏️ 기존 저장사진 관절점 직접 보정")
+        st.caption(
+            "기존 원본사진을 이용해 관절을 다시 인식합니다. "
+            "REBA 최종 점수와 원본사진은 변경하지 않습니다."
+        )
+
+        record_id = str(selected["id"])
+        prefix = f"saved_joint_{record_id}"
+
+        enable_edit = st.checkbox(
+            "기존 사진 관절점 보정 시작",
+            key=f"{prefix}_enabled"
+        )
+
+        if enable_edit:
+            with st.spinner("기존 사진에서 관절 위치를 확인하고 있습니다..."):
+                auto_analyze_image(existing_original, prefix)
+
+            error = st.session_state.get(f"{prefix}_error")
+
+            if error:
+                st.warning(error)
+
+            landmarks = st.session_state.get(
+                f"{prefix}_landmarks"
+            )
+
+            if landmarks:
+                joint_indices = [
+                    11, 12, 13, 14, 15, 16,
+                    23, 24, 25, 26, 27, 28
+                ]
+
+                joint_points = [
+                    {
+                        "id": idx,
+                        "x": float(landmarks[idx].x),
+                        "y": float(landmarks[idx].y),
+                    }
+                    for idx in joint_indices
+                ]
+
+                correction = joint_drag_editor(
+                    existing_original,
+                    joint_points,
+                    key=f"saved_drag_{record_id}",
+                )
+
+                if (
+                    isinstance(correction, dict)
+                    and correction.get("action") == "apply"
+                ):
+                    revision = str(correction.get("revision", ""))
+                    revision_key = f"{prefix}_revision"
+
+                    if (
+                        revision
+                        and st.session_state.get(revision_key) != revision
+                    ):
+                        st.session_state[revision_key] = revision
+
+                        points_by_id = {
+                            int(p["id"]): p
+                            for p in correction.get("points", [])
+                            if isinstance(p, dict)
+                            and all(
+                                k in p
+                                for k in ("id", "x", "y")
+                            )
+                        }
+
+                        if set(joint_indices).issubset(points_by_id):
+                            import copy
+
+                            corrected = copy.deepcopy(landmarks)
+
+                            for idx in joint_indices:
+                                point = points_by_id[idx]
+                                corrected[idx].x = max(
+                                    0.0,
+                                    min(1.0, float(point["x"]))
+                                )
+                                corrected[idx].y = max(
+                                    0.0,
+                                    min(1.0, float(point["y"]))
+                                )
+                                corrected[idx].visibility = 1.0
+
+                            original_rgb = decode_image(
+                                existing_original
+                            )
+
+                            if original_rgb is not None:
+                                output = draw_pose(
+                                    original_rgb, corrected
+                                )
+
+                                output_bgr = cv2.cvtColor(
+                                    output,
+                                    cv2.COLOR_RGB2BGR
+                                )
+
+                                ok, encoded = cv2.imencode(
+                                    ".png", output_bgr
+                                )
+
+                                if ok:
+                                    height, width = original_rgb.shape[:2]
+
+                                    corrected_angles = get_pose_angles(
+                                        corrected, width, height
+                                    )
+
+                                    st.session_state[
+                                        f"{prefix}_landmarks"
+                                    ] = corrected
+
+                                    st.session_state[
+                                        f"{prefix}_corrected_bytes"
+                                    ] = encoded.tobytes()
+
+                                    st.session_state[
+                                        f"{prefix}_corrected_angles"
+                                    ] = corrected_angles
+
+                                    st.rerun()
+                                else:
+                                    st.error(
+                                        "보정사진 생성에 실패했습니다."
+                                    )
+                            else:
+                                st.error(
+                                    "기존 원본사진을 읽지 못했습니다."
+                                )
+                        else:
+                            st.error(
+                                "관절 좌표가 불완전해 보정하지 않았습니다."
+                            )
+
+                corrected_bytes = st.session_state.get(
+                    f"{prefix}_corrected_bytes"
+                )
+
+                if corrected_bytes:
+                    st.success("관절 위치 보정이 적용됐습니다.")
+
+                    display_photo(
+                        corrected_bytes,
+                        "보정된 AI 관절선 사진 미리보기"
+                    )
+
+                    angles = st.session_state.get(
+                        f"{prefix}_corrected_angles"
+                    )
+
+                    if angles:
+                        with st.expander("보정 후 관절 각도"):
+                            st.json(angles)
+
+                    st.warning(
+                        "아래 저장 버튼을 누르면 기존 평가의 "
+                        "분석사진 연결만 새 사진으로 변경됩니다. "
+                        "원본사진과 REBA 점수는 유지됩니다."
+                    )
+
+                    if st.button(
+                        "💾 기존 평가에 보정사진 저장",
+                        type="primary",
+                        key=f"{prefix}_save",
+                        width="stretch"
+                    ):
+                        try:
+                            timestamp = datetime.now().strftime(
+                                "%Y%m%d_%H%M%S_%f"
+                            )
+
+                            analyzed_path = (
+                                f"{timestamp}/corrected_analyzed.png"
+                            )
+
+                            upload_reba_image(
+                                corrected_bytes,
+                                analyzed_path,
+                                "image/png"
+                            )
+
+                            (
+                                supabase
+                                .table("reba_results")
+                                .update({
+                                    "analyzed_image_path": analyzed_path
+                                })
+                                .eq("id", selected["id"])
+                                .execute()
+                            )
+
+                            clear_session_query_cache()
+
+                            st.session_state.pop(
+                                f"{prefix}_corrected_bytes", None
+                            )
+
+                            st.success(
+                                "✅ 보정사진 저장 완료! "
+                                "기존 REBA 점수와 원본사진은 "
+                                "변경하지 않았습니다."
+                            )
+
+                            st.rerun()
+
+                        except Exception as e:
+                            st.error(
+                                f"보정사진 저장 오류: {e}"
+                            )
+
+            elif not error:
+                st.info(
+                    "관절 분석 결과를 확인하는 중입니다."
+                )
+
     st.divider()
 
     old_source = st.radio(

@@ -134,12 +134,12 @@
     let best=null, distance=Infinity;
     points.forEach(p=>{
       const d=Math.hypot(
-        (p.x-pos.x)*canvas.width,
-        (p.y-pos.y)*canvas.height
+        (p.x-pos.x)*canvas.getBoundingClientRect().width,
+        (p.y-pos.y)*canvas.getBoundingClientRect().height
       );
       if(d<distance){best=p;distance=d;}
     });
-    return distance < Math.max(28,canvas.width/25) ? best : null;
+    return distance < 35 ? best : null;
   }
 
   canvas.addEventListener("pointerdown",e=>{
