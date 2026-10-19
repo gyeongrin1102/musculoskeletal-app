@@ -488,6 +488,90 @@ def load_reba_results():
         return []
 
 
+
+def render_bold_reba_preview():
+    with st.expander("🟢 기존 REBA 관절선 굵게 변환 · 미리보기"):
+        st.caption(
+            "저장된 AI 분석사진을 기준으로 변환합니다. "
+            "기존 사진, REBA 점수 및 수동 보정 결과는 변경하지 않습니다."
+        )
+
+        if not st.checkbox("변환 미리보기 열기", key="bold_preview_open"):
+            return
+
+        rows = load_reba_results()
+        candidates = [
+            row for row in rows
+            if row.get("original_image_path")
+            and row.get("analyzed_image_path")
+        ]
+
+        if not candidates:
+            st.info("변환할 사진이 없습니다.")
+            return
+
+        options = {
+            str(row["id"]): row
+            for row in candidates
+        }
+
+        selected_id = st.selectbox(
+            "기존 REBA 평가 선택",
+            list(options),
+            key="bold_preview_selected"
+        )
+        selected = options[selected_id]
+
+        original = download_storage_file(
+            selected["original_image_path"]
+        )
+        analyzed = download_storage_file(
+            selected["analyzed_image_path"]
+        )
+
+        if not original or not analyzed:
+            st.error("기존 사진을 불러오지 못했습니다.")
+            return
+
+        from pages.views.reba_bold_images import make_bold_reba_image
+
+        try:
+            bold = make_bold_reba_image(original, analyzed)
+        except Exception as exc:
+            st.warning(f"이 사진은 자동 변환할 수 없습니다: {exc}")
+            return
+
+        left, right = st.columns(2)
+
+        with left:
+            st.image(
+                analyzed,
+                caption="기존 분석사진",
+                use_container_width=True
+            )
+
+        with right:
+            st.image(
+                bold,
+                caption="관절선을 굵게 만든 미리보기",
+                use_container_width=True
+            )
+
+        st.warning(
+            "관절점 위치가 동일한지 확인하세요. "
+            "초록색 배경까지 굵어지거나 선이 어긋나면 "
+            "이 사진은 저장하면 안 됩니다."
+        )
+
+        st.info(
+            "현재 단계는 미리보기 전용입니다. "
+            "Supabase 사진이나 평가 기록은 수정되지 않습니다."
+        )
+
+
+render_bold_reba_preview()
+
+
 mode = st.radio(
     "작업할 기능을 선택하세요.",
     ["📷 새 REBA 평가", "🖼️ 기존 REBA 평가에 사진만 연결"],
