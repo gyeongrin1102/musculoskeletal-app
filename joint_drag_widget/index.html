@@ -41,9 +41,10 @@
 </style>
 </head>
 <body>
-<div class="help">초록색 점을 잡아 이동하세요. 파란색 점은 현재 선택한 관절입니다.</div>
+<div class="help">기존 점을 드래그하거나 📍 관절점 직접 찍기를 눌러 처음부터 지정하세요.</div>
 <canvas id="canvas"></canvas>
 <div class="toolbar">
+  <button id="manual" type="button">📍 관절점 직접 찍기</button>
   <button id="save">✅ 보정 적용</button>
   <button id="reset">원래 위치로 되돌리기</button>
   <span id="status">관절점을 선택하세요.</span>
@@ -73,7 +74,33 @@
   let points = [];
   let original = [];
   let active = null;
+
   let loaded = false;
+  let manualMode = false;
+  let nextIndex = 0;
+  const order = [11,13,15,12,14,16,23,25,27,24,26,28];
+
+  function updateManualStatus() {
+    if (!manualMode) return;
+    if (nextIndex < order.length) {
+      status.textContent =
+        `(${nextIndex + 1}/12) ${labels[order[nextIndex]]} 위치를 찍으세요.`;
+    } else {
+      status.textContent =
+        "12개 완료! 점을 드래그해서 수정한 후 보정 적용을 누르세요.";
+    }
+  }
+
+  document.getElementById("manual").onclick = () => {
+    if (!loaded) return;
+    manualMode = true;
+    points = [];
+    nextIndex = 0;
+    active = null;
+    updateManualStatus();
+    draw();
+  };
+
 
   function send(type, extra) {
     window.parent.postMessage(
@@ -145,6 +172,19 @@
   canvas.addEventListener("pointerdown",e=>{
     if(!loaded)return;
     const p=nearestPoint(pointerPosition(e));
+    if (!p && manualMode && nextIndex < order.length) {
+      const pos = pointerPosition(e);
+      points.push({
+        id: order[nextIndex],
+        x: Math.max(0, Math.min(1, pos.x)),
+        y: Math.max(0, Math.min(1, pos.y))
+      });
+      nextIndex++;
+      updateManualStatus();
+      draw();
+      e.preventDefault();
+      return;
+    }
     if(!p)return;
     active=p.id;
     status.textContent=labels[active] + " 위치 조정 중";
@@ -178,12 +218,19 @@
   document.getElementById("reset").onclick=()=>{
     points=original.map(p=>({...p}));
     active=null;
-    status.textContent="AI 최초 관절 위치로 되돌렸습니다.";
+    manualMode = false;
+    nextIndex = 0;
+    status.textContent="최초 관절 위치로 되돌렸습니다.";
     draw();
   };
 
   document.getElementById("save").onclick=()=>{
     if(!loaded)return;
+    if (points.length !== 12 ||
+        new Set(points.map(p => p.id)).size !== 12) {
+      status.textContent = "관절점 12개를 모두 지정해야 적용할 수 있습니다.";
+      return;
+    }
     send("streamlit:setComponentValue",{
       value:{
         action:"apply",
@@ -206,6 +253,8 @@
       y:Number(p.y)
     }));
     points=original.map(p=>({...p}));
+    manualMode = false;
+    nextIndex = 0;
     loaded=false;
 
     img.onload=()=>{

@@ -186,6 +186,18 @@ def display_photo(image_bytes, caption):
     except Exception as e:
         st.error(f"사진 표시 오류: {e}")
 
+
+def make_manual_landmarks():
+    from types import SimpleNamespace
+    return [
+        SimpleNamespace(
+            x=0.5, y=0.5, z=0.0,
+            visibility=0.0, presence=0.0
+        )
+        for _ in range(33)
+    ]
+
+
 def get_pose_angles(landmarks, width, height):
     pts = {}
     for index in [11,12,13,14,15,16,23,24,25,26,27,28]:
@@ -325,6 +337,8 @@ def auto_analyze_image(image_bytes, state_prefix):
     if image_rgb is None:
         st.session_state[f"{state_prefix}_error"] = "이미지 파일을 읽을 수 없습니다."
         return
+
+    st.session_state[f"{state_prefix}_original_bytes"] = image_bytes
 
     landmarks, error = analyze_pose(image_rgb)
     if error:
@@ -536,14 +550,20 @@ if mode == "📷 새 REBA 평가":
         if analyzed_bytes:
             st.success("AI 자세분석이 완료되었습니다.")
             display_photo(analyzed_bytes, "AI 관절선 분석사진")
-        if analyzed_bytes and st.session_state.get("new_reba_landmarks"):
+        if image_bytes:
             with st.expander("✏️ 사진에서 관절점 직접 이동", expanded=False):
                 st.caption(
                     "초록색 관절점을 잡아서 실제 관절 위치로 옮긴 뒤 "
                     "'보정 적용'을 누르세요. 최종 REBA 점수는 자동 변경되지 않습니다."
                 )
 
-                current_landmarks = st.session_state["new_reba_landmarks"]
+                current_landmarks = st.session_state.get("new_reba_landmarks")
+
+                if not current_landmarks:
+                    st.info(
+                        "AI가 자세를 인식하지 못했습니다. "
+                        "📍 관절점 직접 찍기를 눌러 12개 관절을 지정하세요."
+                    )
                 joint_indices = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
 
                 joint_points = [
@@ -553,7 +573,7 @@ if mode == "📷 새 REBA 평가":
                         "y": float(current_landmarks[idx].y),
                     }
                     for idx in joint_indices
-                ]
+                ] if current_landmarks else []
 
                 correction = joint_drag_editor(
                     st.session_state["new_reba_original_bytes"],
@@ -576,7 +596,11 @@ if mode == "📷 새 REBA 평가":
                         }
 
                         if set(joint_indices).issubset(points_by_id):
-                            corrected = copy.deepcopy(current_landmarks)
+                            corrected = (
+                                copy.deepcopy(current_landmarks)
+                                if current_landmarks
+                                else make_manual_landmarks()
+                            )
 
                             for idx in joint_indices:
                                 p = points_by_id[idx]
@@ -893,7 +917,13 @@ else:
                 f"{prefix}_landmarks"
             )
 
-            if landmarks:
+            if existing_original:
+                if not landmarks:
+                    st.info(
+                        "AI 인식에 실패했습니다. "
+                        "📍 관절점 직접 찍기를 눌러주세요."
+                    )
+
                 joint_indices = [
                     11, 12, 13, 14, 15, 16,
                     23, 24, 25, 26, 27, 28
@@ -906,7 +936,7 @@ else:
                         "y": float(landmarks[idx].y),
                     }
                     for idx in joint_indices
-                ]
+                ] if landmarks else []
 
                 correction = joint_drag_editor(
                     existing_original,
@@ -940,7 +970,11 @@ else:
                         if set(joint_indices).issubset(points_by_id):
                             import copy
 
-                            corrected = copy.deepcopy(landmarks)
+                            corrected = (
+                                copy.deepcopy(landmarks)
+                                if landmarks
+                                else make_manual_landmarks()
+                            )
 
                             for idx in joint_indices:
                                 point = points_by_id[idx]
