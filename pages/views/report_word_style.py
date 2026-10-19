@@ -161,6 +161,65 @@ def format_table(table):
                 format_table(nested)
 
 
+
+def apply_corporate_report_style_v2(document):
+    """본사 업무지침서형 디자인: 기존 본문과 사진 유지."""
+    import re
+    from docx.shared import Pt, RGBColor
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    navy = RGBColor(23, 61, 115)
+
+    for paragraph in document.paragraphs:
+        text = paragraph.text.strip()
+
+        if not text:
+            continue
+
+        is_heading = bool(
+            re.match(r"^\\d+\\.\\s+", text)
+            or re.match(r"^\\d+-\\d+\\.\\s+", text)
+        )
+
+        if is_heading:
+            paragraph.paragraph_format.space_before = Pt(12)
+            paragraph.paragraph_format.space_after = Pt(7)
+            paragraph.paragraph_format.keep_with_next = True
+
+            for run in paragraph.runs:
+                run.bold = True
+                run.font.size = Pt(11)
+                run.font.color.rgb = navy
+
+            ppr = paragraph._p.get_or_add_pPr()
+            pbdr = ppr.find(qn("w:pBdr"))
+            if pbdr is None:
+                pbdr = OxmlElement("w:pBdr")
+                ppr.append(pbdr)
+
+            bottom = OxmlElement("w:bottom")
+            bottom.set(qn("w:val"), "single")
+            bottom.set(qn("w:sz"), "10")
+            bottom.set(qn("w:color"), "173D73")
+            bottom.set(qn("w:space"), "5")
+            pbdr.append(bottom)
+
+    for table in document.tables:
+        if not table.rows:
+            continue
+
+        for cell in table.rows[0].cells:
+            shade_cell(cell, "DCE8F4")
+
+            for paragraph in cell.paragraphs:
+                for run in paragraph.runs:
+                    run.bold = True
+                    run.font.color.rgb = navy
+
+    return document
+
+
 def apply_corporate_report_style(document):
     """문서 내용, 사진, 계산값은 보존하고 서식만 적용."""
 
@@ -182,4 +241,4 @@ def apply_corporate_report_style(document):
     for table in document.tables:
         format_table(table)
 
-    return document
+    return apply_corporate_report_style_v2(document)
