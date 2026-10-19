@@ -331,7 +331,11 @@ def download_report_image(path):
 
         return optimize_report_image(image_bytes)
 
-    except Exception:
+    except Exception as exc:
+        st.warning(
+            "REBA 사진 다운로드 실패: "
+            f"{type(exc).__name__}: {str(exc)[:180]}"
+        )
         return None
 
 
@@ -1460,10 +1464,22 @@ def prepare_selected_report_data(
 
 
 def get_cached_report_image(path, image_cache, image_loader):
-    if path not in image_cache:
-        image_cache[path] = image_loader(path)
+    if not isinstance(path, str) or not path.strip():
+        return None
 
-    return image_cache[path]
+    # 성공한 사진만 캐시하고, 실패한 사진은 재시도
+    cached = image_cache.get(path)
+    if cached:
+        return cached
+
+    result = image_loader(path)
+
+    if result:
+        image_cache[path] = result
+    else:
+        image_cache.pop(path, None)
+
+    return result
 
 
 def retain_selected_report_images(image_cache, selected_records):
