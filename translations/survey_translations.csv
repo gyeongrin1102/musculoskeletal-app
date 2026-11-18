@@ -1,0 +1,167 @@
+﻿구분,ko,vi,zh
+신체부위,목,Cổ,颈部
+신체부위,어깨,Vai,肩部
+신체부위,팔/팔꿈치,Cánh tay/Khuỷu tay,手臂/肘部
+신체부위,손/손목/손가락,Bàn tay/Cổ tay/Ngón tay,手/手腕/手指
+신체부위,허리,Lưng (thắt lưng),腰部
+신체부위,다리/발,Chân/Bàn chân,腿/脚
+첫 화면,근골격계질환 증상조사표,Phiếu khảo sát triệu chứng bệnh cơ xương khớp,肌肉骨骼疾病症状调查表
+첫 화면,현재 업무와 관련하여 느끼는 신체 증상·불편감을 5단계로 나누어 여쭙니다.,"Chúng tôi sẽ hỏi về các triệu chứng và sự khó chịu trên cơ thể liên quan đến công việc hiện tại của bạn, chia thành 5 bước.",我们将分5个步骤询问您在当前工作中感受到的身体症状和不适。
+첫 화면,약 3~5분 정도 걸립니다.,Mất khoảng 3–5 phút.,大约需要3~5分钟。
+첫 화면,작성 전 확인해 주세요,Vui lòng đọc trước khi trả lời,填写前请确认
+첫 화면,증상을 크게 또는 작게 평가하지 마시고 있는 그대로 응답해 주세요.,"Xin hãy trả lời đúng như thực tế, không phóng đại hay giảm nhẹ triệu chứng.",请如实回答，不要夸大或缩小症状。
+첫 화면,이 조사는 3년마다 실시하는 근골격계부담작업 유해요인조사의 일부입니다.,"Khảo sát này là một phần của cuộc điều tra yếu tố có hại đối với công việc gây gánh nặng cơ xương khớp, được thực hiện 3 năm một lần.",本调查是每3年实施一次的肌肉骨骼负担作业有害因素调查的一部分。
+첫 화면,"이 조사는 근골격계부담작업 유해요인조사의 일부로, 작업환경 개선을 위한 기초자료로만 사용합니다. 증상조사 결과는 근골격계질환의 이환을 부정하거나 입증하는 근거 또는 반증자료로 활용할 수 없습니다.",Khảo sát này là một phần của cuộc điều tra yếu tố có hại đối với công việc gây gánh nặng cơ xương khớp và chỉ được dùng làm tài liệu cơ sở để cải thiện môi trường làm việc. Kết quả khảo sát triệu chứng không được dùng làm căn cứ hay bằng chứng để phủ nhận hoặc chứng minh việc mắc bệnh cơ xương khớp.,本调查是肌肉骨骼负担作业有害因素调查的一部分，仅作为改善作业环境的基础资料使用。症状调查结果不能作为否定或证明患有肌肉骨骼疾病的依据或反证材料。
+첫 화면,개인정보(건강정보) 수집·이용 안내,Thông báo thu thập và sử dụng thông tin cá nhân (thông tin sức khỏe),个人信息（健康信息）收集与使用说明
+첫 화면,"수집 항목: 성명, 연령, 성별, 업체명·공정·작업 정보, 진단받은 질병, 과거 손상, 신체부위별 통증 정보","Thông tin thu thập: họ tên, tuổi, giới tính, tên công ty, công đoạn, thông tin công việc, bệnh đã được chẩn đoán, chấn thương trước đây, thông tin đau theo từng bộ phận cơ thể",收集项目：姓名、年龄、性别、公司名称·工种·作业信息、已确诊疾病、既往损伤、各身体部位疼痛信息
+첫 화면,"이용 목적: 근골격계부담작업 유해요인조사 및 작업환경 개선, 근로자 건강관리","Mục đích sử dụng: điều tra yếu tố có hại của công việc gây gánh nặng cơ xương khớp, cải thiện môi trường làm việc và quản lý sức khỏe người lao động",使用目的：肌肉骨骼负担作业有害因素调查、改善作业环境、劳动者健康管理
+첫 화면,보유 기간: 5년 (유해요인조사 결과 보존기간),Thời gian lưu giữ: 5 năm (thời hạn lưu giữ kết quả điều tra yếu tố có hại),保存期限：5年（有害因素调查结果保存期限）
+첫 화면,"열람 범위: 응답 원본은 보건관리 담당자만 열람하며, 집계 자료에는 개인이 드러나지 않습니다.",Phạm vi xem: chỉ người phụ trách quản lý y tế mới được xem câu trả lời gốc; dữ liệu tổng hợp không tiết lộ danh tính cá nhân.,查阅范围：答卷原件仅由保健管理负责人查阅，汇总资料中不会显示个人身份。
+첫 화면,"동의를 거부할 수 있으며, 이 경우 담당자에게 종이 조사표를 요청해 주세요.","Bạn có quyền từ chối đồng ý; trong trường hợp đó, vui lòng xin phiếu khảo sát giấy từ người phụ trách.",您可以拒绝同意，此时请向负责人索取纸质调查表。
+첫 화면,"위 안내를 읽었으며, 건강정보를 포함한 개인정보 수집·이용에 동의합니다.","Tôi đã đọc thông báo trên và đồng ý cho thu thập, sử dụng thông tin cá nhân bao gồm thông tin sức khỏe.",我已阅读上述说明，同意收集和使用包括健康信息在内的个人信息。
+첫 화면,조사 시작하기  ›,Bắt đầu khảo sát  ›,开始调查  ›
+진행,기본 사항,Thông tin cơ bản,基本信息
+진행,생활과 병력,Sinh hoạt và tiền sử bệnh,生活与病史
+진행,통증 유무와 부위,Có đau hay không và vị trí đau,有无疼痛及部位
+진행,부위별 세부 문항,Câu hỏi chi tiết theo từng bộ phận,各部位详细问题
+진행,확인과 제출,Kiểm tra và gửi,确认与提交
+진행,{step} / 5 단계,Bước {step} / 5,第 {step} / 5 步
+진행,‹ 이전,‹ Quay lại,‹ 上一步
+진행,다음 ›,Tiếp theo ›,下一步 ›
+진행,제출하기,Gửi,提交
+진행,저장 중입니다…,Đang lưu…,正在保存…
+1단계,현장명,Tên công trường,现场名称
+1단계,성명,Họ và tên,姓名
+1단계,연령 (만 나이),Tuổi (tuổi tròn),年龄（周岁）
+1단계,성별,Giới tính,性别
+1단계,남,Nam,男
+1단계,여,Nữ,女
+1단계,결혼여부,Tình trạng hôn nhân,婚姻状况
+1단계,기혼,Đã kết hôn,已婚
+1단계,미혼,Chưa kết hôn,未婚
+1단계,현 직장경력,Thời gian làm việc tại nơi làm việc hiện tại,在现单位工作经历
+1단계,년,Năm,年
+1단계,개월째 근무 중,Tháng (đang làm),个月（在职中）
+1단계,업체명,Tên công ty,公司名称
+1단계,예: ○○건설,VD: Công ty Xây dựng ○○,例：○○建设
+1단계,공정,Công đoạn (loại công việc),工种（工序）
+1단계,"예: 철근, 형틀, 전기","VD: cốt thép, cốp pha, điện",例：钢筋、模板、电气
+1단계,현재 하고 있는 작업 (구체적으로),Công việc hiện tại (ghi cụ thể),目前从事的作业（请具体填写）
+1단계,작업내용,Nội dung công việc,作业内容
+1단계,예: 철근 운반·결속,VD: vận chuyển và buộc cốt thép,例：钢筋搬运·绑扎
+1단계,작업기간 - 년,Thời gian làm - năm,作业期间 - 年
+1단계,개월째 하고 있음,Tháng (đang làm),个月（正在做）
+1단계,1일 근무시간,Thời gian làm việc 1 ngày,每日工作时间
+1단계,시간,Giờ,小时
+1단계,휴식시간(식사 제외) 분씩,Mỗi lần nghỉ (không tính giờ ăn) - phút,休息时间（不含用餐）每次几分钟
+1단계,회 휴식,Số lần nghỉ,休息次数
+1단계,현 작업을 하기 전에 했던 작업,Công việc đã làm trước công việc hiện tại,从事现作业之前做过的作业
+1단계,없으면 '없음',"Nếu không có, ghi 'Không có'",如果没有，请填写'无'
+1단계,개월 동안 했음,Tháng (đã làm),个月（做过）
+1단계,성명을 입력해 주세요.,Vui lòng nhập họ tên.,请输入姓名。
+1단계,연령을 입력해 주세요.,Vui lòng nhập tuổi.,请输入年龄。
+1단계,성별을 선택해 주세요.,Vui lòng chọn giới tính.,请选择性别。
+1단계,업체명을 입력해 주세요.,Vui lòng nhập tên công ty.,请输入公司名称。
+2단계,"1. 규칙적인(한번에 30분 이상, 1주일에 적어도 2-3회 이상) 여가 및 취미활동을 하고 계시는 곳에 표시하여 주십시오.","1. Vui lòng đánh dấu các hoạt động giải trí, sở thích mà bạn thực hiện đều đặn (mỗi lần trên 30 phút, ít nhất 2–3 lần mỗi tuần).",1. 请标出您经常进行的（每次30分钟以上，每周至少2~3次）休闲及兴趣活动。
+2단계,해당 항목 모두 선택,Chọn tất cả các mục phù hợp,请选择所有符合的项目
+2단계,선택하세요,Vui lòng chọn,请选择
+2단계,컴퓨터 관련 활동,Hoạt động liên quan đến máy tính,电脑相关活动
+2단계,"악기연주(피아노, 바이올린 등)","Chơi nhạc cụ (piano, violin, v.v.)",演奏乐器（钢琴、小提琴等）
+2단계,뜨개질 붓글씨,"Đan len, thư pháp",编织、书法
+2단계,테니스/배드민턴/스쿼시,Quần vợt/Cầu lông/Bóng quần,网球/羽毛球/壁球
+2단계,축구/족구/농구/스키,Bóng đá/Bóng đá chân/Bóng rổ/Trượt tuyết,足球/足排球/篮球/滑雪
+2단계,해당사항 없음,Không có,无
+2단계,"2. 귀하의 하루 평균 가사노동시간(밥하기, 빨래하기, 청소하기, 2살 미만의 아이 돌보기 등)은 얼마나 됩니까?","2. Trung bình mỗi ngày bạn làm việc nhà (nấu ăn, giặt giũ, dọn dẹp, chăm trẻ dưới 2 tuổi, v.v.) bao lâu?",2. 您平均每天做家务（做饭、洗衣、打扫、照顾2岁以下孩子等）的时间是多少？
+2단계,거의 하지 않는다,Hầu như không làm,几乎不做
+2단계,1시간 미만,Dưới 1 giờ,不到1小时
+2단계,1-2시간 미만,1 giờ đến dưới 2 giờ,1~不到2小时
+2단계,2-3시간 미만,2 giờ đến dưới 3 giờ,2~不到3小时
+2단계,3시간 이상,Từ 3 giờ trở lên,3小时以上
+2단계,3. 귀하는 의사로부터 다음과 같은 질병에 대해 진단을 받은 적이 있습니까?,3. Bạn đã từng được bác sĩ chẩn đoán mắc các bệnh sau đây chưa?,3. 您是否曾被医生诊断患有以下疾病？
+2단계,보기,Ví dụ,示例
+2단계,류머티스 관절염,Viêm khớp dạng thấp,类风湿关节炎
+2단계,당뇨병,Bệnh tiểu đường,糖尿病
+2단계,루프스병,Bệnh lupus,红斑狼疮
+2단계,통풍,Bệnh gút,痛风
+2단계,알코올중독,Nghiện rượu,酒精中毒
+2단계,아니오,Không,否
+2단계,예,Có,是
+2단계,진단받은 질병,Bệnh đã được chẩn đoán,已确诊的疾病
+2단계,현재상태는?,Tình trạng hiện tại?,目前状态？
+2단계,완치,Đã khỏi hẳn,已痊愈
+2단계,치료나 관찰 중,Đang điều trị hoặc theo dõi,正在治疗或观察中
+2단계,"4. 과거에 운동 중 혹은 사고로(교통사고, 넘어짐, 추락 등) 인해 손/손가락/손목, 팔/팔꿈치, 어깨, 목, 허리, 다리/발 부위를 다친 적이 있습니까?","4. Trước đây bạn đã từng bị thương ở bàn tay/ngón tay/cổ tay, cánh tay/khuỷu tay, vai, cổ, lưng, chân/bàn chân do tập thể thao hoặc tai nạn (tai nạn giao thông, té ngã, rơi từ trên cao, v.v.) chưa?",4. 您过去是否因运动或事故（交通事故、摔倒、坠落等）伤到过手/手指/手腕、手臂/肘部、肩部、颈部、腰部、腿/脚？
+2단계,상해 부위는?,Vị trí bị thương?,受伤部位？
+2단계,손/손가락/손목,Bàn tay/Ngón tay/Cổ tay,手/手指/手腕
+2단계,5. 현재 하고 계시는 일의 육체적 부담 정도는 어느 정도라고 생각합니까?,5. Bạn nghĩ công việc hiện tại nặng nhọc về thể chất ở mức độ nào?,5. 您认为目前从事工作的体力负担程度如何？
+2단계,전혀 힘들지 않음,Hoàn toàn không vất vả,完全不累
+2단계,견딜만 함,Chịu được,可以忍受
+2단계,약간 힘듦,Hơi vất vả,有点累
+2단계,매우 힘듦,Rất vất vả,非常累
+2단계,1번(여가 및 취미활동): 해당 항목을 선택해 주세요. 없으면 '해당사항 없음'.,"Câu 1 (giải trí, sở thích): Vui lòng chọn mục phù hợp. Nếu không có, chọn 'Không có'.",第1题（休闲及兴趣活动）：请选择符合的项目。如果没有，请选择'无'。
+2단계,1번: '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.,Câu 1: Không thể chọn 'Không có' cùng với các mục khác.,第1题：'无'不能与其他项目同时选择。
+2단계,2번(가사노동시간)을 선택해 주세요.,Vui lòng trả lời câu 2 (thời gian làm việc nhà).,请回答第2题（家务时间）。
+2단계,3번(질병 진단)을 선택해 주세요.,Vui lòng trả lời câu 3 (chẩn đoán bệnh).,请回答第3题（疾病诊断）。
+2단계,3번: 진단받은 질병을 선택해 주세요.,Câu 3: Vui lòng chọn bệnh đã được chẩn đoán.,第3题：请选择已确诊的疾病。
+2단계,3번: 현재상태를 선택해 주세요.,Câu 3: Vui lòng chọn tình trạng hiện tại.,第3题：请选择目前状态。
+2단계,4번(과거 손상)을 선택해 주세요.,Vui lòng trả lời câu 4 (chấn thương trước đây).,请回答第4题（既往损伤）。
+2단계,4번: 상해 부위를 선택해 주세요.,Câu 4: Vui lòng chọn vị trí bị thương.,第4题：请选择受伤部位。
+2단계,5번(육체적 부담 정도)을 선택해 주세요.,Vui lòng trả lời câu 5 (mức độ nặng nhọc thể chất).,请回答第5题（体力负担程度）。
+3단계,"지난 1년 동안 손/손가락/손목, 팔/팔꿈치, 어깨, 목, 허리, 다리/발 중 어느 한 부위에서라도 귀하의 작업과 관련하여 통증이나, 쑤시는 느낌, 뻣뻣함, 화끈거리는 느낌, 무감각 혹은 찌릿찌릿함 등의 증상을 느끼신 적이 있습니까?","Trong 1 năm qua, bạn có từng cảm thấy các triệu chứng như đau, đau nhức, cứng, nóng rát, tê hoặc châm chích ở bất kỳ bộ phận nào trong số bàn tay/ngón tay/cổ tay, cánh tay/khuỷu tay, vai, cổ, lưng, chân/bàn chân liên quan đến công việc của bạn không?",在过去1年中，您是否在手/手指/手腕、手臂/肘部、肩部、颈部、腰部、腿/脚中的任何一个部位，感受到与工作有关的疼痛、酸痛、僵硬、灼热感、麻木或刺痛等症状？
+3단계,아팠던 부위를 모두 누르세요,Hãy chọn tất cả các bộ phận đã bị đau,请点选所有疼痛过的部位
+3단계,그림에서 선택한 부위가 빨간색으로 표시됩니다.,Bộ phận đã chọn sẽ hiện màu đỏ trên hình.,所选部位将在图中以红色显示。
+3단계,통증이 없으시면 다음 단계에서 바로 제출할 수 있습니다.,"Nếu không đau, bạn có thể gửi ngay ở bước tiếp theo.",如果没有疼痛，可以在下一步直接提交。
+3단계,증상 여부를 선택해 주세요.,Vui lòng chọn có triệu chứng hay không.,请选择是否有症状。
+3단계,아팠던 부위를 하나 이상 선택해 주세요.,Vui lòng chọn ít nhất một bộ phận đã bị đau.,请至少选择一个疼痛过的部位。
+4단계,<보기> 아픈 정도 기준,<Tham khảo> Tiêu chuẩn mức độ đau,<参考> 疼痛程度标准
+4단계,1. 통증의 구체적 부위는?,1. Vị trí đau cụ thể là?,1. 疼痛的具体部位是？
+4단계,오른쪽,Bên phải,右侧
+4단계,왼쪽,Bên trái,左侧
+4단계,양쪽 모두,Cả hai bên,两侧都有
+4단계,2. 한번 아프기 시작하면 통증 기간은 얼마 동안 지속됩니까?,"2. Mỗi khi bắt đầu đau, cơn đau kéo dài bao lâu?",2. 每次开始疼痛后，疼痛会持续多长时间？
+4단계,1일 미만,Dưới 1 ngày,不到1天
+4단계,1일-1주일 미만,1 ngày đến dưới 1 tuần,1天~不到1周
+4단계,1주일-1달 미만,1 tuần đến dưới 1 tháng,1周~不到1个月
+4단계,1달-6개월 미만,1 tháng đến dưới 6 tháng,1个月~不到6个月
+4단계,6개월 이상,Từ 6 tháng trở lên,6个月以上
+4단계,3. 그때의 아픈 정도는 어느 정도입니까? (보기 참조),3. Khi đó mức độ đau như thế nào? (xem phần tham khảo),3. 当时的疼痛程度如何？（请参考示例）
+4단계,약한 통증,Đau nhẹ,轻度疼痛
+4단계,중간 통증,Đau vừa,中度疼痛
+4단계,심한 통증,Đau nặng,重度疼痛
+4단계,매우 심한 통증,Đau rất nặng,非常严重的疼痛
+4단계,약간 불편한 정도이나 작업에 열중할 때는 못 느낀다,Hơi khó chịu nhưng không cảm thấy khi tập trung làm việc,有点不舒服，但专心工作时感觉不到
+4단계,작업 중 통증이 있으나 귀가 후 휴식을 취하면 괜찮다,Đau trong khi làm việc nhưng về nhà nghỉ ngơi thì đỡ,工作时疼痛，但下班回家休息后就好了
+4단계,작업 중 통증이 비교적 심하고 귀가 후에도 통증이 계속된다,Đau khá nặng khi làm việc và vẫn còn đau sau khi về nhà,工作时疼痛比较严重，回家后疼痛仍持续
+4단계,통증 때문에 작업은 물론 일상생활을 하기가 어렵다,Vì đau nên khó làm việc và cả sinh hoạt hằng ngày,因为疼痛，不仅难以工作，连日常生活也很困难
+4단계,4. 지난 1년 동안 이러한 증상을 얼마나 자주 경험하셨습니까?,"4. Trong 1 năm qua, bạn gặp các triệu chứng này thường xuyên như thế nào?",4. 过去1年中，您多久出现一次这些症状？
+4단계,6개월에 1번,6 tháng 1 lần,6个月1次
+4단계,2-3달에 1번,2–3 tháng 1 lần,2~3个月1次
+4단계,1달에 1번,1 tháng 1 lần,1个月1次
+4단계,1주일에 1번,1 tuần 1 lần,1周1次
+4단계,매일,Hằng ngày,每天
+4단계,5. 지난 1주일 동안에도 이러한 증상이 있었습니까?,5. Trong 1 tuần qua bạn có còn các triệu chứng này không?,5. 过去1周内是否也有这些症状？
+4단계,6. 지난 1년 동안 이러한 통증으로 인해 어떤 일이 있었습니까?,"6. Trong 1 năm qua, do cơn đau này bạn đã gặp những việc gì?",6. 过去1年中，因为这些疼痛发生过什么情况？
+4단계,병원·한의원 치료,Điều trị tại bệnh viện/phòng khám Đông y,在医院/韩医院治疗
+4단계,약국치료,Mua thuốc ở nhà thuốc,在药店买药治疗
+4단계,"병가, 산재","Nghỉ ốm, tai nạn lao động",病假、工伤
+4단계,작업 전환,Chuyển công việc,调换工作
+4단계,기타,Khác,其他
+4단계,기타 내용,Nội dung khác,其他内容
+4단계,1번 구체적 부위,Câu 1 (vị trí cụ thể),第1题（具体部位）
+4단계,{n}번,Câu {n},第{n}题
+4단계,6번 기타 내용,Câu 6 (nội dung khác),第6题（其他内容）
+4단계,{part}: 6번 '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.,{part}: Câu 6 không thể chọn 'Không có' cùng với các mục khác.,{part}：第6题'无'不能与其他项目同时选择。
+4단계,{part}: {items} 응답이 필요합니다.,{part}: Cần trả lời {items}.,{part}：需要回答 {items}。
+5단계,응답 내용을 확인해 주세요. 고칠 부분이 있으면 '이전'으로 돌아가 수정할 수 있습니다.,"Vui lòng kiểm tra lại câu trả lời. Nếu cần sửa, hãy bấm 'Quay lại' để chỉnh sửa.",请确认您的回答。如需修改，可点击'上一步'返回修改。
+5단계,지난 1년간 작업 관련 근골격계 증상: 없음,Triệu chứng cơ xương khớp liên quan đến công việc trong 1 năm qua: Không có,过去1年与工作相关的肌肉骨骼症状：无
+5단계,입력한 내용이 사실과 같음을 확인합니다.,Tôi xác nhận nội dung đã nhập là đúng sự thật.,我确认所填写的内容属实。
+5단계,저장소 연결에 실패했습니다. 담당자에게 알려 주세요.,Không kết nối được máy chủ lưu trữ. Vui lòng báo cho người phụ trách.,连接存储失败，请告知负责人。
+5단계,올해 같은 성명·업체로 제출된 응답이 이미 있습니다. 내용을 고쳐야 하면 보건관리 담당자에게 알려 주세요.,"Năm nay đã có câu trả lời được gửi với cùng họ tên và công ty. Nếu cần sửa nội dung, vui lòng báo cho người phụ trách quản lý y tế.",今年已有相同姓名·公司提交的答卷。如需修改内容，请告知保健管理负责人。
+5단계,저장 중 오류가 발생했습니다. 잠시 후 다시 눌러 주세요.,Đã xảy ra lỗi khi lưu. Vui lòng thử lại sau giây lát.,保存时发生错误，请稍后再试。
+완료,제출이 완료되었습니다,Đã gửi thành công,提交完成
+완료,응답해 주셔서 감사합니다. 결과는 작업환경 개선에 활용됩니다.,Cảm ơn bạn đã trả lời. Kết quả sẽ được dùng để cải thiện môi trường làm việc.,感谢您的回答。结果将用于改善作业环境。
+완료,통증이 계속되거나 심해지면 보건관리 담당자와 상담해 주세요.,"Nếu cơn đau kéo dài hoặc nặng hơn, vui lòng trao đổi với người phụ trách quản lý y tế.",如果疼痛持续或加重，请咨询保健管理负责人。
+완료,내 응답 사본 받기 (PDF),Tải bản sao câu trả lời của tôi (PDF),下载我的答卷副本（PDF）
+완료,내 응답 사본 받기 (Word),Tải bản sao câu trả lời của tôi (Word),下载我的答卷副本（Word）
+완료,사본은 한국어 공식 서식으로 제공됩니다.,Bản sao được cung cấp theo mẫu chính thức bằng tiếng Hàn.,副本以韩语官方格式提供。
+완료,새 응답 작성 (다른 사람),Trả lời mới (người khác),填写新答卷（其他人）

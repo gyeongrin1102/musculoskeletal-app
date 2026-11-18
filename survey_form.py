@@ -21,6 +21,9 @@ from datetime import datetime
 
 FORM_TITLE = "근골격계질환 증상조사표"
 
+# 현장명 (설문에서 고정 표시). Streamlit Secrets 의 SITE_NAME 으로 바꿀 수 있습니다.
+SITE_NAME = "문현마루지역주택조합 공동주택 신축현장"
+
 BODY_PARTS = ["목", "어깨", "팔/팔꿈치", "손/손목/손가락", "허리", "다리/발"]
 
 # 좌우 구분 문항이 있는 부위 (서식 Ⅱ-1)
@@ -306,9 +309,9 @@ def general_rows(r):
         ("성별", opts_line(GENDER_OPTIONS, r.get("성별"))),
         ("현 직장경력",
          f"{b(r.get('현직장_근무년'), 2)} 년 {b(r.get('현직장_근무개월'), 2)} 개월째 근무 중"),
-        ("작업부서",
-         f"{b(r.get('작업부서'), 4)} 부  {b(r.get('라인/세부부서'), 4)} 라인  "
-         f"{b(r.get('수행작업'), 4)} 작업"),
+        ("현장명", _clean(r.get("현장명")) or SITE_NAME),
+        ("업체명 / 공정",
+         f"업체명: {b(company_of(r), 8)}    공정: {b(process_of(r), 6)}"),
         ("결혼여부", opts_line(MARRIAGE_OPTIONS, r.get("결혼여부"))),
         ("현재 하고 있는 작업\n(구체적으로)",
          f"작업내용: {b(r.get('현재작업'), 10)}\n"
@@ -392,7 +395,7 @@ def judgment_rows(r):
 
 def file_stem(r):
     name = _clean(r.get("성명")) or "무기명"
-    dept = _clean(r.get("작업부서"))
+    dept = company_of(r)
     date = _clean(r.get("제출일시"))[:10].replace("-", "")
     parts = [p for p in (date, dept, name) if p]
     stem = "_".join(parts) or "증상조사표"
@@ -467,8 +470,8 @@ def _write_form(doc, r, org="", include_judgment=False):
     if org:
         _para(doc, org, 9, False, AL.CENTER, 0, 4)
     meta = []
-    if _clean(r.get("업체명")):
-        meta.append(f"업체명: {_clean(r.get('업체명'))}")
+    if _clean(r.get("응답언어")) not in ("", "한국어"):
+        meta.append(f"응답 언어: {_clean(r.get('응답언어'))}")
     if _clean(r.get("제출일시")):
         meta.append(f"작성일시: {_clean(r.get('제출일시'))}")
     if meta:
@@ -640,8 +643,8 @@ def build_pdf(records, org="", include_judgment=False):
         if org:
             story.append(P(org, 9, False, 1))
         meta = []
-        if _clean(r.get("업체명")):
-            meta.append(f"업체명: {_clean(r.get('업체명'))}")
+        if _clean(r.get("응답언어")) not in ("", "한국어"):
+            meta.append(f"응답 언어: {_clean(r.get('응답언어'))}")
         if _clean(r.get("제출일시")):
             meta.append(f"작성일시: {_clean(r.get('제출일시'))}")
         if meta:
@@ -711,7 +714,16 @@ def build_pdf(records, org="", include_judgment=False):
 # =========================================================
 
 def company_of(r):
-    for key in ("업체명", "company", "company_name", "사업장명"):
+    """업체명. 예전 응답은 '작업부서' 칸에 업체명을 적었으므로 그 값을 씁니다."""
+    for key in ("업체명", "company", "company_name", "사업장명", "작업부서"):
+        if _clean(r.get(key)).strip():
+            return _clean(r.get(key)).strip()
+    return ""
+
+
+def process_of(r):
+    """공정. 예전 응답은 '라인/세부부서' 칸의 값을 씁니다."""
+    for key in ("공정", "라인/세부부서"):
         if _clean(r.get(key)).strip():
             return _clean(r.get(key)).strip()
     return ""
@@ -724,7 +736,7 @@ def summary_tables(records):
     rows = []
     for r in records:
         j = judge_record(r)
-        row = {"작업부서": _clean(r.get("작업부서")) or "(미기재)",
+        row = {"업체명": company_of(r) or "(미기재)",
                "증상여부": norm(r.get("근골격계증상여부")) or "",
                "최종판정": j["최종판정"]}
         for p in BODY_PARTS:
@@ -752,10 +764,10 @@ def summary_tables(records):
 
     dept_rows = []
     if total:
-        for dept, g in df.groupby("작업부서"):
+        for dept, g in df.groupby("업체명"):
             n = len(g)
             dept_rows.append({
-                "작업부서": dept, "응답자(명)": n,
+                "업체명": dept, "응답자(명)": n,
                 "정상(명)": int((g["최종판정"] == "정상").sum()),
                 "관리대상자(명)": int((g["최종판정"] == "관리대상자").sum()),
                 "통증호소자(명)": int((g["최종판정"] == "통증호소자").sum()),
@@ -763,7 +775,7 @@ def summary_tables(records):
                     (g["최종판정"] != "정상").sum() / n * 100, 1),
             })
     by_dept = pd.DataFrame(dept_rows, columns=[
-        "작업부서", "응답자(명)", "정상(명)", "관리대상자(명)", "통증호소자(명)",
+        "업체명", "응답자(명)", "정상(명)", "관리대상자(명)", "통증호소자(명)",
         "관리대상자+통증호소자(%)"])
 
     overall = pd.DataFrame([{
@@ -777,8 +789,8 @@ def summary_tables(records):
 
 
 RAW_COLUMNS = [
-    "제출일시", "조사연도", "업체명", "성명", "성별", "연령", "결혼여부", "작업부서", "라인/세부부서",
-    "수행작업", "현직장_근무년", "현직장_근무개월", "현재작업", "현재작업_수행년",
+    "제출일시", "조사연도", "응답언어", "현장명", "업체명", "공정", "성명", "성별", "연령",
+    "결혼여부", "현직장_근무년", "현직장_근무개월", "현재작업", "현재작업_수행년",
     "현재작업_수행개월", "1일근무시간", "휴식시간_분", "휴식횟수", "이전작업",
     "이전작업_수행년", "이전작업_수행개월", "취미활동", "가사노동", "질병진단여부",
     "진단질병", "질병현재상태", "과거손상여부", "과거손상부위", "육체적부담",
@@ -854,13 +866,17 @@ def build_xlsx(records, title="", include_personal=True):
         ws["A2"].font = Font(size=9, color="666666")
         ws.cell(row=start, column=1, value="■ 전체 현황").font = Font(bold=True)
         ws.cell(row=start + 4, column=1, value="■ 신체부위별 현황").font = Font(bold=True)
-        ws.cell(row=start + 6 + len(by_part), column=1, value="■ 부서별 현황").font = Font(bold=True)
+        ws.cell(row=start + 6 + len(by_part), column=1, value="■ 업체별 현황").font = Font(bold=True)
 
         if include_personal:
             raw = []
             for r in records:
                 j = judge_record(r)
                 row = {c: _clean(r.get(c)) for c in RAW_COLUMNS}
+                row["현장명"] = row["현장명"] or SITE_NAME
+                row["업체명"] = company_of(r)
+                row["공정"] = process_of(r)
+                row["응답언어"] = row["응답언어"] or "한국어"
                 if not row["조사연도"]:
                     row["조사연도"] = survey_year(r) or ""
                 for p in BODY_PARTS:
@@ -871,7 +887,7 @@ def build_xlsx(records, title="", include_personal=True):
                 raw.append(row)
             raw_df = pd.DataFrame(raw)
             target = raw_df[raw_df["최종판정"] != "정상"] if len(raw_df) else raw_df
-            cols = ["최종판정", "업체명", "성명", "작업부서", "라인/세부부서", "수행작업", "연령", "성별"]
+            cols = ["최종판정", "업체명", "공정", "성명", "연령", "성별", "응답언어"]
             judged_parts = []
             for r in target.to_dict("records") if len(target) else []:
                 judged_parts.append(", ".join(

@@ -61,6 +61,7 @@ def load_records():
         if not r.get("업체명") and (row.get("company") or row.get("company_name")):
             r["업체명"] = row.get("company") or row.get("company_name")
         r["_업체"] = sf.company_of(r) or UNKNOWN_COMPANY
+        r["_공정"] = sf.process_of(r) or "(미기재)"
         r["_id"] = row.get("id")
         r["_저장판정"] = row.get("final_judgment") or r.get("최종판정") or ""
         r["_판정"] = sf.judge_record(r)["최종판정"]
@@ -119,19 +120,19 @@ years = sorted({r["_연도"] for r in records if r["_연도"]}, reverse=True)
 # 응답자 조사표 출력
 # ---------------------------------------------------------
 with tab_out:
-    c0, c1, c2, c3, c4 = st.columns([1.3, 1, 1.4, 1.4, 1.2])
+    c0, c1, c2, c3, c4 = st.columns([1.5, 1, 1.3, 1.3, 1.2])
     year = c1.selectbox("조사연도", years, key="po_year")
     companies = sorted({r["_업체"] for r in records})
     company = c0.selectbox("업체", ["전체 업체"] + companies, key="po_company")
     pool = [r for r in records if r["_연도"] == year
             and (company == "전체 업체" or r["_업체"] == company)]
-    depts = sorted({str(r.get("작업부서") or "(미기재)") for r in pool})
-    dept = c2.multiselect("작업부서", depts, placeholder="전체")
+    depts = sorted({r["_공정"] for r in pool})
+    dept = c2.multiselect("공정", depts, placeholder="전체")
     judg = c3.multiselect("판정", sf.JUDGMENTS, placeholder="전체")
     name_q = c4.text_input("성명 검색")
 
     shown = [r for r in pool
-             if (not dept or str(r.get("작업부서") or "(미기재)") in dept)
+             if (not dept or r["_공정"] in dept)
              and (not judg or r["_판정"] in judg)
              and (not name_q or name_q.strip() in str(r.get("성명", "")))]
 
@@ -140,8 +141,8 @@ with tab_out:
         "제출일시": r.get("제출일시", ""),
         "업체": r["_업체"],
         "성명": r.get("성명", ""),
-        "작업부서": r.get("작업부서", ""),
-        "라인": r.get("라인/세부부서", ""),
+        "공정": r["_공정"],
+        "언어": r.get("응답언어") or "한국어",
         "판정": r["_판정"],
     } for r in shown])
 
@@ -150,7 +151,7 @@ with tab_out:
     else:
         edited = st.data_editor(
             table, hide_index=True, width="stretch",
-            disabled=["제출일시", "업체", "성명", "작업부서", "라인", "판정"],
+            disabled=["제출일시", "업체", "성명", "공정", "언어", "판정"],
             column_config={"선택": st.column_config.CheckboxColumn("선택", width="small")},
             key=f"po_table_{company}_{year}_{len(shown)}")
         chosen = [shown[i] for i, on in enumerate(edited["선택"].tolist()) if on]
@@ -253,7 +254,7 @@ with tab_fix:
         st.success("모든 응답이 현행 기준 판정과 일치합니다.")
     else:
         st.dataframe(pd.DataFrame([{
-            "제출일시": r.get("제출일시"), "성명": r.get("성명"), "작업부서": r.get("작업부서"),
+            "제출일시": r.get("제출일시"), "성명": r.get("성명"), "업체": r["_업체"],
             "저장된 판정": r["_저장판정"], "현행 기준 판정": r["_판정"]} for r in diff]),
             hide_index=True, width="stretch")
         ok = st.checkbox(f"{len(diff)}건의 저장 판정을 현행 기준으로 바꿉니다.")
