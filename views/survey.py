@@ -9,10 +9,15 @@ import smtplib
 from datetime import datetime
 from email.mime.text import MIMEText
 
+import importlib
+
 import streamlit as st
 
 import survey_form as sf
 import survey_i18n as i18n
+
+if getattr(i18n, "VERSION", 0) < 3:   # 서버에 예전 번역 모듈이 남아 있으면 새로 읽음
+    i18n = importlib.reload(i18n)
 from session_query_cache import clear_session_query_cache
 
 PREFIX = "w_"

@@ -11,6 +11,8 @@
 import csv
 import os
 
+VERSION = 3  # 이 파일을 고치면 숫자를 올려 주세요 (실행 중인 앱이 새 코드로 다시 읽음)
+
 CSV_PATH = os.path.join(os.path.dirname(__file__), "translations", "survey_translations.csv")
 
 # 언어 코드 → (화면 표시 이름, 저장용 한국어 이름)
@@ -43,7 +45,7 @@ def _load():
     with open(CSV_PATH, encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         cols = [c.strip() for c in (reader.fieldnames or [])]
-        langs += [c for c in cols if c in LANGUAGES and c != "ko"]
+        langs += [c for c in cols if c and c not in ("ko", "구분")]
         for row in reader:
             row = {(k or "").strip(): (v or "") for k, v in row.items()}
             key = row.get("ko", "")
