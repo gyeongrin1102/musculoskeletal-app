@@ -1,167 +1,167 @@
-﻿구분,ko,vi,zh
-신체부위,목,Cổ,颈部
-신체부위,어깨,Vai,肩部
-신체부위,팔/팔꿈치,Cánh tay/Khuỷu tay,手臂/肘部
-신체부위,손/손목/손가락,Bàn tay/Cổ tay/Ngón tay,手/手腕/手指
-신체부위,허리,Lưng (thắt lưng),腰部
-신체부위,다리/발,Chân/Bàn chân,腿/脚
-첫 화면,근골격계질환 증상조사표,Phiếu khảo sát triệu chứng bệnh cơ xương khớp,肌肉骨骼疾病症状调查表
-첫 화면,현재 업무와 관련하여 느끼는 신체 증상·불편감을 5단계로 나누어 여쭙니다.,"Chúng tôi sẽ hỏi về các triệu chứng và sự khó chịu trên cơ thể liên quan đến công việc hiện tại của bạn, chia thành 5 bước.",我们将分5个步骤询问您在当前工作中感受到的身体症状和不适。
-첫 화면,약 3~5분 정도 걸립니다.,Mất khoảng 3–5 phút.,大约需要3~5分钟。
-첫 화면,작성 전 확인해 주세요,Vui lòng đọc trước khi trả lời,填写前请确认
-첫 화면,증상을 크게 또는 작게 평가하지 마시고 있는 그대로 응답해 주세요.,"Xin hãy trả lời đúng như thực tế, không phóng đại hay giảm nhẹ triệu chứng.",请如实回答，不要夸大或缩小症状。
-첫 화면,이 조사는 3년마다 실시하는 근골격계부담작업 유해요인조사의 일부입니다.,"Khảo sát này là một phần của cuộc điều tra yếu tố có hại đối với công việc gây gánh nặng cơ xương khớp, được thực hiện 3 năm một lần.",本调查是每3年实施一次的肌肉骨骼负担作业有害因素调查的一部分。
-첫 화면,"이 조사는 근골격계부담작업 유해요인조사의 일부로, 작업환경 개선을 위한 기초자료로만 사용합니다. 증상조사 결과는 근골격계질환의 이환을 부정하거나 입증하는 근거 또는 반증자료로 활용할 수 없습니다.",Khảo sát này là một phần của cuộc điều tra yếu tố có hại đối với công việc gây gánh nặng cơ xương khớp và chỉ được dùng làm tài liệu cơ sở để cải thiện môi trường làm việc. Kết quả khảo sát triệu chứng không được dùng làm căn cứ hay bằng chứng để phủ nhận hoặc chứng minh việc mắc bệnh cơ xương khớp.,本调查是肌肉骨骼负担作业有害因素调查的一部分，仅作为改善作业环境的基础资料使用。症状调查结果不能作为否定或证明患有肌肉骨骼疾病的依据或反证材料。
-첫 화면,개인정보(건강정보) 수집·이용 안내,Thông báo thu thập và sử dụng thông tin cá nhân (thông tin sức khỏe),个人信息（健康信息）收集与使用说明
-첫 화면,"수집 항목: 성명, 연령, 성별, 업체명·공정·작업 정보, 진단받은 질병, 과거 손상, 신체부위별 통증 정보","Thông tin thu thập: họ tên, tuổi, giới tính, tên công ty, công đoạn, thông tin công việc, bệnh đã được chẩn đoán, chấn thương trước đây, thông tin đau theo từng bộ phận cơ thể",收集项目：姓名、年龄、性别、公司名称·工种·作业信息、已确诊疾病、既往损伤、各身体部位疼痛信息
-첫 화면,"이용 목적: 근골격계부담작업 유해요인조사 및 작업환경 개선, 근로자 건강관리","Mục đích sử dụng: điều tra yếu tố có hại của công việc gây gánh nặng cơ xương khớp, cải thiện môi trường làm việc và quản lý sức khỏe người lao động",使用目的：肌肉骨骼负担作业有害因素调查、改善作业环境、劳动者健康管理
-첫 화면,보유 기간: 5년 (유해요인조사 결과 보존기간),Thời gian lưu giữ: 5 năm (thời hạn lưu giữ kết quả điều tra yếu tố có hại),保存期限：5年（有害因素调查结果保存期限）
-첫 화면,"열람 범위: 응답 원본은 보건관리 담당자만 열람하며, 집계 자료에는 개인이 드러나지 않습니다.",Phạm vi xem: chỉ người phụ trách quản lý y tế mới được xem câu trả lời gốc; dữ liệu tổng hợp không tiết lộ danh tính cá nhân.,查阅范围：答卷原件仅由保健管理负责人查阅，汇总资料中不会显示个人身份。
-첫 화면,"동의를 거부할 수 있으며, 이 경우 담당자에게 종이 조사표를 요청해 주세요.","Bạn có quyền từ chối đồng ý; trong trường hợp đó, vui lòng xin phiếu khảo sát giấy từ người phụ trách.",您可以拒绝同意，此时请向负责人索取纸质调查表。
-첫 화면,"위 안내를 읽었으며, 건강정보를 포함한 개인정보 수집·이용에 동의합니다.","Tôi đã đọc thông báo trên và đồng ý cho thu thập, sử dụng thông tin cá nhân bao gồm thông tin sức khỏe.",我已阅读上述说明，同意收集和使用包括健康信息在内的个人信息。
-첫 화면,조사 시작하기  ›,Bắt đầu khảo sát  ›,开始调查  ›
-진행,기본 사항,Thông tin cơ bản,基本信息
-진행,생활과 병력,Sinh hoạt và tiền sử bệnh,生活与病史
-진행,통증 유무와 부위,Có đau hay không và vị trí đau,有无疼痛及部位
-진행,부위별 세부 문항,Câu hỏi chi tiết theo từng bộ phận,各部位详细问题
-진행,확인과 제출,Kiểm tra và gửi,确认与提交
-진행,{step} / 5 단계,Bước {step} / 5,第 {step} / 5 步
-진행,‹ 이전,‹ Quay lại,‹ 上一步
-진행,다음 ›,Tiếp theo ›,下一步 ›
-진행,제출하기,Gửi,提交
-진행,저장 중입니다…,Đang lưu…,正在保存…
-1단계,현장명,Tên công trường,现场名称
-1단계,성명,Họ và tên,姓名
-1단계,연령 (만 나이),Tuổi (tuổi tròn),年龄（周岁）
-1단계,성별,Giới tính,性别
-1단계,남,Nam,男
-1단계,여,Nữ,女
-1단계,결혼여부,Tình trạng hôn nhân,婚姻状况
-1단계,기혼,Đã kết hôn,已婚
-1단계,미혼,Chưa kết hôn,未婚
-1단계,현 직장경력,Thời gian làm việc tại nơi làm việc hiện tại,在现单位工作经历
-1단계,년,Năm,年
-1단계,개월째 근무 중,Tháng (đang làm),个月（在职中）
-1단계,업체명,Tên công ty,公司名称
-1단계,예: ○○건설,VD: Công ty Xây dựng ○○,例：○○建设
-1단계,공정,Công đoạn (loại công việc),工种（工序）
-1단계,"예: 철근, 형틀, 전기","VD: cốt thép, cốp pha, điện",例：钢筋、模板、电气
-1단계,현재 하고 있는 작업 (구체적으로),Công việc hiện tại (ghi cụ thể),目前从事的作业（请具体填写）
-1단계,작업내용,Nội dung công việc,作业内容
-1단계,예: 철근 운반·결속,VD: vận chuyển và buộc cốt thép,例：钢筋搬运·绑扎
-1단계,작업기간 - 년,Thời gian làm - năm,作业期间 - 年
-1단계,개월째 하고 있음,Tháng (đang làm),个月（正在做）
-1단계,1일 근무시간,Thời gian làm việc 1 ngày,每日工作时间
-1단계,시간,Giờ,小时
-1단계,휴식시간(식사 제외) 분씩,Mỗi lần nghỉ (không tính giờ ăn) - phút,休息时间（不含用餐）每次几分钟
-1단계,회 휴식,Số lần nghỉ,休息次数
-1단계,현 작업을 하기 전에 했던 작업,Công việc đã làm trước công việc hiện tại,从事现作业之前做过的作业
-1단계,없으면 '없음',"Nếu không có, ghi 'Không có'",如果没有，请填写'无'
-1단계,개월 동안 했음,Tháng (đã làm),个月（做过）
-1단계,성명을 입력해 주세요.,Vui lòng nhập họ tên.,请输入姓名。
-1단계,연령을 입력해 주세요.,Vui lòng nhập tuổi.,请输入年龄。
-1단계,성별을 선택해 주세요.,Vui lòng chọn giới tính.,请选择性别。
-1단계,업체명을 입력해 주세요.,Vui lòng nhập tên công ty.,请输入公司名称。
-2단계,"1. 규칙적인(한번에 30분 이상, 1주일에 적어도 2-3회 이상) 여가 및 취미활동을 하고 계시는 곳에 표시하여 주십시오.","1. Vui lòng đánh dấu các hoạt động giải trí, sở thích mà bạn thực hiện đều đặn (mỗi lần trên 30 phút, ít nhất 2–3 lần mỗi tuần).",1. 请标出您经常进行的（每次30分钟以上，每周至少2~3次）休闲及兴趣活动。
-2단계,해당 항목 모두 선택,Chọn tất cả các mục phù hợp,请选择所有符合的项目
-2단계,선택하세요,Vui lòng chọn,请选择
-2단계,컴퓨터 관련 활동,Hoạt động liên quan đến máy tính,电脑相关活动
-2단계,"악기연주(피아노, 바이올린 등)","Chơi nhạc cụ (piano, violin, v.v.)",演奏乐器（钢琴、小提琴等）
-2단계,뜨개질 붓글씨,"Đan len, thư pháp",编织、书法
-2단계,테니스/배드민턴/스쿼시,Quần vợt/Cầu lông/Bóng quần,网球/羽毛球/壁球
-2단계,축구/족구/농구/스키,Bóng đá/Bóng đá chân/Bóng rổ/Trượt tuyết,足球/足排球/篮球/滑雪
-2단계,해당사항 없음,Không có,无
-2단계,"2. 귀하의 하루 평균 가사노동시간(밥하기, 빨래하기, 청소하기, 2살 미만의 아이 돌보기 등)은 얼마나 됩니까?","2. Trung bình mỗi ngày bạn làm việc nhà (nấu ăn, giặt giũ, dọn dẹp, chăm trẻ dưới 2 tuổi, v.v.) bao lâu?",2. 您平均每天做家务（做饭、洗衣、打扫、照顾2岁以下孩子等）的时间是多少？
-2단계,거의 하지 않는다,Hầu như không làm,几乎不做
-2단계,1시간 미만,Dưới 1 giờ,不到1小时
-2단계,1-2시간 미만,1 giờ đến dưới 2 giờ,1~不到2小时
-2단계,2-3시간 미만,2 giờ đến dưới 3 giờ,2~不到3小时
-2단계,3시간 이상,Từ 3 giờ trở lên,3小时以上
-2단계,3. 귀하는 의사로부터 다음과 같은 질병에 대해 진단을 받은 적이 있습니까?,3. Bạn đã từng được bác sĩ chẩn đoán mắc các bệnh sau đây chưa?,3. 您是否曾被医生诊断患有以下疾病？
-2단계,보기,Ví dụ,示例
-2단계,류머티스 관절염,Viêm khớp dạng thấp,类风湿关节炎
-2단계,당뇨병,Bệnh tiểu đường,糖尿病
-2단계,루프스병,Bệnh lupus,红斑狼疮
-2단계,통풍,Bệnh gút,痛风
-2단계,알코올중독,Nghiện rượu,酒精中毒
-2단계,아니오,Không,否
-2단계,예,Có,是
-2단계,진단받은 질병,Bệnh đã được chẩn đoán,已确诊的疾病
-2단계,현재상태는?,Tình trạng hiện tại?,目前状态？
-2단계,완치,Đã khỏi hẳn,已痊愈
-2단계,치료나 관찰 중,Đang điều trị hoặc theo dõi,正在治疗或观察中
-2단계,"4. 과거에 운동 중 혹은 사고로(교통사고, 넘어짐, 추락 등) 인해 손/손가락/손목, 팔/팔꿈치, 어깨, 목, 허리, 다리/발 부위를 다친 적이 있습니까?","4. Trước đây bạn đã từng bị thương ở bàn tay/ngón tay/cổ tay, cánh tay/khuỷu tay, vai, cổ, lưng, chân/bàn chân do tập thể thao hoặc tai nạn (tai nạn giao thông, té ngã, rơi từ trên cao, v.v.) chưa?",4. 您过去是否因运动或事故（交通事故、摔倒、坠落等）伤到过手/手指/手腕、手臂/肘部、肩部、颈部、腰部、腿/脚？
-2단계,상해 부위는?,Vị trí bị thương?,受伤部位？
-2단계,손/손가락/손목,Bàn tay/Ngón tay/Cổ tay,手/手指/手腕
-2단계,5. 현재 하고 계시는 일의 육체적 부담 정도는 어느 정도라고 생각합니까?,5. Bạn nghĩ công việc hiện tại nặng nhọc về thể chất ở mức độ nào?,5. 您认为目前从事工作的体力负担程度如何？
-2단계,전혀 힘들지 않음,Hoàn toàn không vất vả,完全不累
-2단계,견딜만 함,Chịu được,可以忍受
-2단계,약간 힘듦,Hơi vất vả,有点累
-2단계,매우 힘듦,Rất vất vả,非常累
-2단계,1번(여가 및 취미활동): 해당 항목을 선택해 주세요. 없으면 '해당사항 없음'.,"Câu 1 (giải trí, sở thích): Vui lòng chọn mục phù hợp. Nếu không có, chọn 'Không có'.",第1题（休闲及兴趣活动）：请选择符合的项目。如果没有，请选择'无'。
-2단계,1번: '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.,Câu 1: Không thể chọn 'Không có' cùng với các mục khác.,第1题：'无'不能与其他项目同时选择。
-2단계,2번(가사노동시간)을 선택해 주세요.,Vui lòng trả lời câu 2 (thời gian làm việc nhà).,请回答第2题（家务时间）。
-2단계,3번(질병 진단)을 선택해 주세요.,Vui lòng trả lời câu 3 (chẩn đoán bệnh).,请回答第3题（疾病诊断）。
-2단계,3번: 진단받은 질병을 선택해 주세요.,Câu 3: Vui lòng chọn bệnh đã được chẩn đoán.,第3题：请选择已确诊的疾病。
-2단계,3번: 현재상태를 선택해 주세요.,Câu 3: Vui lòng chọn tình trạng hiện tại.,第3题：请选择目前状态。
-2단계,4번(과거 손상)을 선택해 주세요.,Vui lòng trả lời câu 4 (chấn thương trước đây).,请回答第4题（既往损伤）。
-2단계,4번: 상해 부위를 선택해 주세요.,Câu 4: Vui lòng chọn vị trí bị thương.,第4题：请选择受伤部位。
-2단계,5번(육체적 부담 정도)을 선택해 주세요.,Vui lòng trả lời câu 5 (mức độ nặng nhọc thể chất).,请回答第5题（体力负担程度）。
-3단계,"지난 1년 동안 손/손가락/손목, 팔/팔꿈치, 어깨, 목, 허리, 다리/발 중 어느 한 부위에서라도 귀하의 작업과 관련하여 통증이나, 쑤시는 느낌, 뻣뻣함, 화끈거리는 느낌, 무감각 혹은 찌릿찌릿함 등의 증상을 느끼신 적이 있습니까?","Trong 1 năm qua, bạn có từng cảm thấy các triệu chứng như đau, đau nhức, cứng, nóng rát, tê hoặc châm chích ở bất kỳ bộ phận nào trong số bàn tay/ngón tay/cổ tay, cánh tay/khuỷu tay, vai, cổ, lưng, chân/bàn chân liên quan đến công việc của bạn không?",在过去1年中，您是否在手/手指/手腕、手臂/肘部、肩部、颈部、腰部、腿/脚中的任何一个部位，感受到与工作有关的疼痛、酸痛、僵硬、灼热感、麻木或刺痛等症状？
-3단계,아팠던 부위를 모두 누르세요,Hãy chọn tất cả các bộ phận đã bị đau,请点选所有疼痛过的部位
-3단계,그림에서 선택한 부위가 빨간색으로 표시됩니다.,Bộ phận đã chọn sẽ hiện màu đỏ trên hình.,所选部位将在图中以红色显示。
-3단계,통증이 없으시면 다음 단계에서 바로 제출할 수 있습니다.,"Nếu không đau, bạn có thể gửi ngay ở bước tiếp theo.",如果没有疼痛，可以在下一步直接提交。
-3단계,증상 여부를 선택해 주세요.,Vui lòng chọn có triệu chứng hay không.,请选择是否有症状。
-3단계,아팠던 부위를 하나 이상 선택해 주세요.,Vui lòng chọn ít nhất một bộ phận đã bị đau.,请至少选择一个疼痛过的部位。
-4단계,<보기> 아픈 정도 기준,<Tham khảo> Tiêu chuẩn mức độ đau,<参考> 疼痛程度标准
-4단계,1. 통증의 구체적 부위는?,1. Vị trí đau cụ thể là?,1. 疼痛的具体部位是？
-4단계,오른쪽,Bên phải,右侧
-4단계,왼쪽,Bên trái,左侧
-4단계,양쪽 모두,Cả hai bên,两侧都有
-4단계,2. 한번 아프기 시작하면 통증 기간은 얼마 동안 지속됩니까?,"2. Mỗi khi bắt đầu đau, cơn đau kéo dài bao lâu?",2. 每次开始疼痛后，疼痛会持续多长时间？
-4단계,1일 미만,Dưới 1 ngày,不到1天
-4단계,1일-1주일 미만,1 ngày đến dưới 1 tuần,1天~不到1周
-4단계,1주일-1달 미만,1 tuần đến dưới 1 tháng,1周~不到1个月
-4단계,1달-6개월 미만,1 tháng đến dưới 6 tháng,1个月~不到6个月
-4단계,6개월 이상,Từ 6 tháng trở lên,6个月以上
-4단계,3. 그때의 아픈 정도는 어느 정도입니까? (보기 참조),3. Khi đó mức độ đau như thế nào? (xem phần tham khảo),3. 当时的疼痛程度如何？（请参考示例）
-4단계,약한 통증,Đau nhẹ,轻度疼痛
-4단계,중간 통증,Đau vừa,中度疼痛
-4단계,심한 통증,Đau nặng,重度疼痛
-4단계,매우 심한 통증,Đau rất nặng,非常严重的疼痛
-4단계,약간 불편한 정도이나 작업에 열중할 때는 못 느낀다,Hơi khó chịu nhưng không cảm thấy khi tập trung làm việc,有点不舒服，但专心工作时感觉不到
-4단계,작업 중 통증이 있으나 귀가 후 휴식을 취하면 괜찮다,Đau trong khi làm việc nhưng về nhà nghỉ ngơi thì đỡ,工作时疼痛，但下班回家休息后就好了
-4단계,작업 중 통증이 비교적 심하고 귀가 후에도 통증이 계속된다,Đau khá nặng khi làm việc và vẫn còn đau sau khi về nhà,工作时疼痛比较严重，回家后疼痛仍持续
-4단계,통증 때문에 작업은 물론 일상생활을 하기가 어렵다,Vì đau nên khó làm việc và cả sinh hoạt hằng ngày,因为疼痛，不仅难以工作，连日常生活也很困难
-4단계,4. 지난 1년 동안 이러한 증상을 얼마나 자주 경험하셨습니까?,"4. Trong 1 năm qua, bạn gặp các triệu chứng này thường xuyên như thế nào?",4. 过去1年中，您多久出现一次这些症状？
-4단계,6개월에 1번,6 tháng 1 lần,6个月1次
-4단계,2-3달에 1번,2–3 tháng 1 lần,2~3个月1次
-4단계,1달에 1번,1 tháng 1 lần,1个月1次
-4단계,1주일에 1번,1 tuần 1 lần,1周1次
-4단계,매일,Hằng ngày,每天
-4단계,5. 지난 1주일 동안에도 이러한 증상이 있었습니까?,5. Trong 1 tuần qua bạn có còn các triệu chứng này không?,5. 过去1周内是否也有这些症状？
-4단계,6. 지난 1년 동안 이러한 통증으로 인해 어떤 일이 있었습니까?,"6. Trong 1 năm qua, do cơn đau này bạn đã gặp những việc gì?",6. 过去1年中，因为这些疼痛发生过什么情况？
-4단계,병원·한의원 치료,Điều trị tại bệnh viện/phòng khám Đông y,在医院/韩医院治疗
-4단계,약국치료,Mua thuốc ở nhà thuốc,在药店买药治疗
-4단계,"병가, 산재","Nghỉ ốm, tai nạn lao động",病假、工伤
-4단계,작업 전환,Chuyển công việc,调换工作
-4단계,기타,Khác,其他
-4단계,기타 내용,Nội dung khác,其他内容
-4단계,1번 구체적 부위,Câu 1 (vị trí cụ thể),第1题（具体部位）
-4단계,{n}번,Câu {n},第{n}题
-4단계,6번 기타 내용,Câu 6 (nội dung khác),第6题（其他内容）
-4단계,{part}: 6번 '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.,{part}: Câu 6 không thể chọn 'Không có' cùng với các mục khác.,{part}：第6题'无'不能与其他项目同时选择。
-4단계,{part}: {items} 응답이 필요합니다.,{part}: Cần trả lời {items}.,{part}：需要回答 {items}。
-5단계,응답 내용을 확인해 주세요. 고칠 부분이 있으면 '이전'으로 돌아가 수정할 수 있습니다.,"Vui lòng kiểm tra lại câu trả lời. Nếu cần sửa, hãy bấm 'Quay lại' để chỉnh sửa.",请确认您的回答。如需修改，可点击'上一步'返回修改。
-5단계,지난 1년간 작업 관련 근골격계 증상: 없음,Triệu chứng cơ xương khớp liên quan đến công việc trong 1 năm qua: Không có,过去1年与工作相关的肌肉骨骼症状：无
-5단계,입력한 내용이 사실과 같음을 확인합니다.,Tôi xác nhận nội dung đã nhập là đúng sự thật.,我确认所填写的内容属实。
-5단계,저장소 연결에 실패했습니다. 담당자에게 알려 주세요.,Không kết nối được máy chủ lưu trữ. Vui lòng báo cho người phụ trách.,连接存储失败，请告知负责人。
-5단계,올해 같은 성명·업체로 제출된 응답이 이미 있습니다. 내용을 고쳐야 하면 보건관리 담당자에게 알려 주세요.,"Năm nay đã có câu trả lời được gửi với cùng họ tên và công ty. Nếu cần sửa nội dung, vui lòng báo cho người phụ trách quản lý y tế.",今年已有相同姓名·公司提交的答卷。如需修改内容，请告知保健管理负责人。
-5단계,저장 중 오류가 발생했습니다. 잠시 후 다시 눌러 주세요.,Đã xảy ra lỗi khi lưu. Vui lòng thử lại sau giây lát.,保存时发生错误，请稍后再试。
-완료,제출이 완료되었습니다,Đã gửi thành công,提交完成
-완료,응답해 주셔서 감사합니다. 결과는 작업환경 개선에 활용됩니다.,Cảm ơn bạn đã trả lời. Kết quả sẽ được dùng để cải thiện môi trường làm việc.,感谢您的回答。结果将用于改善作业环境。
-완료,통증이 계속되거나 심해지면 보건관리 담당자와 상담해 주세요.,"Nếu cơn đau kéo dài hoặc nặng hơn, vui lòng trao đổi với người phụ trách quản lý y tế.",如果疼痛持续或加重，请咨询保健管理负责人。
-완료,내 응답 사본 받기 (PDF),Tải bản sao câu trả lời của tôi (PDF),下载我的答卷副本（PDF）
-완료,내 응답 사본 받기 (Word),Tải bản sao câu trả lời của tôi (Word),下载我的答卷副本（Word）
-완료,사본은 한국어 공식 서식으로 제공됩니다.,Bản sao được cung cấp theo mẫu chính thức bằng tiếng Hàn.,副本以韩语官方格式提供。
-완료,새 응답 작성 (다른 사람),Trả lời mới (người khác),填写新答卷（其他人）
+﻿구분,ko,vi,zh,ru,km,id,fil
+신체부위,목,Cổ,颈部,Шея,ក,Leher,Leeg
+신체부위,어깨,Vai,肩部,Плечо,ស្មា,Bahu,Balikat
+신체부위,팔/팔꿈치,Cánh tay/Khuỷu tay,手臂/肘部,Рука / локоть,ដៃ / កែងដៃ,Lengan / siku,Braso / siko
+신체부위,손/손목/손가락,Bàn tay/Cổ tay/Ngón tay,手/手腕/手指,Кисть / запястье / пальцы рук,ប្រអប់ដៃ / កដៃ / ម្រាមដៃ,Tangan / pergelangan tangan / jari tangan,Kamay / pulsuhan / mga daliri sa kamay
+신체부위,허리,Thắt lưng,腰部,Поясница,ចង្កេះ,Punggung bawah,Ibabang bahagi ng likod
+신체부위,다리/발,Chân/Bàn chân,腿/脚,Нога / стопа,ជើង / ប្រអប់ជើង,Tungkai / kaki,Binti / paa
+첫 화면,근골격계질환 증상조사표,Phiếu khảo sát triệu chứng bệnh cơ xương khớp,肌肉骨骼疾病症状调查表,"Анкета о симптомах заболеваний мышц, костей и суставов",កម្រងសំណួរអំពីរោគសញ្ញានៃជំងឺសាច់ដុំ និងឆ្អឹង,"Kuesioner gejala gangguan otot, tulang, dan sendi","Talatanungan tungkol sa mga sintomas ng sakit sa kalamnan, buto, at kasukasuan"
+첫 화면,현재 업무와 관련하여 느끼는 신체 증상·불편감을 5단계로 나누어 여쭙니다.,"Khảo sát gồm 5 bước, với các câu hỏi về triệu chứng và cảm giác khó chịu liên quan đến công việc hiện tại của bạn.",本调查分5步，了解您与目前工作有关的身体症状和不适。,"Анкета состоит из 5 шагов. Мы спросим о симптомах и неприятных ощущениях, связанных с вашей нынешней работой.",យើងនឹងសួរអំពីរោគសញ្ញា និងអារម្មណ៍មិនស្រួលក្នុងរាងកាយដែលពាក់ព័ន្ធនឹងការងារបច្ចុប្បន្នរបស់អ្នក។ កម្រងសំណួរនេះមាន 5 ជំហាន។,"Dalam 5 langkah, kami akan menanyakan gejala dan rasa tidak nyaman pada tubuh yang berkaitan dengan pekerjaan Anda saat ini.","Sa 5 hakbang, tatanungin ka namin tungkol sa mga sintomas at anumang hindi komportableng pakiramdam sa katawan na may kaugnayan sa kasalukuyan mong trabaho."
+첫 화면,약 3~5분 정도 걸립니다.,Mất khoảng 3–5 phút.,大约需要3~5分钟。,Займёт около 3–5 минут.,ចំណាយពេលប្រហែល 3–5 នាទី។,Waktu pengisian sekitar 3–5 menit.,Aabutin ito ng mga 3–5 minuto.
+첫 화면,작성 전 확인해 주세요,Vui lòng đọc trước khi trả lời,填写前请先阅读,Прочитайте перед заполнением,សូមអានមុនពេលបំពេញ,Baca sebelum mengisi,Pakibasa bago sumagot
+첫 화면,증상을 크게 또는 작게 평가하지 마시고 있는 그대로 응답해 주세요.,"Xin hãy trả lời đúng như thực tế, không phóng đại hay giảm nhẹ triệu chứng.",请如实回答，不要夸大或缩小症状。,"Отвечайте так, как есть. Не преувеличивайте и не преуменьшайте симптомы.",សូមឆ្លើយតាមការពិត ដោយកុំបំផ្លើស ឬបន្ថយកម្រិតរោគសញ្ញា។,Jawablah sesuai kondisi sebenarnya. Jangan melebih-lebihkan atau meremehkan gejala.,Sumagot ayon sa tunay mong nararamdaman. Huwag palakihin o maliitin ang mga sintomas.
+첫 화면,이 조사는 3년마다 실시하는 근골격계부담작업 유해요인조사의 일부입니다.,"Phiếu này là một phần của đợt đánh giá các yếu tố nguy cơ trong những công việc gây quá tải cho cơ, xương và khớp. Đợt đánh giá được thực hiện 3 năm một lần.",本问卷是每3年开展一次的工作中肌肉骨骼负荷风险评估的一部分。,"Этот опрос входит в обследование факторов риска на работах, которые создают нагрузку на мышцы, кости и суставы. Его проводят раз в 3 года.",ការស្ទង់មតិនេះជាផ្នែកមួយនៃការសិក្សាពីកត្តាហានិភ័យក្នុងការងារដែលដាក់បន្ទុកលើសាច់ដុំ និងឆ្អឹង។ ការសិក្សានេះធ្វើឡើងរៀងរាល់ 3 ឆ្នាំម្តង។,"Survei ini merupakan bagian dari penilaian faktor risiko pada pekerjaan yang membebani otot, tulang, dan sendi. Penilaian dilakukan setiap 3 tahun.","Bahagi ito ng pagsusuri sa mga panganib sa trabahong nagpapabigat sa kalamnan, buto, at kasukasuan. Isinasagawa ang pagsusuri tuwing 3 taon."
+첫 화면,"이 조사는 근골격계부담작업 유해요인조사의 일부로, 작업환경 개선을 위한 기초자료로만 사용합니다. 증상조사 결과는 근골격계질환의 이환을 부정하거나 입증하는 근거 또는 반증자료로 활용할 수 없습니다.","Phiếu này là một phần của đợt đánh giá các yếu tố nguy cơ trong những công việc gây quá tải cho cơ, xương và khớp. Câu trả lời chỉ được dùng làm dữ liệu cơ sở để cải thiện môi trường làm việc. Kết quả khảo sát triệu chứng không được dùng làm căn cứ hoặc bằng chứng để xác nhận hay bác bỏ việc mắc bệnh cơ xương khớp.",本问卷是工作中肌肉骨骼负荷风险评估的一部分。答卷仅用作改善工作环境的基础资料。症状调查结果不得作为证明或否认患有肌肉骨骼疾病的依据或证据。,"Этот опрос входит в обследование факторов риска на работах, которые создают нагрузку на мышцы, кости и суставы. Ответы используются только как исходные данные для улучшения условий труда. Результаты опроса о симптомах нельзя использовать как основание или доказательство наличия либо отсутствия заболевания мышц, костей или суставов.",ការស្ទង់មតិនេះជាផ្នែកមួយនៃការសិក្សាពីកត្តាហានិភ័យក្នុងការងារដែលដាក់បន្ទុកលើសាច់ដុំ និងឆ្អឹង។ ចម្លើយត្រូវប្រើជាទិន្នន័យមូលដ្ឋានសម្រាប់កែលម្អបរិយាកាសការងារប៉ុណ្ណោះ។ លទ្ធផលស្ទង់មតិអំពីរោគសញ្ញាមិនអាចប្រើជាមូលដ្ឋាន ឬជាភស្តុតាងបញ្ជាក់ថាមាន ឬគ្មានជំងឺសាច់ដុំ និងឆ្អឹងបានទេ។,"Survei ini merupakan bagian dari penilaian faktor risiko pada pekerjaan yang membebani otot, tulang, dan sendi. Jawaban hanya digunakan sebagai data dasar untuk memperbaiki lingkungan kerja. Hasil survei gejala tidak dapat dijadikan dasar atau bukti untuk memastikan atau menyangkal adanya gangguan otot, tulang, dan sendi.","Bahagi ito ng pagsusuri sa mga panganib sa trabahong nagpapabigat sa kalamnan, buto, at kasukasuan. Gagamitin lamang ang mga sagot bilang batayang datos sa pagpapabuti ng lugar at kondisyon ng trabaho. Hindi maaaring gamiting batayan o ebidensiya ang resulta ng talatanungan upang patunayan o pabulaanan na may sakit sa kalamnan, buto, o kasukasuan."
+첫 화면,개인정보(건강정보) 수집·이용 안내,Thông báo thu thập và sử dụng thông tin cá nhân (thông tin sức khỏe),个人信息（健康信息）收集与使用说明,"Сбор и использование персональных данных, включая сведения о здоровье",សេចក្តីជូនដំណឹងអំពីការប្រមូល និងប្រើប្រាស់ព័ត៌មានផ្ទាល់ខ្លួន (រួមទាំងព័ត៌មានសុខភាព),Pemberitahuan pengumpulan dan penggunaan data pribadi (termasuk data kesehatan),"Abiso sa pangongolekta at paggamit ng personal na impormasyon, kasama ang impormasyon tungkol sa kalusugan"
+첫 화면,"수집 항목: 성명, 연령, 성별, 업체명·공정·작업 정보, 진단받은 질병, 과거 손상, 신체부위별 통증 정보","Thông tin thu thập: họ và tên, tuổi, giới tính, tên công ty, loại công việc và nhiệm vụ cụ thể, các bệnh đã được chẩn đoán, chấn thương trước đây và thông tin về cơn đau ở từng bộ phận cơ thể.",收集内容：姓名、年龄、性别、公司名称、工种及具体工作内容、已确诊的疾病、以往受伤情况和各身体部位的疼痛情况。,"Собираемые данные: имя и фамилия, возраст, пол, название компании, вид работ, сведения о выполняемой работе, диагностированные заболевания, перенесённые травмы и сведения о боли в разных частях тела.",ព័ត៌មានដែលប្រមូល៖ ឈ្មោះពេញ អាយុ ភេទ ឈ្មោះក្រុមហ៊ុន ផ្នែកការងារ ព័ត៌មានអំពីកិច្ចការដែលធ្វើ ជំងឺដែលគ្រូពេទ្យបានធ្វើរោគវិនិច្ឆ័យ របួសពីមុន និងព័ត៌មានអំពីការឈឺចាប់តាមផ្នែកនីមួយៗនៃរាងកាយ។,"Data yang dikumpulkan: nama lengkap, usia, jenis kelamin, nama perusahaan, bidang pekerjaan dan rincian tugas, penyakit yang telah didiagnosis, riwayat cedera, dan informasi nyeri pada tiap bagian tubuh.","Impormasyong kokolektahin: buong pangalan, edad, kasarian, pangalan ng kompanya, uri at detalye ng trabaho, mga sakit na na-diagnose, mga dating pinsala, at impormasyon tungkol sa pananakit sa bawat bahagi ng katawan."
+첫 화면,"이용 목적: 근골격계부담작업 유해요인조사 및 작업환경 개선, 근로자 건강관리","Mục đích sử dụng: đánh giá các yếu tố nguy cơ trong những công việc gây quá tải cho cơ, xương và khớp, cải thiện môi trường làm việc và theo dõi sức khỏe người lao động.",使用目的：评估工作中肌肉骨骼负荷的风险因素、改善工作环境和管理员工健康。,"Цель: оценить факторы риска на работах, которые создают нагрузку на мышцы, кости и суставы, улучшить условия труда и следить за здоровьем работников.",គោលបំណង៖ សិក្សាកត្តាហានិភ័យក្នុងការងារដែលដាក់បន្ទុកលើសាច់ដុំ និងឆ្អឹង កែលម្អបរិយាកាសការងារ និងតាមដានសុខភាពកម្មករ។,"Tujuan penggunaan: menilai faktor risiko pada pekerjaan yang membebani otot, tulang, dan sendi, memperbaiki lingkungan kerja, dan memantau kesehatan pekerja.","Layunin: suriin ang mga panganib sa trabahong nagpapabigat sa kalamnan, buto, at kasukasuan, pagbutihin ang kondisyon sa trabaho, at pangalagaan ang kalusugan ng mga manggagawa."
+첫 화면,보유 기간: 5년 (유해요인조사 결과 보존기간),Thời gian lưu giữ: 5 năm (thời hạn lưu giữ kết quả đánh giá yếu tố nguy cơ).,保存期限：5年（风险评估结果的保存期限）。,Срок хранения: 5 лет (срок хранения результатов обследования факторов риска).,រយៈពេលរក្សាទុក៖ 5 ឆ្នាំ (រយៈពេលរក្សាទុកលទ្ធផលសិក្សាកត្តាហានិភ័យ)។,Masa penyimpanan: 5 tahun (sesuai masa penyimpanan hasil penilaian faktor risiko).,Tagal ng pag-iingat ng datos: 5 taon (tagal ng pag-iingat sa resulta ng pagsusuri sa mga panganib).
+첫 화면,"열람 범위: 응답 원본은 보건관리 담당자만 열람하며, 집계 자료에는 개인이 드러나지 않습니다.",Quyền xem thông tin: chỉ người phụ trách sức khỏe người lao động được xem câu trả lời gốc. Dữ liệu tổng hợp không tiết lộ danh tính của người trả lời.,查阅权限：只有负责员工健康管理的人员可以查看原始答卷。汇总资料不会披露个人身份。,"Доступ: исходные ответы видит только ответственный за охрану здоровья работников. По сводным данным нельзя определить, кто именно ответил.",អ្នកដែលអាចមើលចម្លើយ៖ មានតែអ្នកទទួលបន្ទុកសុខភាពកម្មករប៉ុណ្ណោះដែលអាចមើលចម្លើយដើម។ ទិន្នន័យសរុបមិនបង្ហាញអត្តសញ្ញាណអ្នកឆ្លើយទេ។,Akses: hanya petugas kesehatan kerja yang dapat melihat jawaban asli. Data rekap tidak mengungkap identitas Anda.,Sino ang makakakita: ang tagapangasiwa ng kalusugan sa trabaho lamang ang maaaring makakita ng orihinal na sagot. Hindi makikilala ang sinumang sumagot mula sa pinagsama-samang datos.
+첫 화면,"동의를 거부할 수 있으며, 이 경우 담당자에게 종이 조사표를 요청해 주세요.","Bạn có thể không đồng ý. Trong trường hợp đó, vui lòng xin phiếu khảo sát bản giấy từ người phụ trách.",您可以选择不同意。如不同意，请向工作人员索取纸质问卷。,Вы можете не давать согласие. В этом случае попросите у ответственного сотрудника бумажную анкету.,អ្នកអាចបដិសេធមិនយល់ព្រមបាន។ ក្នុងករណីនោះ សូមសុំកម្រងសំណួរជាក្រដាសពីអ្នកទទួលបន្ទុក។,"Anda boleh menolak memberikan persetujuan. Jika menolak, mintalah formulir survei cetak kepada petugas.","Maaari kang tumangging magbigay ng pahintulot. Kung tatanggi ka, humingi ng papel na talatanungan sa tagapangasiwa."
+첫 화면,"위 안내를 읽었으며, 건강정보를 포함한 개인정보 수집·이용에 동의합니다.","Tôi đã đọc thông báo trên và đồng ý cho thu thập, sử dụng thông tin cá nhân bao gồm thông tin sức khỏe.",我已阅读上述说明，同意收集和使用包括健康信息在内的个人信息。,"Я прочитал(а) это уведомление и даю согласие на сбор и использование моих персональных данных, включая сведения о здоровье.",ខ្ញុំបានអានសេចក្តីជូនដំណឹងខាងលើ ហើយយល់ព្រមឱ្យប្រមូល និងប្រើប្រាស់ព័ត៌មានផ្ទាល់ខ្លួនរបស់ខ្ញុំ រួមទាំងព័ត៌មានសុខភាព។,"Saya telah membaca pemberitahuan di atas dan menyetujui pengumpulan dan penggunaan data pribadi saya, termasuk data kesehatan.","Nabasa ko ang abiso sa itaas at pumapayag akong kolektahin at gamitin ang aking personal na impormasyon, kasama ang impormasyon tungkol sa aking kalusugan."
+첫 화면,조사 시작하기  ›,Bắt đầu khảo sát  ›,开始调查  ›,Начать опрос ›,ចាប់ផ្តើមឆ្លើយ ›,Mulai survei ›,Simulan ang pagsagot ›
+진행,기본 사항,Thông tin cơ bản,基本信息,Основные сведения,ព័ត៌មានមូលដ្ឋាន,Informasi dasar,Pangunahing impormasyon
+진행,생활과 병력,Sinh hoạt và tiền sử bệnh,生活与病史,Образ жизни и история болезней,ទម្លាប់រស់នៅ និងប្រវត្តិជំងឺ,Kebiasaan sehari-hari dan riwayat penyakit,Pang-araw-araw na gawain at kasaysayan ng sakit
+진행,통증 유무와 부위,Có đau hay không và vị trí đau,有无疼痛及部位,Есть ли боль и где,មានការឈឺចាប់ឬអត់ និងឈឺត្រង់ណា,Ada tidaknya nyeri dan bagian yang nyeri,Kung may pananakit at kung saan
+진행,부위별 세부 문항,Câu hỏi chi tiết theo từng bộ phận,各部位详细问题,Подробные вопросы по частям тела,សំណួរលម្អិតតាមផ្នែកនៃរាងកាយ,Pertanyaan rinci per bagian tubuh,Mga detalye sa bawat bahagi ng katawan
+진행,확인과 제출,Kiểm tra và gửi,确认与提交,Проверка и отправка,ពិនិត្យ និងបញ្ជូន,Periksa dan kirim,Suriin at isumite
+진행,{step} / 5 단계,Bước {step} / 5,第 {step} / 5 步,Шаг {step} из 5,ជំហាន {step} / 5,Langkah {step} dari 5,Hakbang {step} sa 5
+진행,‹ 이전,‹ Quay lại,‹ 上一步,‹ Назад,‹ ត្រឡប់ក្រោយ,‹ Kembali,‹ Bumalik
+진행,다음 ›,Tiếp theo ›,下一步 ›,Далее ›,បន្ទាប់ ›,Lanjut ›,Susunod ›
+진행,제출하기,Gửi,提交,Отправить,បញ្ជូន,Kirim,Isumite
+진행,저장 중입니다…,Đang lưu…,正在保存…,Сохраняем…,កំពុងរក្សាទុក…,Sedang menyimpan…,Sine-save…
+1단계,현장명,Tên công trường,工地名称,Название объекта,ឈ្មោះការដ្ឋាន,Nama proyek,Pangalan ng proyekto
+1단계,성명,Họ và tên,姓名,Имя и фамилия,ឈ្មោះពេញ,Nama lengkap,Buong pangalan
+1단계,연령 (만 나이),Tuổi (tuổi tròn),年龄（周岁）,Возраст (полных лет),អាយុ (គិតជាឆ្នាំពេញ),Usia (tahun penuh),Edad (sa nakumpletong taon)
+1단계,성별,Giới tính,性别,Пол,ភេទ,Jenis kelamin,Kasarian
+1단계,남,Nam,男,Мужской,ប្រុស,Laki-laki,Lalaki
+1단계,여,Nữ,女,Женский,ស្រី,Perempuan,Babae
+1단계,결혼여부,Tình trạng hôn nhân,婚姻状况,Семейное положение,ស្ថានភាពអាពាហ៍ពិពាហ៍,Status perkawinan,Katayuang sibil
+1단계,기혼,Đã kết hôn,已婚,В браке,រៀបការហើយ,Menikah,May asawa
+1단계,미혼,Chưa kết hôn,未婚,Не в браке,មិនទាន់រៀបការ,Belum menikah,Walang asawa
+1단계,현 직장경력,Thời gian làm việc tại đơn vị hiện tại,在目前单位工作了多久,Стаж на нынешнем месте работы,រយៈពេលធ្វើការនៅកន្លែងបច្ចុប្បន្ន,Lama bekerja di tempat kerja saat ini,Tagal sa kasalukuyang pinagtatrabahuhan
+1단계,년,Năm,年,лет,ឆ្នាំ,tahun,taon
+1단계,개월째 근무 중,tháng làm việc tại đơn vị hiện tại,个月（在目前单位）,мес. на этом месте работы,ខែ នៅកន្លែងការងារនេះ,bulan bekerja di sini,buwan nang nagtatrabaho rito
+1단계,업체명,Tên công ty,公司名称,Название компании,ឈ្មោះក្រុមហ៊ុន,Nama perusahaan,Pangalan ng kompanya
+1단계,예: ○○건설,VD: Công ty Xây dựng ○○,例：○○建设,Например: строительная компания «XX»,ឧទាហរណ៍៖ ក្រុមហ៊ុនសំណង់ XX,Contoh: PT Konstruksi XX,Halimbawa: XX Construction
+1단계,공정,Loại công việc,工种,Вид работ,ផ្នែកការងារ,Bidang pekerjaan,Uri ng trabaho
+1단계,"예: 철근, 형틀, 전기","VD: cốt thép, cốp pha, điện",例：钢筋、模板、电气,"Например: арматурные работы, опалубка, электромонтаж",ឧទាហរណ៍៖ ដែកសរសៃ ពុម្ពចាក់បេតុង ការងារអគ្គិសនី,"Contoh: pembesian, bekisting, pekerjaan listrik","Halimbawa: gawaing rebar, paggawa ng hulmahan ng kongkreto, gawaing elektrikal"
+1단계,현재 하고 있는 작업 (구체적으로),Công việc hiện tại (ghi cụ thể),目前从事的作业（请具体填写）,Текущие задачи (укажите подробно),កិច្ចការដែលកំពុងធ្វើ (សូមបញ្ជាក់ឱ្យច្បាស់),Tugas saat ini (jelaskan secara spesifik),Kasalukuyang gawain (ilagay ang detalye)
+1단계,작업내용,Nội dung công việc,作业内容,Описание работы,ពណ៌នាកិច្ចការ,Rincian tugas,Detalye ng gawain
+1단계,예: 철근 운반·결속,VD: vận chuyển và buộc cốt thép,例：钢筋搬运·绑扎,Например: переноска и вязка арматуры,ឧទាហរណ៍៖ ដឹក និងចងដែកសរសៃ,Contoh: mengangkut dan mengikat besi tulangan,Halimbawa: pagbubuhat at pagtatali ng bakal na pampatibay
+1단계,작업기간 - 년,Thời gian làm công việc này – năm,从事这项工作的时间（年）,Длительность работы — лет,រយៈពេលធ្វើកិច្ចការនេះ - ឆ្នាំ,Lama melakukan tugas ini - tahun,Tagal sa gawaing ito - taon
+1단계,개월째 하고 있음,tháng làm công việc này,个月（从事这项工作）,мес. выполняю эту работу,ខែ ដែលបានធ្វើកិច្ចការនេះ,bulan menjalankan tugas ini,buwan nang ginagawa ito
+1단계,1일 근무시간,Thời gian làm việc 1 ngày,每日工作时间,Рабочее время в день,ម៉ោងធ្វើការក្នុងមួយថ្ងៃ,Jam kerja per hari,Oras ng trabaho kada araw
+1단계,시간,Giờ,小时,ч,ម៉ោង,jam,oras
+1단계,휴식시간(식사 제외) 분씩,"Thời gian mỗi lần nghỉ (không tính giờ ăn), tính bằng phút",每次休息时长（不含用餐，单位：分钟）,"Перерывы (без учёта еды), минут за раз",ពេលសម្រាក (មិនរាប់ពេលបាយ) នាទីក្នុងមួយលើក,"Istirahat (di luar waktu makan), menit per jeda","Pahinga (bukod sa oras ng pagkain), minuto bawat pahinga"
+1단계,회 휴식,Số lần nghỉ,休息次数,раз за день,ដងសម្រាក,kali istirahat,beses na nagpapahinga
+1단계,현 작업을 하기 전에 했던 작업,Công việc đã làm trước công việc hiện tại,从事现作业之前做过的作业,Работа до нынешней,កិច្ចការដែលបានធ្វើមុនកិច្ចការបច្ចុប្បន្ន,Tugas sebelum tugas saat ini,Gawaing ginawa bago ang kasalukuyang gawain
+1단계,없으면 '없음',"Nếu không có, ghi 'Không có'",如果没有，请填写'无',"Если предыдущей работы не было, укажите «Нет».",បើគ្មាន សូមសរសេរ «គ្មាន»។,"Jika tidak ada, tulis “Tidak ada”.","Kung wala, ilagay ang “Wala”."
+1단계,개월 동안 했음,tháng làm công việc trước đây,个月（从事上一项工作）,мес. выполнял(а) эту работу,ខែ ដែលបានធ្វើកិច្ចការមុន,bulan menjalankan tugas sebelumnya,buwang ginawa ang dating gawain
+1단계,성명을 입력해 주세요.,Vui lòng nhập họ tên.,请输入姓名。,Введите имя и фамилию.,សូមបញ្ចូលឈ្មោះពេញ។,Masukkan nama lengkap.,Ilagay ang buong pangalan.
+1단계,연령을 입력해 주세요.,Vui lòng nhập tuổi.,请输入年龄。,Введите возраст.,សូមបញ្ចូលអាយុ។,Masukkan usia.,Ilagay ang edad.
+1단계,성별을 선택해 주세요.,Vui lòng chọn giới tính.,请选择性别。,Укажите пол.,សូមជ្រើសរើសភេទ។,Pilih jenis kelamin.,Piliin ang kasarian.
+1단계,업체명을 입력해 주세요.,Vui lòng nhập tên công ty.,请输入公司名称。,Введите название компании.,សូមបញ្ចូលឈ្មោះក្រុមហ៊ុន។,Masukkan nama perusahaan.,Ilagay ang pangalan ng kompanya.
+2단계,"1. 규칙적인(한번에 30분 이상, 1주일에 적어도 2-3회 이상) 여가 및 취미활동을 하고 계시는 곳에 표시하여 주십시오.","1. Hãy chọn các hoạt động giải trí hoặc sở thích mà bạn thực hiện thường xuyên (ít nhất 30 phút mỗi lần, ít nhất 2–3 lần mỗi tuần).",1. 请选择您经常参加的休闲或兴趣活动（每次至少30分钟，每周至少2–3次）。,"1. Отметьте, чем вы регулярно занимаетесь в свободное время (не менее 30 минут за раз, хотя бы 2–3 раза в неделю).",1. សូមជ្រើសរើសសកម្មភាពកម្សាន្ត ឬចំណង់ចំណូលចិត្តដែលអ្នកធ្វើជាប្រចាំ (យ៉ាងតិច 30 នាទីក្នុងមួយលើក និងយ៉ាងតិច 2–3 ដងក្នុងមួយសប្ដាហ៍)។,1. Pilih kegiatan waktu luang atau hobi yang rutin Anda lakukan (minimal 30 menit setiap kali dan setidaknya 2–3 kali seminggu).,"1. Piliin ang mga libangan o aktibidad na regular mong ginagawa (30 minuto o higit pa bawat beses, nang hindi bababa sa 2–3 beses bawat linggo)."
+2단계,해당 항목 모두 선택,Chọn tất cả các mục phù hợp,请选择所有符合的项目,Выберите все подходящие варианты,ជ្រើសរើសគ្រប់ចម្លើយដែលត្រូវនឹងអ្នក,Pilih semua yang sesuai,Piliin ang lahat ng naaangkop
+2단계,선택하세요,Vui lòng chọn,请选择,Выберите вариант,សូមជ្រើសរើស,Silakan pilih,Pumili
+2단계,컴퓨터 관련 활동,Hoạt động liên quan đến máy tính,电脑相关活动,Занятия за компьютером,សកម្មភាពប្រើកុំព្យូទ័រ,Kegiatan menggunakan komputer,Mga aktibidad gamit ang kompyuter
+2단계,"악기연주(피아노, 바이올린 등)","Chơi nhạc cụ (piano, violin, v.v.)",演奏乐器（钢琴、小提琴等）,"Игра на музыкальных инструментах (пианино, скрипка и т. п.)",លេងឧបករណ៍តន្ត្រី (ព្យាណូ វីយូឡុង ជាដើម),"Bermain alat musik (piano, biola, dll.)","Pagtugtog ng instrumentong pangmusika (piyano, biyolin, atbp.)"
+2단계,뜨개질 붓글씨,Đan hoặc viết thư pháp bằng bút lông,编织、毛笔书法,"Вязание, каллиграфия кистью",ចាក់ប៉ាក់ ឬសរសេរអក្សរផ្ចង់ដោយជក់,Merajut atau kaligrafi dengan kuas,Pagniniting o kaligrapiya gamit ang brotsa
+2단계,테니스/배드민턴/스쿼시,Quần vợt/Cầu lông/Bóng quần,网球/羽毛球/壁球,Теннис / бадминтон / сквош,តេនីស / វាយសី / ស្ក្វាស,Tenis / bulu tangkis / skuos,Tenis / badminton / squash
+2단계,축구/족구/농구/스키,Bóng đá / jokgu (đá bóng qua lưới kiểu Hàn Quốc) / bóng rổ / trượt tuyết,足球／韩式足排球（用脚把球踢过球网）／篮球／滑雪,Футбол / чокку (корейский футбол через сетку) / баскетбол / лыжи,បាល់ទាត់ / ចុកគូ (បាល់ទាត់ឆ្លងសំណាញ់បែបកូរ៉េ) / បាល់បោះ / ជិះស្គីលើព្រិល,Sepak bola / jokgu (sepak bola melewati net ala Korea) / bola basket / ski,Football / jokgu (larong Koreano na sinisipa ang bola sa ibabaw ng net) / basketball / pag-i-ski
+2단계,해당사항 없음,Không có,无,Ничего из перечисленного,គ្មាន,Tidak ada,Wala sa mga nabanggit
+2단계,"2. 귀하의 하루 평균 가사노동시간(밥하기, 빨래하기, 청소하기, 2살 미만의 아이 돌보기 등)은 얼마나 됩니까?","2. Trung bình mỗi ngày bạn làm việc nhà (nấu ăn, giặt giũ, dọn dẹp, chăm trẻ dưới 2 tuổi, v.v.) bao lâu?",2. 您平均每天花多少时间做家务（做饭、洗衣、打扫、照顾未满2岁的孩子等）？,"2. Сколько времени в среднем за день вы тратите на домашние дела (готовка, стирка, уборка, уход за ребёнком младше 2 лет и т. п.)?",2. ជាមធ្យម តើអ្នកចំណាយពេលប៉ុន្មានក្នុងមួយថ្ងៃលើការងារផ្ទះ (ធ្វើម្ហូប បោកខោអាវ សម្អាតផ្ទះ មើលថែកូនអាយុក្រោម 2 ឆ្នាំ ជាដើម)?,"2. Rata-rata, berapa lama per hari Anda mengerjakan pekerjaan rumah tangga (memasak, mencuci pakaian, membersihkan rumah, menjaga anak di bawah 2 tahun, dll.)?","2. Ilang oras kada araw ang karaniwang ginugugol mo sa gawaing-bahay (pagluluto, paglalaba, paglilinis, pag-aalaga ng batang wala pang 2 taon, atbp.)?"
+2단계,거의 하지 않는다,Hầu như không làm,几乎不做,Почти не занимаюсь,ស្ទើរតែមិនធ្វើ,Hampir tidak pernah,Halos hindi gumagawa
+2단계,1시간 미만,Dưới 1 giờ,不到1小时,Менее 1 часа,តិចជាង 1 ម៉ោង,Kurang dari 1 jam,Wala pang 1 oras
+2단계,1-2시간 미만,1 giờ đến dưới 2 giờ,满1小时，不到2小时,От 1 до менее 2 часов,ចាប់ពី 1 ម៉ោង ដល់ក្រោម 2 ម៉ោង,1 jam hingga kurang dari 2 jam,1 oras hanggang wala pang 2 oras
+2단계,2-3시간 미만,2 giờ đến dưới 3 giờ,满2小时，不到3小时,От 2 до менее 3 часов,ចាប់ពី 2 ម៉ោង ដល់ក្រោម 3 ម៉ោង,2 jam hingga kurang dari 3 jam,2 oras hanggang wala pang 3 oras
+2단계,3시간 이상,Từ 3 giờ trở lên,3小时以上,3 часа и более,3 ម៉ោងឡើងទៅ,3 jam atau lebih,3 oras o higit pa
+2단계,3. 귀하는 의사로부터 다음과 같은 질병에 대해 진단을 받은 적이 있습니까?,3. Bạn đã từng được bác sĩ chẩn đoán mắc các bệnh sau đây chưa?,3. 您是否曾被医生诊断患有以下疾病？,3. Ставил ли вам врач какой-либо из следующих диагнозов?,3. តើគ្រូពេទ្យធ្លាប់ធ្វើរោគវិនិច្ឆ័យថាអ្នកមានជំងឺណាមួយខាងក្រោមដែរឬទេ?,3. Apakah dokter pernah mendiagnosis Anda dengan salah satu penyakit berikut?,3. Na-diagnose ka na ba ng doktor na may alinman sa mga sumusunod na sakit?
+2단계,보기,Các lựa chọn,选项,Варианты ответа,ជម្រើសចម្លើយ,Pilihan jawaban,Mga pagpipilian
+2단계,류머티스 관절염,Viêm khớp dạng thấp,类风湿关节炎,Ревматоидный артрит,ជំងឺរលាកសន្លាក់រ៉ូម៉ាតូអ៊ីត,Artritis reumatoid (rematik autoimun),Rheumatoid arthritis
+2단계,당뇨병,Bệnh tiểu đường,糖尿病,Сахарный диабет,ជំងឺទឹកនោមផ្អែម,Diabetes,Diyabetis
+2단계,루프스병,Bệnh lupus,红斑狼疮,Красная волчанка,ជំងឺលុយពីស (Lupus),Lupus,Lupus
+2단계,통풍,Bệnh gút,痛风,Подагра,ជំងឺហ្គោត (Gout),Gout (radang sendi karena asam urat),Gout
+2단계,알코올중독,Nghiện rượu,酒精成瘾,Алкогольная зависимость,ការញៀនស្រា,Ketergantungan alkohol,Pagdepende sa alak
+2단계,아니오,Không,否,Нет,ទេ,Tidak,Hindi
+2단계,예,Có,是,Да,បាទ/ចាស,Ya,Oo
+2단계,진단받은 질병,Bệnh đã được chẩn đoán,已确诊的疾病,Диагностированные заболевания,ជំងឺដែលគ្រូពេទ្យបានធ្វើរោគវិនិច្ឆ័យ,Penyakit yang telah didiagnosis,Mga sakit na na-diagnose
+2단계,현재상태는?,Tình trạng hiện tại?,目前状态？,Каково ваше состояние сейчас?,តើស្ថានភាពបច្ចុប្បន្នយ៉ាងដូចម្តេច?,Bagaimana kondisi Anda sekarang?,Ano ang kalagayan mo ngayon?
+2단계,완치,Đã khỏi hẳn,已痊愈,Полностью выздоровел(а),ជាសះស្បើយទាំងស្រុង,Sudah sembuh sepenuhnya,Ganap nang gumaling
+2단계,치료나 관찰 중,Đang điều trị hoặc theo dõi,正在治疗或观察中,Прохожу лечение или наблюдаюсь у врача,កំពុងព្យាបាល ឬតាមដានស្ថានភាព,Sedang menjalani pengobatan atau pemantauan,Ginagamot o sinusubaybayan pa
+2단계,"4. 과거에 운동 중 혹은 사고로(교통사고, 넘어짐, 추락 등) 인해 손/손가락/손목, 팔/팔꿈치, 어깨, 목, 허리, 다리/발 부위를 다친 적이 있습니까?","4. Trước đây bạn đã từng bị thương ở bàn tay/ngón tay/cổ tay, cánh tay/khuỷu tay, vai, cổ, lưng, chân/bàn chân do tập thể thao hoặc tai nạn (tai nạn giao thông, té ngã, rơi từ trên cao, v.v.) chưa?",4. 您过去是否因运动或事故（如交通事故、摔倒或从高处坠落），伤到过手、手指、手腕、手臂、肘部、肩部、颈部、腰部、腿或脚？,"4. Травмировали ли вы когда-нибудь кисть, пальцы рук, запястье, руку, локоть, плечо, шею, поясницу, ногу или стопу во время занятий спортом или из-за несчастного случая (ДТП, падение, падение с высоты и т. п.)?",4. តើអ្នកធ្លាប់រងរបួសត្រង់ប្រអប់ដៃ ម្រាមដៃ កដៃ ដៃ កែងដៃ ស្មា ក ចង្កេះ ជើង ឬប្រអប់ជើង ពេលហាត់កីឡា ឬដោយសារគ្រោះថ្នាក់ (គ្រោះថ្នាក់ចរាចរណ៍ ដួល ធ្លាក់ពីទីខ្ពស់ ជាដើម) ដែរឬទេ?,"4. Apakah tangan, jari tangan, pergelangan tangan, lengan, siku, bahu, leher, punggung bawah, tungkai, atau kaki Anda pernah cedera saat berolahraga atau karena kecelakaan (kecelakaan lalu lintas, jatuh, jatuh dari ketinggian, dll.)?","4. Napinsala ka na ba sa kamay, mga daliri, pulsuhan, braso, siko, balikat, leeg, ibabang bahagi ng likod, binti, o paa habang naglalaro ng isports o dahil sa aksidente (aksidente sa kalsada, pagkadapa, pagkahulog mula sa mataas na lugar, atbp.)?"
+2단계,상해 부위는?,Vị trí bị thương?,受伤部位？,Какие части тела были травмированы?,តើផ្នែកណាខ្លះបានរងរបួស?,Bagian tubuh mana yang cedera?,Aling mga bahagi ang napinsala?
+2단계,손/손가락/손목,Bàn tay/Ngón tay/Cổ tay,手/手指/手腕,Кисть / пальцы рук / запястье,ប្រអប់ដៃ / ម្រាមដៃ / កដៃ,Tangan / jari tangan / pergelangan tangan,Kamay / mga daliri sa kamay / pulsuhan
+2단계,5. 현재 하고 계시는 일의 육체적 부담 정도는 어느 정도라고 생각합니까?,5. Bạn thấy công việc hiện tại đòi hỏi thể lực ở mức nào?,5. 您觉得现在的工作有多费体力？,5. Насколько тяжела для вас нынешняя работа физически?,5. តើការងារដែលអ្នកកំពុងធ្វើធ្ងន់កម្លាំងប៉ុណ្ណាសម្រាប់អ្នក?,5. Seberapa berat pekerjaan Anda saat ini bagi tubuh Anda?,5. Gaano kabigat sa katawan ang kasalukuyan mong trabaho?
+2단계,전혀 힘들지 않음,Hoàn toàn không vất vả,完全不累,Совсем не тяжело,មិនធ្ងន់កម្លាំងទាល់តែសោះ,Sama sekali tidak berat,Hindi mabigat
+2단계,견딜만 함,Chịu được,可以忍受,Терпимо,អាចទ្រាំបាន,Masih sanggup,Kaya naman
+2단계,약간 힘듦,Hơi vất vả,有点累,Немного тяжело,ធ្ងន់កម្លាំងបន្តិច,Agak berat,Medyo mabigat
+2단계,매우 힘듦,Rất vất vả,非常累,Очень тяжело,ធ្ងន់កម្លាំងខ្លាំងណាស់,Sangat berat,Napakabigat
+2단계,1번(여가 및 취미활동): 해당 항목을 선택해 주세요. 없으면 '해당사항 없음'.,"Câu 1 (giải trí, sở thích): Vui lòng chọn mục phù hợp. Nếu không có, chọn 'Không có'.",第1题（休闲及兴趣活动）：请选择符合的项目。如果没有，请选择'无'。,"Вопрос 1 (досуг и хобби): выберите подходящие варианты. Если таких нет, выберите «Ничего из перечисленного».",សំណួរ 1 (សកម្មភាពកម្សាន្ត និងចំណង់ចំណូលចិត្ត)៖ សូមជ្រើសរើសចម្លើយដែលត្រូវនឹងអ្នក។ បើគ្មាន សូមជ្រើស «គ្មាន»។,"Nomor 1 (kegiatan waktu luang dan hobi): pilih yang sesuai. Jika tidak ada, pilih “Tidak ada”.","Tanong 1 (mga libangan at aktibidad): piliin ang naaangkop. Kung wala, piliin ang “Wala sa mga nabanggit”."
+2단계,1번: '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.,Câu 1: Không thể chọn 'Không có' cùng với các mục khác.,第1题：'无'不能与其他项目同时选择。,Вопрос 1: вариант «Ничего из перечисленного» нельзя выбирать вместе с другими вариантами.,សំណួរ 1៖ មិនអាចជ្រើស «គ្មាន» រួមជាមួយចម្លើយផ្សេងបានទេ។,Nomor 1: “Tidak ada” tidak dapat dipilih bersama pilihan lain.,Tanong 1: Hindi maaaring piliin ang “Wala sa mga nabanggit” kasabay ng ibang sagot.
+2단계,2번(가사노동시간)을 선택해 주세요.,Vui lòng trả lời câu 2 (thời gian làm việc nhà).,请回答第2题（家务时间）。,Ответьте на вопрос 2 (время на домашние дела).,សូមឆ្លើយសំណួរ 2 (រយៈពេលធ្វើការងារផ្ទះ)។,Jawab nomor 2 (waktu untuk pekerjaan rumah tangga).,Sagutin ang tanong 2 (oras sa gawaing-bahay).
+2단계,3번(질병 진단)을 선택해 주세요.,Vui lòng trả lời câu 3 (chẩn đoán bệnh).,请回答第3题（疾病诊断）。,Ответьте на вопрос 3 (диагнозы).,សូមឆ្លើយសំណួរ 3 (ជំងឺដែលបានធ្វើរោគវិនិច្ឆ័យ)។,Jawab nomor 3 (diagnosis penyakit).,Sagutin ang tanong 3 (mga na-diagnose na sakit).
+2단계,3번: 진단받은 질병을 선택해 주세요.,Câu 3: Vui lòng chọn bệnh đã được chẩn đoán.,第3题：请选择已确诊的疾病。,Вопрос 3: выберите диагностированные заболевания.,សំណួរ 3៖ សូមជ្រើសរើសជំងឺដែលគ្រូពេទ្យបានធ្វើរោគវិនិច្ឆ័យ។,Nomor 3: pilih penyakit yang telah didiagnosis.,Tanong 3: Piliin ang mga sakit na na-diagnose.
+2단계,3번: 현재상태를 선택해 주세요.,Câu 3: Vui lòng chọn tình trạng hiện tại.,第3题：请选择目前状态。,Вопрос 3: укажите текущее состояние.,សំណួរ 3៖ សូមជ្រើសរើសស្ថានភាពបច្ចុប្បន្ន។,Nomor 3: pilih kondisi Anda saat ini.,Tanong 3: Piliin ang kalagayan mo ngayon.
+2단계,4번(과거 손상)을 선택해 주세요.,Vui lòng trả lời câu 4 (chấn thương trước đây).,请回答第4题（既往损伤）。,Ответьте на вопрос 4 (перенесённые травмы).,សូមឆ្លើយសំណួរ 4 (របួសពីមុន)។,Jawab nomor 4 (riwayat cedera).,Sagutin ang tanong 4 (mga dating pinsala).
+2단계,4번: 상해 부위를 선택해 주세요.,Câu 4: Vui lòng chọn vị trí bị thương.,第4题：请选择受伤部位。,Вопрос 4: укажите травмированные части тела.,សំណួរ 4៖ សូមជ្រើសរើសផ្នែកដែលបានរងរបួស។,Nomor 4: pilih bagian tubuh yang cedera.,Tanong 4: Piliin ang mga bahaging napinsala.
+2단계,5번(육체적 부담 정도)을 선택해 주세요.,Vui lòng trả lời câu 5 (mức độ nặng nhọc thể chất).,请回答第5题（体力负担程度）。,Ответьте на вопрос 5 (физическая нагрузка).,សូមឆ្លើយសំណួរ 5 (កម្រិតធ្ងន់កម្លាំងនៃការងារ)។,Jawab nomor 5 (beban fisik pekerjaan).,Sagutin ang tanong 5 (bigat ng trabaho sa katawan).
+3단계,"지난 1년 동안 손/손가락/손목, 팔/팔꿈치, 어깨, 목, 허리, 다리/발 중 어느 한 부위에서라도 귀하의 작업과 관련하여 통증이나, 쑤시는 느낌, 뻣뻣함, 화끈거리는 느낌, 무감각 혹은 찌릿찌릿함 등의 증상을 느끼신 적이 있습니까?","Trong 1 năm qua, do công việc, bạn có từng bị đau, đau nhức, cứng, nóng rát, tê hoặc châm chích ở bất kỳ vị trí nào sau đây không: bàn tay, ngón tay, cổ tay, cánh tay, khuỷu tay, vai, cổ, thắt lưng, chân hoặc bàn chân?",在过去1年中，您是否在手/手指/手腕、手臂/肘部、肩部、颈部、腰部、腿/脚中的任何一个部位，感受到与工作有关的疼痛、酸痛、僵硬、灼热感、麻木或刺痛等症状？,"За последние 12 месяцев возникали ли у вас из-за работы боль, ломота, скованность, жжение, онемение или покалывание хотя бы в одной из этих областей: кисть, пальцы рук, запястье, рука, локоть, плечо, шея, поясница, нога или стопа?",ក្នុងរយៈពេល 1 ឆ្នាំកន្លងមក តើអ្នកធ្លាប់មានអាការៈឈឺចាប់ ឈឺចុករយ រាងកាយរឹង ក្តៅក្រហាយ ស្ពឹក ឬចាក់ៗ ដោយសារការងារ នៅផ្នែកណាមួយខាងក្រោមដែរឬទេ៖ ប្រអប់ដៃ ម្រាមដៃ កដៃ ដៃ កែងដៃ ស្មា ក ចង្កេះ ជើង ឬប្រអប់ជើង?,"Dalam 1 tahun terakhir, apakah karena pekerjaan Anda pernah merasakan nyeri, pegal, kaku, rasa panas seperti terbakar, mati rasa, atau kesemutan pada salah satu bagian berikut: tangan, jari tangan, pergelangan tangan, lengan, siku, bahu, leher, punggung bawah, tungkai, atau kaki?","Sa nakaraang 1 taon, nakaramdam ka na ba dahil sa trabaho ng pananakit, kirot, paninigas, hapdi na parang nasusunog, pamamanhid, o tusok-tusok sa alinman sa mga ito: kamay, mga daliri, pulsuhan, braso, siko, balikat, leeg, ibabang bahagi ng likod, binti, o paa?"
+3단계,아팠던 부위를 모두 누르세요,Hãy chọn tất cả các bộ phận đã bị đau,请点选所有曾经疼痛的部位,"Нажмите на все части тела, которые болели",ចុចលើគ្រប់ផ្នែកដែលធ្លាប់ឈឺ,Ketuk semua bagian yang pernah terasa sakit,Pindutin ang lahat ng bahaging sumakit
+3단계,그림에서 선택한 부위가 빨간색으로 표시됩니다.,Bộ phận đã chọn sẽ hiện màu đỏ trên hình.,所选部位将在图中以红色显示。,Выбранные части тела выделяются на рисунке красным цветом.,ផ្នែកដែលអ្នកជ្រើសរើសនឹងបង្ហាញជាពណ៌ក្រហមលើរូបភាព។,Bagian yang dipilih akan ditandai merah pada gambar.,Mamumula sa larawan ang mga bahaging pinili mo.
+3단계,통증이 없으시면 다음 단계에서 바로 제출할 수 있습니다.,"Nếu không đau, bạn có thể gửi ngay ở bước tiếp theo.",如果没有疼痛，可以在下一步直接提交。,"Если боли не было, на следующем шаге можно сразу отправить анкету.",បើអ្នកមិនមានការឈឺចាប់ អ្នកអាចបញ្ជូនចម្លើយភ្លាមៗនៅជំហានបន្ទាប់។,"Jika tidak ada nyeri, Anda bisa langsung mengirim jawaban pada langkah berikutnya.","Kung wala kang naramdamang pananakit, maaari mo nang isumite ang mga sagot sa susunod na hakbang."
+3단계,증상 여부를 선택해 주세요.,Vui lòng chọn có triệu chứng hay không.,请选择是否有症状。,"Укажите, были ли симптомы.",សូមជ្រើសថាធ្លាប់មានរោគសញ្ញាឬអត់។,Pilih apakah Anda mengalami gejala.,Piliin kung nakaramdam ka ng mga sintomas.
+3단계,아팠던 부위를 하나 이상 선택해 주세요.,Vui lòng chọn ít nhất một bộ phận đã bị đau.,请至少选择一个疼痛过的部位。,"Выберите хотя бы одну часть тела, которая болела.",សូមជ្រើសរើសយ៉ាងហោចណាស់មួយផ្នែកដែលធ្លាប់ឈឺ។,Pilih setidaknya satu bagian yang pernah terasa sakit.,Pumili ng kahit isang bahaging sumakit.
+4단계,<보기> 아픈 정도 기준,Hướng dẫn đánh giá mức độ đau,疼痛程度参考,Шкала оценки боли,កម្រិតនៃការឈឺចាប់ (សម្រាប់យោង),Panduan tingkat nyeri,Gabay sa tindi ng pananakit
+4단계,1. 통증의 구체적 부위는?,1. Bạn đau cụ thể ở bên nào?,1. 您具体是哪一侧疼痛？,1. Где именно болит?,1. តើឈឺត្រង់ណាជាក់លាក់?,1. Di sisi mana nyerinya terasa?,1. Saang bahagi mismo ang masakit?
+4단계,오른쪽,Bên phải,右侧,Справа,ខាងស្តាំ,Kanan,Kanan
+4단계,왼쪽,Bên trái,左侧,Слева,ខាងឆ្វេង,Kiri,Kaliwa
+4단계,양쪽 모두,Cả hai bên,两侧都有,С обеих сторон,ទាំងសងខាង,Kedua sisi,Magkabilang panig
+4단계,2. 한번 아프기 시작하면 통증 기간은 얼마 동안 지속됩니까?,"2. Mỗi khi bắt đầu đau, cơn đau kéo dài bao lâu?",2. 每次开始疼痛后，疼痛会持续多长时间？,"2. Когда начинается боль, как долго она длится?",2. ពេលចាប់ផ្តើមឈឺ តើការឈឺចាប់បន្តរយៈពេលប៉ុន្មាន?,"2. Setelah muncul, berapa lama nyeri biasanya berlangsung?","2. Kapag nagsimula ang pananakit, gaano ito katagal?"
+4단계,1일 미만,Dưới 1 ngày,不到1天,Менее 1 дня,តិចជាង 1 ថ្ងៃ,Kurang dari 1 hari,Wala pang 1 araw
+4단계,1일-1주일 미만,1 ngày đến dưới 1 tuần,1天~不到1周,От 1 дня до менее 1 недели,ចាប់ពី 1 ថ្ងៃ ដល់ក្រោម 1 សប្ដាហ៍,1 hari hingga kurang dari 1 minggu,1 araw hanggang wala pang 1 linggo
+4단계,1주일-1달 미만,1 tuần đến dưới 1 tháng,1周~不到1个月,От 1 недели до менее 1 месяца,ចាប់ពី 1 សប្ដាហ៍ ដល់ក្រោម 1 ខែ,1 minggu hingga kurang dari 1 bulan,1 linggo hanggang wala pang 1 buwan
+4단계,1달-6개월 미만,1 tháng đến dưới 6 tháng,1个月~不到6个月,От 1 месяца до менее 6 месяцев,ចាប់ពី 1 ខែ ដល់ក្រោម 6 ខែ,1 bulan hingga kurang dari 6 bulan,1 buwan hanggang wala pang 6 na buwan
+4단계,6개월 이상,Từ 6 tháng trở lên,6个月以上,6 месяцев и более,6 ខែឡើងទៅ,6 bulan atau lebih,6 na buwan o higit pa
+4단계,3. 그때의 아픈 정도는 어느 정도입니까? (보기 참조),3. Khi đó mức độ đau như thế nào? (xem phần tham khảo),3. 当时有多疼？（请参照疼痛程度说明。）,3. Насколько сильной была боль? (См. шкалу.),3. តើពេលនោះឈឺខ្លាំងកម្រិតណា? (សូមមើលកម្រិតសម្រាប់យោង។),3. Seberapa berat nyeri saat itu? (Lihat panduan.),3. Gaano katindi ang pananakit noon? (Tingnan ang gabay.)
+4단계,약한 통증,Đau nhẹ,轻度疼痛,Слабая боль,ឈឺស្រាល,Nyeri ringan,Bahagyang pananakit
+4단계,중간 통증,Đau vừa,中度疼痛,Умеренная боль,ឈឺមធ្យម,Nyeri sedang,Katamtamang pananakit
+4단계,심한 통증,Đau nặng,重度疼痛,Сильная боль,ឈឺខ្លាំង,Nyeri berat,Matinding pananakit
+4단계,매우 심한 통증,Đau rất nặng,非常严重的疼痛,Очень сильная боль,ឈឺខ្លាំងណាស់,Nyeri sangat berat,Napakatinding pananakit
+4단계,약간 불편한 정도이나 작업에 열중할 때는 못 느낀다,Hơi khó chịu nhưng không cảm thấy khi tập trung làm việc,有点不舒服，但专心工作时感觉不到,"Небольшой дискомфорт, который не замечаю, когда увлечён(а) работой.",មិនស្រួលបន្តិច ប៉ុន្តែមិនសូវមានអារម្មណ៍ពេលផ្តោតលើការងារ។,"Sedikit tidak nyaman, tetapi tidak terasa saat fokus bekerja.","Medyo hindi komportable, pero hindi ko ito napapansin kapag tutok ako sa trabaho."
+4단계,작업 중 통증이 있으나 귀가 후 휴식을 취하면 괜찮다,Đau trong khi làm việc nhưng về nhà nghỉ ngơi thì đỡ,工作时会疼，回家休息后就好了。,"Во время работы болит, но после отдыха дома боль проходит.",ឈឺពេលធ្វើការ ប៉ុន្តែធូរវិញពេលសម្រាកនៅផ្ទះ។,"Terasa nyeri saat bekerja, tetapi membaik setelah beristirahat di rumah.","Masakit habang nagtatrabaho, pero gumagaan kapag nakapagpahinga na sa bahay."
+4단계,작업 중 통증이 비교적 심하고 귀가 후에도 통증이 계속된다,Đau khá nặng khi làm việc và vẫn còn đau sau khi về nhà,工作时疼痛比较严重，回家后疼痛仍持续,Во время работы боль довольно сильная и не проходит даже дома.,ឈឺខ្លាំងគួរសមពេលធ្វើការ ហើយនៅតែឈឺពេលត្រឡប់ដល់ផ្ទះ។,Nyeri cukup berat saat bekerja dan masih terasa setelah pulang.,Medyo matindi ang sakit habang nagtatrabaho at tuloy pa rin pag-uwi.
+4단계,통증 때문에 작업은 물론 일상생활을 하기가 어렵다,Vì đau nên khó làm việc và cả sinh hoạt hằng ngày,因为疼痛，不仅难以工作，连日常生活也很困难,"Из-за боли трудно и работать, и заниматься повседневными делами.",ដោយសារឈឺ ពិបាកទាំងធ្វើការ និងធ្វើកិច្ចការប្រចាំថ្ងៃ។,Nyeri membuat saya sulit bekerja dan menjalani kegiatan sehari-hari.,"Dahil sa sakit, nahihirapan akong magtrabaho at gawin ang mga pang-araw-araw na gawain."
+4단계,4. 지난 1년 동안 이러한 증상을 얼마나 자주 경험하셨습니까?,"4. Trong 1 năm qua, bạn gặp các triệu chứng này thường xuyên như thế nào?",4. 过去1年中，您多久出现一次这些症状？,4. Как часто возникали эти симптомы за последние 12 месяцев?,4. ក្នុងរយៈពេល 1 ឆ្នាំកន្លងមក តើអ្នកមានរោគសញ្ញាទាំងនេះញឹកញាប់ប៉ុណ្ណា?,"4. Dalam 1 tahun terakhir, seberapa sering Anda mengalami gejala ini?","4. Sa nakaraang 1 taon, gaano kadalas mong naramdaman ang mga sintomas na ito?"
+4단계,6개월에 1번,6 tháng 1 lần,6个月1次,Раз в 6 месяцев,ម្តងក្នុង 6 ខែ,Sekali setiap 6 bulan,Isang beses kada 6 na buwan
+4단계,2-3달에 1번,2–3 tháng 1 lần,2~3个月1次,Раз в 2–3 месяца,ម្តងក្នុង 2–3 ខែ,Sekali setiap 2–3 bulan,Isang beses kada 2–3 buwan
+4단계,1달에 1번,1 tháng 1 lần,1个月1次,Раз в месяц,ម្តងក្នុងមួយខែ,Sekali sebulan,Isang beses kada buwan
+4단계,1주일에 1번,1 tuần 1 lần,1周1次,Раз в неделю,ម្តងក្នុងមួយសប្ដាហ៍,Sekali seminggu,Isang beses kada linggo
+4단계,매일,Hằng ngày,每天,Каждый день,រៀងរាល់ថ្ងៃ,Setiap hari,Araw-araw
+4단계,5. 지난 1주일 동안에도 이러한 증상이 있었습니까?,"5. Trong 1 tuần qua, bạn có gặp những triệu chứng này không?",5. 过去1周内是否也有这些症状？,5. Были ли эти симптомы и в течение последней недели?,5. ក្នុងរយៈពេល 1 សប្ដាហ៍កន្លងមក តើអ្នកក៏មានរោគសញ្ញាទាំងនេះដែរឬទេ?,5. Apakah gejala ini juga muncul dalam 1 minggu terakhir?,5. Naramdaman mo rin ba ang mga sintomas na ito sa nakaraang linggo?
+4단계,6. 지난 1년 동안 이러한 통증으로 인해 어떤 일이 있었습니까?,"6. Trong 1 năm qua, cơn đau này đã ảnh hưởng đến bạn như thế nào?",6. 过去1年，您因疼痛遇到过以下哪些情况？,6. К чему привела эта боль за последние 12 месяцев?,6. ក្នុងរយៈពេល 1 ឆ្នាំកន្លងមក តើមានអ្វីកើតឡើងដោយសារការឈឺចាប់នេះ?,"6. Dalam 1 tahun terakhir, apa yang terjadi akibat nyeri ini?","6. Sa nakaraang 1 taon, ano ang nangyari dahil sa pananakit na ito?"
+4단계,병원·한의원 치료,Điều trị tại bệnh viện hoặc phòng khám y học cổ truyền Hàn Quốc,在医院或韩医诊所接受治疗,Лечение в больнице или клинике традиционной корейской медицины,ព្យាបាលនៅមន្ទីរពេទ្យ ឬគ្លីនិកវេជ្ជសាស្ត្របុរាណកូរ៉េ,Berobat ke rumah sakit atau klinik pengobatan tradisional Korea,Nagpagamot sa ospital o klinika ng tradisyonal na medisina ng Korea
+4단계,약국치료,Dùng thuốc mua ở nhà thuốc,在药店买药治疗,Лечение средствами из аптеки,ប្រើថ្នាំពីឱសថស្ថាន,Menggunakan obat dari apotek,Gumamit ng gamot mula sa botika
+4단계,"병가, 산재",Nghỉ ốm hoặc làm thủ tục liên quan đến tai nạn lao động hay bệnh nghề nghiệp,请病假或办理工伤相关手续,Больничный или оформление производственной травмы либо профзаболевания,ឈប់សម្រាកដោយសារឈឺ ឬដាក់ពាក្យសំណងសម្រាប់របួស ឬជំងឺដែលបណ្តាលមកពីការងារ,Cuti sakit atau pengurusan klaim kecelakaan atau penyakit akibat kerja,Nag-sick leave o nag-asikaso ng claim para sa pinsala o sakit na dulot ng trabaho
+4단계,작업 전환,Được chuyển sang công việc khác,调换工作任务,Перевод на другую работу,ប្តូរទៅធ្វើកិច្ចការផ្សេង,Dialihkan ke tugas lain,Inilipat sa ibang gawain
+4단계,기타,Khác,其他,Другое,ផ្សេងទៀត,Lainnya,Iba pa
+4단계,기타 내용,Nội dung khác,其他内容,"Уточните, что именно",សូមបញ្ជាក់អ្វីផ្សេងទៀត,Jelaskan pilihan “Lainnya”,Ilagay ang detalye ng “Iba pa”
+4단계,1번 구체적 부위,Câu 1 (vị trí cụ thể),第1题（具体部位）,Вопрос 1: точное место боли,សំណួរ 1៖ ទីតាំងដែលឈឺជាក់លាក់,Nomor 1: lokasi nyeri yang spesifik,Tanong 1: Eksaktong bahaging masakit
+4단계,{n}번,Câu {n},第{n}题,Вопрос {n},សំណួរ {n},Nomor {n},Tanong {n}
+4단계,6번 기타 내용,Câu 6 (nội dung khác),第6题（其他内容）,Вопрос 6: уточнение варианта «Другое»,សំណួរ 6៖ ព័ត៌មានលម្អិតសម្រាប់ «ផ្សេងទៀត»,Nomor 6: rincian pilihan “Lainnya”,Tanong 6: Detalye ng “Iba pa”
+4단계,{part}: 6번 '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.,"{part}: Ở câu 6, không thể chọn “Không có” cùng với các mục khác.",{part}：第6题的“无”不能与其他选项同时选择。,{part}: в вопросе 6 вариант «Ничего из перечисленного» нельзя выбрать вместе с другими вариантами.,{part}៖ នៅសំណួរ 6 មិនអាចជ្រើស «គ្មាន» រួមជាមួយចម្លើយផ្សេងបានទេ។,"{part}: pada nomor 6, “Tidak ada” tidak dapat dipilih bersama pilihan lain.","{part}: Sa tanong 6, hindi maaaring piliin ang “Wala sa mga nabanggit” kasabay ng ibang sagot."
+4단계,{part}: {items} 응답이 필요합니다.,{part}: Cần trả lời {items}.,{part}：请回答 {items}。,{part}: нужно ответить на {items}.,{part}៖ សូមឆ្លើយ {items}។,{part}: jawab {items}.,{part}: Pakisagutan ang {items}.
+5단계,응답 내용을 확인해 주세요. 고칠 부분이 있으면 '이전'으로 돌아가 수정할 수 있습니다.,"Vui lòng kiểm tra lại câu trả lời. Nếu cần sửa, hãy bấm 'Quay lại' để chỉnh sửa.",请确认您的回答。如需修改，可点击'上一步'返回修改。,"Проверьте ответы. Чтобы исправить их, нажмите «Назад».",សូមពិនិត្យចម្លើយរបស់អ្នក។ បើចង់កែ សូមចុច «ត្រឡប់ក្រោយ»។,"Periksa kembali jawaban Anda. Untuk mengubahnya, tekan “Kembali”.","Suriin ang mga sagot mo. Kung may kailangang itama, pindutin ang “Bumalik”."
+5단계,지난 1년간 작업 관련 근골격계 증상: 없음,Triệu chứng cơ xương khớp liên quan đến công việc trong 1 năm qua: Không có,过去1年与工作相关的肌肉骨骼症状：无,"Симптомы со стороны мышц, костей и суставов, связанные с работой за последние 12 месяцев: нет.",រោគសញ្ញាសាច់ដុំ និងឆ្អឹងដែលពាក់ព័ន្ធនឹងការងារក្នុងរយៈពេល 1 ឆ្នាំកន្លងមក៖ គ្មាន។,"Gejala pada otot, tulang, atau sendi terkait pekerjaan dalam 1 tahun terakhir: tidak ada.","Mga sintomas sa kalamnan, buto, o kasukasuan na may kaugnayan sa trabaho sa nakaraang 1 taon: wala."
+5단계,입력한 내용이 사실과 같음을 확인합니다.,Tôi xác nhận nội dung đã nhập là đúng sự thật.,我确认所填写的内容属实。,"Подтверждаю, что указанные сведения верны.",ខ្ញុំបញ្ជាក់ថាព័ត៌មានដែលខ្ញុំបានបញ្ចូលគឺត្រឹមត្រូវតាមការពិត។,Saya menyatakan bahwa informasi yang saya masukkan sesuai kenyataan.,Kinukumpirma kong totoo ang impormasyong inilagay ko.
+5단계,저장소 연결에 실패했습니다. 담당자에게 알려 주세요.,Không kết nối được với hệ thống lưu trữ. Vui lòng báo cho người phụ trách.,无法连接数据存储系统。请告知工作人员。,Не удалось подключиться к хранилищу данных. Сообщите ответственному сотруднику.,មិនអាចភ្ជាប់ទៅកន្លែងផ្ទុកទិន្នន័យបានទេ។ សូមជូនដំណឹងដល់អ្នកទទួលបន្ទុក។,Tidak dapat terhubung ke penyimpanan data. Beri tahu petugas.,Hindi makakonekta sa imbakan ng datos. Ipaalam ito sa tagapangasiwa.
+5단계,올해 같은 성명·업체로 제출된 응답이 이미 있습니다. 내용을 고쳐야 하면 보건관리 담당자에게 알려 주세요.,"Năm nay đã có một câu trả lời được gửi với cùng họ tên và tên công ty. Nếu cần sửa, vui lòng báo cho người phụ trách sức khỏe người lao động.",今年已收到姓名和公司名称相同的答卷。如需修改，请联系负责员工健康管理的人员。,"В этом году анкета с таким же именем, фамилией и названием компании уже отправлена. Для исправления обратитесь к ответственному за охрану здоровья работников.",ឆ្នាំនេះ មានចម្លើយដែលបានបញ្ជូនដោយប្រើឈ្មោះពេញ និងឈ្មោះក្រុមហ៊ុនដូចគ្នារួចហើយ។ បើត្រូវការកែ សូមជូនដំណឹងដល់អ្នកទទួលបន្ទុកសុខភាពកម្មករ។,"Tahun ini sudah ada jawaban yang dikirim dengan nama lengkap dan nama perusahaan yang sama. Jika perlu memperbaiki jawaban, hubungi petugas kesehatan kerja.","May naisumite nang sagot ngayong taon na may parehong buong pangalan at kompanya. Kung may kailangang itama, ipaalam sa tagapangasiwa ng kalusugan sa trabaho."
+5단계,저장 중 오류가 발생했습니다. 잠시 후 다시 눌러 주세요.,Đã xảy ra lỗi khi lưu. Vui lòng đợi một lát rồi bấm lại.,保存时发生错误，请稍后再试。,Не удалось сохранить ответы. Попробуйте нажать ещё раз через несколько секунд.,មានបញ្ហាពេលរក្សាទុក។ សូមរង់ចាំបន្តិច រួចចុចម្តងទៀត។,"Terjadi kesalahan saat menyimpan. Tunggu sebentar, lalu tekan lagi.",Nagka-error habang sine-save ang mga sagot. Maghintay sandali at pindutin ulit.
+완료,제출이 완료되었습니다,Đã gửi thành công,提交完成,Анкета отправлена,បានបញ្ជូនចម្លើយរួចរាល់,Jawaban berhasil dikirim,Naisumite na ang mga sagot
+완료,응답해 주셔서 감사합니다. 결과는 작업환경 개선에 활용됩니다.,Cảm ơn bạn đã trả lời. Kết quả sẽ được dùng để cải thiện môi trường làm việc.,感谢您的回答。结果将用于改善作业环境。,Спасибо за ответы. Результаты помогут улучшить условия труда.,សូមអរគុណដែលបានឆ្លើយ។ លទ្ធផលនឹងត្រូវប្រើដើម្បីកែលម្អបរិយាកាសការងារ។,Terima kasih sudah mengisi. Hasilnya akan digunakan untuk memperbaiki lingkungan kerja.,Salamat sa pagsagot. Gagamitin ang resulta para mapabuti ang kondisyon sa trabaho.
+완료,통증이 계속되거나 심해지면 보건관리 담당자와 상담해 주세요.,"Nếu cơn đau kéo dài hoặc nặng hơn, vui lòng trao đổi với người phụ trách sức khỏe người lao động.",如果疼痛持续或加重，请咨询负责员工健康管理的人员。,"Если боль не проходит или усиливается, обратитесь к ответственному за охрану здоровья работников.",បើការឈឺចាប់នៅតែបន្ត ឬកាន់តែខ្លាំង សូមពិគ្រោះជាមួយអ្នកទទួលបន្ទុកសុខភាពកម្មករ។,"Jika nyeri berlanjut atau makin parah, konsultasikan dengan petugas kesehatan kerja.","Kung patuloy o lumalala ang pananakit, kumonsulta sa tagapangasiwa ng kalusugan sa trabaho."
+완료,내 응답 사본 받기 (PDF),Tải bản sao câu trả lời của tôi (PDF),下载我的答卷副本（PDF）,Скачать копию моих ответов (PDF),ទាញយកច្បាប់ចម្លងនៃចម្លើយរបស់ខ្ញុំ (PDF),Unduh salinan jawaban saya (PDF),I-download ang kopya ng mga sagot ko (PDF)
+완료,내 응답 사본 받기 (Word),Tải bản sao câu trả lời của tôi (Word),下载我的答卷副本（Word）,Скачать копию моих ответов (Word),ទាញយកច្បាប់ចម្លងនៃចម្លើយរបស់ខ្ញុំ (Word),Unduh salinan jawaban saya (Word),I-download ang kopya ng mga sagot ko (Word)
+완료,사본은 한국어 공식 서식으로 제공됩니다.,Bản sao được cung cấp theo mẫu chính thức bằng tiếng Hàn.,副本以韩语官方格式提供。,Копия предоставляется на официальном бланке на корейском языке.,ច្បាប់ចម្លងផ្តល់ជូនតាមទម្រង់ផ្លូវការជាភាសាកូរ៉េ។,Salinan tersedia dalam formulir resmi berbahasa Korea.,Ang kopya ay nasa opisyal na pormularyo sa wikang Koreano.
+완료,새 응답 작성 (다른 사람),Điền phiếu mới (cho người khác),填写新答卷（其他人）,Заполнить новую анкету (для другого человека),បំពេញចម្លើយថ្មី (សម្រាប់អ្នកផ្សេង),Isi jawaban baru (untuk orang lain),Magsagot ng bagong talatanungan (para sa ibang tao)

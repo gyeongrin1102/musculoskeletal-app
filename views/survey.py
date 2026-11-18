@@ -76,7 +76,7 @@ def reset_survey():
 def language_picker():
     if len(LANGS) <= 1:
         return
-    st.radio("🌐 언어 · Ngôn ngữ · 语言 · Language", LANGS, index=None, horizontal=True,
+    st.radio("🌐 언어 · Language", LANGS, index=None, horizontal=True,
              format_func=i18n.display_name, key="survey_lang")
 
 
