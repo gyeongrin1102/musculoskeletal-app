@@ -467,6 +467,8 @@ def _write_form(doc, r, org="", include_judgment=False):
     if org:
         _para(doc, org, 9, False, AL.CENTER, 0, 4)
     meta = []
+    if _clean(r.get("업체명")):
+        meta.append(f"업체명: {_clean(r.get('업체명'))}")
     if _clean(r.get("제출일시")):
         meta.append(f"작성일시: {_clean(r.get('제출일시'))}")
     if meta:
@@ -637,8 +639,13 @@ def build_pdf(records, org="", include_judgment=False):
         story.append(P(FORM_TITLE, 16, True, 1))
         if org:
             story.append(P(org, 9, False, 1))
+        meta = []
+        if _clean(r.get("업체명")):
+            meta.append(f"업체명: {_clean(r.get('업체명'))}")
         if _clean(r.get("제출일시")):
-            story.append(P(f"작성일시: {_clean(r.get('제출일시'))}", 8, False, 2))
+            meta.append(f"작성일시: {_clean(r.get('제출일시'))}")
+        if meta:
+            story.append(P("  ".join(meta), 8, False, 2))
         story.append(Spacer(1, 4))
         story.append(P("Ⅰ. 아래 사항을 직접 기입해 주시기 바랍니다.", 10, True))
         story.append(Spacer(1, 3))
@@ -703,6 +710,13 @@ def build_pdf(records, org="", include_judgment=False):
 # 엑셀 집계표
 # =========================================================
 
+def company_of(r):
+    for key in ("업체명", "company", "company_name", "사업장명"):
+        if _clean(r.get(key)).strip():
+            return _clean(r.get(key)).strip()
+    return ""
+
+
 def summary_tables(records):
     """집계용 표(개인 식별정보 없음)를 pandas DataFrame 으로."""
     import pandas as pd
@@ -763,7 +777,7 @@ def summary_tables(records):
 
 
 RAW_COLUMNS = [
-    "제출일시", "조사연도", "성명", "성별", "연령", "결혼여부", "작업부서", "라인/세부부서",
+    "제출일시", "조사연도", "업체명", "성명", "성별", "연령", "결혼여부", "작업부서", "라인/세부부서",
     "수행작업", "현직장_근무년", "현직장_근무개월", "현재작업", "현재작업_수행년",
     "현재작업_수행개월", "1일근무시간", "휴식시간_분", "휴식횟수", "이전작업",
     "이전작업_수행년", "이전작업_수행개월", "취미활동", "가사노동", "질병진단여부",
@@ -817,7 +831,7 @@ def build_xlsx(records, title="", include_personal=True):
                 raw.append(row)
             raw_df = pd.DataFrame(raw)
             target = raw_df[raw_df["최종판정"] != "정상"] if len(raw_df) else raw_df
-            cols = ["최종판정", "성명", "작업부서", "라인/세부부서", "수행작업", "연령", "성별"]
+            cols = ["최종판정", "업체명", "성명", "작업부서", "라인/세부부서", "수행작업", "연령", "성별"]
             judged_parts = []
             for r in target.to_dict("records") if len(target) else []:
                 judged_parts.append(", ".join(

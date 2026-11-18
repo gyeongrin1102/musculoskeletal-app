@@ -15,9 +15,13 @@ import pandas as pd
 import streamlit as st
 
 import survey_form as sf
-from auth import logout_button, require_admin
+from auth import get_authenticated_supabase, logout_button, require_admin
+from session_query_cache import clear_session_query_cache, get_cached_query
+from ui_theme import apply_theme
 
 require_admin()
+apply_theme()
+UNKNOWN_COMPANY = "업체 미분류"
 
 DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -33,16 +37,16 @@ def secret(name, default=""):
 ORG = secret("ORG_NAME", "")
 
 
-@st.cache_resource
-def get_supabase():
-    from supabase import create_client
-    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+supabase = get_authenticated_supabase()
 
 
-@st.cache_data(ttl=30)
-def load_records():
-    rows = (get_supabase().table("survey_results").select("*")
+def _fetch_rows():
+    return (supabase.table("survey_results").select("*")
             .order("created_at", desc=True).execute().data or [])
+
+
+def load_records():
+    rows = get_cached_query("survey_print_rows", _fetch_rows)
     records = []
     for row in rows:
         r = dict(row.get("survey_data") or {})
@@ -54,6 +58,9 @@ def load_records():
                 r[k] = row.get(col)
         if not r.get("제출일시") and row.get("created_at"):
             r["제출일시"] = str(row["created_at"])[:19].replace("T", " ")
+        if not r.get("업체명") and (row.get("company") or row.get("company_name")):
+            r["업체명"] = row.get("company") or row.get("company_name")
+        r["_업체"] = sf.company_of(r) or UNKNOWN_COMPANY
         r["_id"] = row.get("id")
         r["_저장판정"] = row.get("final_judgment") or r.get("최종판정") or ""
         r["_판정"] = sf.judge_record(r)["최종판정"]
@@ -105,9 +112,12 @@ years = sorted({r["_연도"] for r in records if r["_연도"]}, reverse=True)
 # 응답자 조사표 출력
 # ---------------------------------------------------------
 with tab_out:
-    c1, c2, c3, c4 = st.columns([1, 1.4, 1.4, 1.4])
+    c0, c1, c2, c3, c4 = st.columns([1.3, 1, 1.4, 1.4, 1.2])
     year = c1.selectbox("조사연도", years, key="po_year")
-    pool = [r for r in records if r["_연도"] == year]
+    companies = sorted({r["_업체"] for r in records})
+    company = c0.selectbox("업체", ["전체 업체"] + companies, key="po_company")
+    pool = [r for r in records if r["_연도"] == year
+            and (company == "전체 업체" or r["_업체"] == company)]
     depts = sorted({str(r.get("작업부서") or "(미기재)") for r in pool})
     dept = c2.multiselect("작업부서", depts, placeholder="전체")
     judg = c3.multiselect("판정", sf.JUDGMENTS, placeholder="전체")
@@ -121,6 +131,7 @@ with tab_out:
     table = pd.DataFrame([{
         "선택": True,
         "제출일시": r.get("제출일시", ""),
+        "업체": r["_업체"],
         "성명": r.get("성명", ""),
         "작업부서": r.get("작업부서", ""),
         "라인": r.get("라인/세부부서", ""),
@@ -132,9 +143,9 @@ with tab_out:
     else:
         edited = st.data_editor(
             table, hide_index=True, width="stretch",
-            disabled=["제출일시", "성명", "작업부서", "라인", "판정"],
+            disabled=["제출일시", "업체", "성명", "작업부서", "라인", "판정"],
             column_config={"선택": st.column_config.CheckboxColumn("선택", width="small")},
-            key=f"po_table_{year}_{len(shown)}")
+            key=f"po_table_{company}_{year}_{len(shown)}")
         chosen = [shown[i] for i, on in enumerate(edited["선택"].tolist()) if on]
         st.caption(f"{len(shown)}명 중 {len(chosen)}명 선택")
 
@@ -177,8 +188,12 @@ with tab_out:
 # 집계·보관 엑셀
 # ---------------------------------------------------------
 with tab_xlsx:
-    year_x = st.selectbox("조사연도", years, key="px_year")
-    pool = [r for r in records if r["_연도"] == year_x]
+    c1, c2 = st.columns(2)
+    company_x = c1.selectbox("업체", ["전체 업체"] + sorted({r["_업체"] for r in records}),
+                             key="px_company")
+    year_x = c2.selectbox("조사연도", years, key="px_year")
+    pool = [r for r in records if r["_연도"] == year_x
+            and (company_x == "전체 업체" or r["_업체"] == company_x)]
     overall, by_part, by_dept = sf.summary_tables(pool)
     c = st.columns(4)
     o = overall.iloc[0]
@@ -189,16 +204,17 @@ with tab_xlsx:
     st.dataframe(by_part, hide_index=True, width="stretch")
     st.dataframe(by_dept, hide_index=True, width="stretch")
 
-    title = f"{year_x}년 {sf.FORM_TITLE} 결과" + (f" ({ORG})" if ORG else "")
+    who = company_x if company_x not in ("전체 업체", UNKNOWN_COMPANY) else ORG
+    title = f"{year_x}년 {sf.FORM_TITLE} 결과" + (f" ({who})" if who else "")
     stamp = datetime.now().strftime("%Y%m%d")
     c1, c2 = st.columns(2)
     c1.download_button(
         "담당자 보관용 엑셀 (원자료·명단 포함)", sf.build_xlsx(pool, title, True),
-        f"{year_x}_근골격계증상조사_보관용_{stamp}.xlsx", XLSX_MIME, width="stretch",
+        f"{year_x}_{'' if company_x == '전체 업체' else company_x + '_'}근골격계증상조사_보관용_{stamp}.xlsx", XLSX_MIME, width="stretch",
         help="건강정보가 들어 있습니다. 담당자만 열람할 수 있는 곳에 5년간 보관하세요.")
     c2.download_button(
         "보고·공유용 엑셀 (집계만)", sf.build_xlsx(pool, title, False),
-        f"{year_x}_근골격계증상조사_집계_{stamp}.xlsx", XLSX_MIME, width="stretch",
+        f"{year_x}_{'' if company_x == '전체 업체' else company_x + '_'}근골격계증상조사_집계_{stamp}.xlsx", XLSX_MIME, width="stretch",
         help="개인이 드러나지 않는 숫자 집계만 들어 있습니다.")
     st.info(
         "보존 기간(KOSHA GUIDE E-G-1-2025 10): 유해요인조사 결과(증상 설문조사 결과 포함) 5년. "
@@ -224,7 +240,7 @@ with tab_fix:
             hide_index=True, width="stretch")
         ok = st.checkbox(f"{len(diff)}건의 저장 판정을 현행 기준으로 바꿉니다.")
         if st.button("판정 업데이트", disabled=not ok, type="primary"):
-            client = get_supabase()
+            client = supabase
             done = 0
             for r in diff:
                 data = {k: val for k, val in r.items() if not k.startswith("_")}
@@ -236,5 +252,5 @@ with tab_fix:
                     done += 1
                 except Exception as e:
                     st.error(f"{r.get('성명')}: {e}")
-            load_records.clear()
+            clear_session_query_cache()
             st.success(f"{done}건을 업데이트했습니다.")

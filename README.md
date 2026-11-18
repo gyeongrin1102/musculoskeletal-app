@@ -21,14 +21,23 @@
   - **통증호소자**: 1주일 이상 지속되고 *그리고* 1달에 1번 이상 발생 + 심한/매우 심한
   - **정상**: 위에 해당하지 않음
 - 같은 해에 같은 성명·부서·성별로 다시 제출하면 막습니다(중복 제출 방지).
+  `survey_results`에 RLS(행 보안)가 걸려 있으면 설문 화면에서 기존 응답을 조회할 수 없으므로,
+  Supabase SQL Editor에서 `supabase/survey_duplicate_check.sql`을 한 번 실행해 주세요.
+  (실행하지 않으면 중복 확인만 건너뛰고 제출은 정상 저장됩니다.)
 - 증상조사 결과는 근골격계질환 이환을 부정하거나 입증하는 근거로 쓸 수 없다는 안내를 첫 화면에 표시합니다.
+
+## 관리자 로그인
+
+관리자 화면은 **Supabase Auth 계정(이메일·비밀번호)** 으로 로그인합니다.
+계정의 `app_metadata`에 `"role": "admin"`이 있어야 관리자 메뉴가 열립니다.
+비밀번호를 잊었을 때는 Supabase 대시보드 > Authentication > Users 에서
+해당 사용자의 비밀번호 재설정 메일을 보내거나 비밀번호를 새로 지정합니다.
 
 ## Streamlit Secrets
 
 ```toml
 SUPABASE_URL = "..."
 SUPABASE_KEY = "..."
-ADMIN_PASSWORD = "..."
 APP_URL = "https://....streamlit.app"
 
 # 선택

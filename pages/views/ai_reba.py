@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import datetime
 import hashlib
+import copy
 
 import cv2
 import numpy as np
@@ -10,46 +11,47 @@ import mediapipe as mp
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from supabase import create_client
+from auth import require_admin, logout_button, get_authenticated_supabase
+from session_query_cache import clear_session_query_cache
+from ui_theme import apply_theme
 
-from auth import require_admin, logout_button
+from joint_drag_editor import joint_drag_editor
 
 require_admin()
+apply_theme()
 
-st.title("🤖 AI 자세·REBA 평가")
+st.title("AI 자세·REBA 평가")
 logout_button()
-st.write(
-    "휴대전화 카메라로 현장 작업사진을 바로 촬영하거나, "
-    "기존 사진을 업로드해 AI 자세분석과 REBA 평가를 진행할 수 있습니다."
-)
-st.info(
-    "AI 분석결과는 평가 보조용입니다. "
-    "최종 REBA 점수는 실제 작업조건을 확인한 평가자가 확정해주세요."
-)
+st.caption("작업 사진과 AI 분석을 확인한 뒤 평가자가 REBA 점수를 확정합니다.")
 st.divider()
 
-@st.cache_resource
-def get_supabase():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-supabase = get_supabase()
-
-
+supabase = get_authenticated_supabase()
 def upload_reba_image(image_bytes, file_name, content_type):
+    """관리자 인증을 유지한 채 새 이미지를 업로드한다."""
     bucket = supabase.storage.from_("reba-images")
-    bucket.upload(
-        path=file_name,
-        file=image_bytes,
-        file_options={
-            "content-type": content_type,
-            "upsert": "false"
-        }
-    )
-    return file_name
 
+    try:
+        bucket.upload(
+            path=file_name,
+            file=image_bytes,
+            file_options={
+                "content-type": content_type
+            }
+        )
+    except Exception as exc:
+        message = str(exc)
+        if (
+            "row-level security" in message.lower()
+            or "unauthorized" in message.lower()
+            or "403" in message
+        ):
+            raise RuntimeError(
+                "Supabase Storage에서 관리자 사진 업로드를 거부했습니다. "
+                "RLS 정책과 실제 요청 인증 상태를 확인해야 합니다."
+            ) from exc
+        raise
+
+    return file_name
 
 def download_storage_file(path):
     if not path:
@@ -106,12 +108,94 @@ def image_signature(image_bytes):
     return hashlib.sha256(image_bytes).hexdigest()
 
 
+def submission_signature(image_bytes, values):
+    payload = "\x1f".join(str(value) for value in values)
+    return hashlib.sha256(
+        image_bytes + payload.encode("utf-8")
+    ).hexdigest()
+
+
+def resolve_company(row):
+    company = row.get("company") or row.get("company_name")
+    if company:
+        return str(company).strip()
+    department = str(row.get("department") or "").strip()
+    return department.split(" / ", 1)[0].strip() if " / " in department else ""
+
+
+def resolve_department(row):
+    department = str(row.get("department") or "").strip()
+    if " / " in department:
+        return department.split(" / ", 1)[1].strip()
+    return department
+
+
+def reset_new_capture():
+    st.session_state["new_capture_revision"] = st.session_state.get("new_capture_revision", 0) + 1
+    for key in (
+        "new_reba_signature", "new_reba_original_bytes",
+        "new_reba_analyzed_bytes", "new_reba_angles",
+        "new_reba_recommendation", "new_reba_error",
+        "new_saving_signature", "new_trunk", "new_legs",
+        "new_upper_arm", "new_lower_arm",
+    ):
+        st.session_state.pop(key, None)
+
+
+def cancel_new_evaluation():
+    reset_new_capture()
+    for key in (
+        "new_worker", "new_company_choice", "new_company_custom",
+        "new_department_choice", "new_department_custom",
+        "new_task_choice", "new_task_custom", "new_evaluator",
+        "new_neck", "new_trunk", "new_legs", "new_upper_arm",
+        "new_lower_arm", "new_wrist", "new_load", "new_coupling",
+        "new_activity",
+    ):
+        st.session_state.pop(key, None)
+
+
 def decode_image(image_bytes):
     file_bytes = np.asarray(bytearray(image_bytes), dtype=np.uint8)
     image_bgr = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     if image_bgr is None:
         return None
     return cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+
+def display_photo(image_bytes, caption):
+    """화면 표시용으로만 사진 축소"""
+    try:
+        image = decode_image(image_bytes)
+        if image is None:
+            st.warning(f"{caption}: 이미지를 읽을 수 없습니다.")
+            return
+
+        height, width = image.shape[:2]
+        max_width = 1200
+
+        if width > max_width:
+            scale = max_width / width
+            image = cv2.resize(
+                image,
+                (max_width, max(1, int(height * scale))),
+                interpolation=cv2.INTER_AREA,
+            )
+
+        st.image(image, caption=caption, width="stretch")
+
+    except Exception as e:
+        st.error(f"사진 표시 오류: {e}")
+
+
+def make_manual_landmarks():
+    from types import SimpleNamespace
+    return [
+        SimpleNamespace(
+            x=0.5, y=0.5, z=0.0,
+            visibility=0.0, presence=0.0
+        )
+        for _ in range(33)
+    ]
 
 
 def get_pose_angles(landmarks, width, height):
@@ -192,24 +276,70 @@ def draw_pose(image_rgb, landmarks):
     output = image_rgb.copy()
     height, width = output.shape[:2]
 
+    # 관절선/관절점 스타일 통일
+    line_color = (0, 255, 50)          # 진한 형광초록 느낌
+    point_color = (0, 255, 50)
+    point_border_color = (255, 255, 255)
+
+    line_thickness = 6                 # 선 굵기
+    point_radius = 8                   # 점 크기
+    point_border_thickness = 2         # 점 테두리
+
+    joint_indices = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
+
     for start_idx, end_idx in POSE_CONNECTIONS:
         start = landmarks[start_idx]
         end = landmarks[end_idx]
+
         start_visibility = getattr(start, "visibility", 1.0)
         end_visibility = getattr(end, "visibility", 1.0)
-        if start_visibility < VISIBILITY_THRESHOLD or end_visibility < VISIBILITY_THRESHOLD:
+
+        if (
+            start_visibility < VISIBILITY_THRESHOLD
+            or end_visibility < VISIBILITY_THRESHOLD
+        ):
             continue
+
         start_point = (int(start.x * width), int(start.y * height))
         end_point = (int(end.x * width), int(end.y * height))
-        cv2.line(output, start_point, end_point, (0, 220, 0), 4)
 
-    for index in [11,12,13,14,15,16,23,24,25,26,27,28]:
+        cv2.line(
+            output,
+            start_point,
+            end_point,
+            line_color,
+            line_thickness,
+            lineType=cv2.LINE_AA
+        )
+
+    for index in joint_indices:
         landmark = landmarks[index]
         visibility = getattr(landmark, "visibility", 1.0)
+
         if visibility < VISIBILITY_THRESHOLD:
             continue
+
         point = (int(landmark.x * width), int(landmark.y * height))
-        cv2.circle(output, point, 7, (0, 255, 0), -1)
+
+        # 흰색 테두리
+        cv2.circle(
+            output,
+            point,
+            point_radius + 2,
+            point_border_color,
+            -1,
+            lineType=cv2.LINE_AA
+        )
+
+        # 초록색 본체
+        cv2.circle(
+            output,
+            point,
+            point_radius,
+            point_color,
+            -1,
+            lineType=cv2.LINE_AA
+        )
 
     return output
 
@@ -240,6 +370,9 @@ def auto_analyze_image(image_bytes, state_prefix):
     signature = image_signature(image_bytes)
     signature_key = f"{state_prefix}_signature"
 
+    if st.session_state.get(signature_key) != signature:
+        st.session_state.pop(f"{state_prefix}_landmarks", None)
+
     if (
         st.session_state.get(signature_key) == signature
         and st.session_state.get(f"{state_prefix}_analyzed_bytes")
@@ -251,11 +384,16 @@ def auto_analyze_image(image_bytes, state_prefix):
         st.session_state[f"{state_prefix}_error"] = "이미지 파일을 읽을 수 없습니다."
         return
 
+    st.session_state[f"{state_prefix}_original_bytes"] = image_bytes
+
     landmarks, error = analyze_pose(image_rgb)
     if error:
         st.session_state[f"{state_prefix}_error"] = error
         st.session_state[signature_key] = signature
         return
+
+    st.session_state[f"{state_prefix}_landmarks"] = copy.deepcopy(landmarks)
+
 
     analyzed_image = draw_pose(image_rgb, landmarks)
     height, width = image_rgb.shape[:2]
@@ -350,6 +488,161 @@ def load_reba_results():
         return []
 
 
+
+def render_bold_reba_preview():
+    with st.expander("🟢 기존 REBA 관절선 굵게 변환 · 미리보기"):
+        st.caption(
+            "저장된 AI 분석사진을 기준으로 변환합니다. "
+            "기존 사진, REBA 점수 및 수동 보정 결과는 변경하지 않습니다."
+        )
+
+        if not st.checkbox("변환 미리보기 열기", key="bold_preview_open"):
+            return
+
+        rows = load_reba_results()
+        candidates = [
+            row for row in rows
+            if row.get("original_image_path")
+            and row.get("analyzed_image_path")
+        ]
+
+        if not candidates:
+            st.info("변환할 사진이 없습니다.")
+            return
+
+        options = {
+            str(row["id"]): row
+            for row in candidates
+        }
+
+        selected_id = st.selectbox(
+            "기존 REBA 평가 선택",
+            list(options),
+            key="bold_preview_selected"
+        )
+        selected = options[selected_id]
+
+        original = download_storage_file(
+            selected["original_image_path"]
+        )
+        analyzed = download_storage_file(
+            selected["analyzed_image_path"]
+        )
+
+        if not original or not analyzed:
+            st.error("기존 사진을 불러오지 못했습니다.")
+            return
+
+        from pages.views.reba_bold_images import make_bold_reba_image
+
+        try:
+            bold = make_bold_reba_image(original, analyzed)
+        except Exception as exc:
+            st.warning(f"이 사진은 자동 변환할 수 없습니다: {exc}")
+            return
+
+        left, right = st.columns(2)
+
+        with left:
+            st.image(
+                analyzed,
+                caption="기존 분석사진",
+                use_container_width=True
+            )
+
+        with right:
+            st.image(
+                bold,
+                caption="관절선을 굵게 만든 미리보기",
+                use_container_width=True
+            )
+
+        st.warning(
+            "관절점 위치가 동일한지 확인하세요. "
+            "초록색 배경까지 굵어지거나 선이 어긋나면 "
+            "이 사진은 저장하면 안 됩니다."
+        )
+
+        st.caption(
+            "변환본은 새 파일로 저장합니다. "
+            "기존 원본·분석사진과 REBA 점수는 유지됩니다."
+        )
+
+        if selected.get("bold_analyzed_image_path"):
+            st.info(
+                "이 평가에는 이미 굵은 분석사진이 저장되어 "
+                "있습니다. 중복 저장하지 않습니다."
+            )
+            return
+
+        confirmed = st.checkbox(
+            "기존 사진과 비교하여 관절선 위치가 "
+            "동일하고 배경에 이상이 없음을 확인했습니다.",
+            key=f"bold_save_confirm_{selected_id}"
+        )
+
+        if st.button(
+            "💾 확인한 굵은 사진 저장",
+            disabled=not confirmed,
+            key=f"bold_save_button_{selected_id}"
+        ):
+            from uuid import uuid4
+
+            new_path = (
+                "bold-reba/"
+                + uuid4().hex
+                + "/analyzed_bold.png"
+            )
+
+            try:
+                # 기존 저장 함수와 관리자 인증을 그대로 사용
+                upload_reba_image(
+                    bold,
+                    new_path,
+                    "image/png"
+                )
+
+                # 다른 사용자가 갱신했다면 덮어쓰지 않음
+                result = (
+                    supabase
+                    .table("reba_results")
+                    .update({
+                        "bold_analyzed_image_path": new_path
+                    })
+                    .eq("id", selected["id"])
+                    .eq(
+                        "analyzed_image_path",
+                        selected["analyzed_image_path"]
+                    )
+                    .is_("bold_analyzed_image_path", "null")
+                    .execute()
+                )
+
+                if not result.data:
+                    raise RuntimeError(
+                        "평가 기록이 변경되었거나 권한이 없어 "
+                        "DB 연결을 완료하지 못했습니다. "
+                        "페이지를 새로고침하여 확인하세요."
+                    )
+
+                clear_session_query_cache()
+                st.success(
+                    "굵은 관절선 사진 저장 완료! "
+                    "Word 보고서에 사용할 수 있습니다."
+                )
+                st.rerun()
+
+            except Exception as exc:
+                st.error(
+                    "저장 또는 DB 연결에 실패했습니다. "
+                    "기존 분석사진과 점수는 변경하지 않았습니다. "
+                    f"상세 오류: {exc}"
+                )
+
+
+render_bold_reba_preview()
+
+
 mode = st.radio(
     "작업할 기능을 선택하세요.",
     ["📷 새 REBA 평가", "🖼️ 기존 REBA 평가에 사진만 연결"],
@@ -361,12 +654,60 @@ st.divider()
 if mode == "📷 새 REBA 평가":
     st.subheader("1. 평가 기본정보")
 
+    previous_rows = load_reba_results()
+    company_options = sorted({
+        resolve_company(row)
+        for row in previous_rows
+        if resolve_company(row)
+    })
+
+    company_choice = st.selectbox(
+        "업체 빠른 선택",
+        ["직접 입력"] + company_options,
+        key="new_company_choice"
+    )
+    if company_choice == "직접 입력":
+        company = st.text_input("업체명", placeholder="예: ○○건설", key="new_company_custom")
+    else:
+        company = company_choice
+
+    department_options = sorted({
+        resolve_department(row)
+        for row in previous_rows
+        if resolve_department(row)
+        and (not company or resolve_company(row) == company)
+    })
+    department_choice = st.selectbox(
+        "공종 빠른 선택",
+        ["직접 입력"] + department_options,
+        key="new_department_choice"
+    )
+    if department_choice == "직접 입력":
+        department = st.text_input("공종 / 부서", placeholder="예: 철근팀", key="new_department_custom")
+    else:
+        department = department_choice
+
+    task_options = sorted({
+        str(row.get("task_name")).strip()
+        for row in previous_rows
+        if row.get("task_name")
+        and (not company or resolve_company(row) == company)
+        and (not department or resolve_department(row) == department)
+    })
+    task_choice = st.selectbox(
+        "작업명 빠른 선택",
+        ["직접 입력"] + task_options,
+        key="new_task_choice"
+    )
+    if task_choice == "직접 입력":
+        task_name = st.text_input("작업명", placeholder="예: 철근 결속", key="new_task_custom")
+    else:
+        task_name = task_choice
+
     col1, col2 = st.columns(2)
     with col1:
         worker = st.text_input("작업자 또는 평가대상", key="new_worker")
-        department = st.text_input("공종 / 부서", key="new_department")
     with col2:
-        task_name = st.text_input("작업명", key="new_task_name")
         evaluator = st.text_input("평가자", key="new_evaluator")
 
     st.divider()
@@ -374,26 +715,27 @@ if mode == "📷 새 REBA 평가":
 
     source = st.radio(
         "사진 입력방법",
-        ["📷 카메라 촬영", "🖼️ 사진 업로드"],
+        ["📷 스마트폰 촬영", "🖼️ 사진 업로드"],
         horizontal=True,
         key="new_source"
     )
 
-    if source == "📷 카메라 촬영":
+    capture_revision = st.session_state.get("new_capture_revision", 0)
+    if source == "📷 스마트폰 촬영":
         photo = st.camera_input(
             "작업자 전신이 보이도록 촬영해주세요.",
-            key="new_camera"
+            key=f"new_camera_{capture_revision}"
         )
     else:
         photo = st.file_uploader(
             "작업사진을 선택하세요.",
             type=["jpg", "jpeg", "png"],
-            key="new_upload"
+            key=f"new_upload_{capture_revision}"
         )
 
     if photo is not None:
         image_bytes = photo.getvalue()
-        st.image(image_bytes, caption="촬영/업로드 사진", width="stretch")
+        display_photo(image_bytes, "촬영/업로드 사진")
 
         with st.spinner("AI가 자세를 자동 분석하고 있습니다..."):
             auto_analyze_image(image_bytes, "new_reba")
@@ -408,22 +750,120 @@ if mode == "📷 새 REBA 평가":
 
         if analyzed_bytes:
             st.success("AI 자세분석이 완료되었습니다.")
-            st.image(analyzed_bytes, caption="AI 관절선 분석사진", width="stretch")
+            display_photo(analyzed_bytes, "AI 관절선 분석사진")
+        if image_bytes:
+            with st.expander("✏️ 사진에서 관절점 직접 이동", expanded=False):
+                st.caption(
+                    "초록색 관절점을 잡아서 실제 관절 위치로 옮긴 뒤 "
+                    "'보정 적용'을 누르세요. 최종 REBA 점수는 자동 변경되지 않습니다."
+                )
 
-        if angles:
-            angle_df = pd.DataFrame(
-                [
-                    ["왼쪽 팔꿈치", angles.get("left_elbow", "")],
-                    ["오른쪽 팔꿈치", angles.get("right_elbow", "")],
-                    ["왼쪽 무릎", angles.get("left_knee", "")],
-                    ["오른쪽 무릎", angles.get("right_knee", "")],
-                    ["왼쪽 위팔", angles.get("left_upper_arm", "")],
-                    ["오른쪽 위팔", angles.get("right_upper_arm", "")],
-                    ["몸통 기울기", angles.get("trunk_angle", "")],
-                ],
-                columns=["관절/부위", "각도(°)"]
-            )
-            st.dataframe(angle_df, hide_index=True, width="stretch")
+                current_landmarks = st.session_state.get("new_reba_landmarks")
+
+                if not current_landmarks:
+                    st.info(
+                        "AI가 자세를 인식하지 못했습니다. "
+                        "📍 관절점 직접 찍기를 눌러 12개 관절을 지정하세요."
+                    )
+                joint_indices = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
+
+                joint_points = [
+                    {
+                        "id": idx,
+                        "x": float(current_landmarks[idx].x),
+                        "y": float(current_landmarks[idx].y),
+                    }
+                    for idx in joint_indices
+                ] if current_landmarks else []
+
+                correction = joint_drag_editor(
+                    st.session_state["new_reba_original_bytes"],
+                    joint_points,
+                    key=f"joint_drag_{image_signature(image_bytes)}",
+                )
+
+                if isinstance(correction, dict) and correction.get("action") == "apply":
+                    revision = str(correction.get("revision", ""))
+                    revision_key = "new_reba_drag_revision"
+
+                    if revision and st.session_state.get(revision_key) != revision:
+                        st.session_state[revision_key] = revision
+
+                        points_by_id = {
+                            int(p["id"]): p
+                            for p in correction.get("points", [])
+                            if isinstance(p, dict)
+                            and all(k in p for k in ("id", "x", "y"))
+                        }
+
+                        if set(joint_indices).issubset(points_by_id):
+                            corrected = (
+                                copy.deepcopy(current_landmarks)
+                                if current_landmarks
+                                else make_manual_landmarks()
+                            )
+
+                            for idx in joint_indices:
+                                p = points_by_id[idx]
+                                corrected[idx].x = max(0.0, min(1.0, float(p["x"])))
+                                corrected[idx].y = max(0.0, min(1.0, float(p["y"])))
+                                corrected[idx].visibility = 1.0
+
+                            original_rgb = decode_image(
+                                st.session_state["new_reba_original_bytes"]
+                            )
+
+                            if original_rgb is not None:
+                                output = draw_pose(original_rgb, corrected)
+                                output_bgr = cv2.cvtColor(
+                                    output, cv2.COLOR_RGB2BGR
+                                )
+                                ok, encoded = cv2.imencode(".png", output_bgr)
+
+                                if ok:
+                                    height, width = original_rgb.shape[:2]
+                                    corrected_angles = get_pose_angles(
+                                        corrected, width, height
+                                    )
+
+                                    st.session_state["new_reba_landmarks"] = corrected
+                                    st.session_state["new_reba_analyzed_bytes"] = (
+                                        encoded.tobytes()
+                                    )
+                                    st.session_state["new_reba_angles"] = (
+                                        corrected_angles
+                                    )
+                                    st.session_state["new_reba_recommendation"] = (
+                                        recommend_reba_from_angles(corrected_angles)
+                                    )
+                                    st.rerun()
+                                else:
+                                    st.error("보정 사진 생성에 실패했습니다.")
+                            else:
+                                st.error("원본사진을 불러오지 못했습니다.")
+                        else:
+                            st.error("관절 좌표가 불완전하여 보정하지 않았습니다.")
+
+        if angles or recommendation:
+            with st.expander("AI 분석 참고값", expanded=bool(recommendation)):
+                st.caption("AI 결과는 참고용이며, 최종 점수는 아래 평가 항목에서 평가자가 확인·수정합니다.")
+                if angles:
+                    angle_df = pd.DataFrame(
+                        [
+                            ["왼쪽 팔꿈치", angles.get("left_elbow", "")],
+                            ["오른쪽 팔꿈치", angles.get("right_elbow", "")],
+                            ["왼쪽 무릎", angles.get("left_knee", "")],
+                            ["오른쪽 무릎", angles.get("right_knee", "")],
+                            ["왼쪽 위팔", angles.get("left_upper_arm", "")],
+                            ["오른쪽 위팔", angles.get("right_upper_arm", "")],
+                            ["몸통 기울기", angles.get("trunk_angle", "")],
+                        ],
+                        columns=["관절/부위", "각도(°)"]
+                    )
+                    st.dataframe(angle_df, hide_index=True, width="stretch")
+                if recommendation:
+                    st.write("AI 권고 점수")
+                    st.json(recommendation)
 
         if recommendation:
             defaults = {
@@ -439,18 +879,25 @@ if mode == "📷 새 REBA 평가":
     st.divider()
     st.subheader("3. REBA 점수 확인/수정")
 
-    c1, c2, c3 = st.columns(3)
+    st.markdown("**AI 권고 기반 항목**")
+    st.caption("AI 추천값으로 시작하며, 각 점수는 평가자가 직접 확정하거나 수정할 수 있습니다.")
+    c1, c2 = st.columns(2)
     with c1:
-        neck_score = st.selectbox("목(Neck)", [1,2,3], key="new_neck")
         trunk_score = st.selectbox("몸통(Trunk)", [1,2,3,4,5], key="new_trunk")
         legs_score = st.selectbox("다리(Legs)", [1,2,3,4], key="new_legs")
     with c2:
         upper_arm_score = st.selectbox("위팔(Upper Arm)", [1,2,3,4,5,6], key="new_upper_arm")
         lower_arm_score = st.selectbox("아래팔(Lower Arm)", [1,2], key="new_lower_arm")
+    st.markdown("**평가자 수동 판단 항목**")
+    st.caption("목·손목·하중·결합도·활동 점수는 현장 조건을 확인해 입력해주세요.")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        neck_score = st.selectbox("목(Neck)", [1,2,3], key="new_neck")
         wrist_score = st.selectbox("손목(Wrist)", [1,2,3], key="new_wrist")
-    with c3:
+    with c2:
         load_score = st.selectbox("하중/힘(Load)", [0,1,2,3], key="new_load")
         coupling_score = st.selectbox("결합도(Coupling)", [0,1,2,3], key="new_coupling")
+    with c3:
         activity_score = st.selectbox("활동점수(Activity)", [0,1,2,3], key="new_activity")
 
     score_a = get_score_a(trunk_score, neck_score, legs_score, load_score)
@@ -473,10 +920,36 @@ if mode == "📷 새 REBA 평가":
     st.write(f"**조치권고:** {action_text}")
     st.divider()
 
+    saved_values = (
+        worker.strip(),
+        company.strip(),
+        department.strip(),
+        task_name.strip(),
+        evaluator.strip(),
+        neck_score, trunk_score, legs_score, load_score,
+        upper_arm_score, lower_arm_score, wrist_score,
+        coupling_score, activity_score,
+    )
+    current_signature = (
+        submission_signature(photo.getvalue(), saved_values)
+        if photo is not None
+        else None
+    )
+    already_saved = (
+        current_signature is not None
+        and current_signature in st.session_state.get("new_saved_signatures", set())
+    )
+    if already_saved:
+        st.success("저장 완료: 같은 사진과 평가내용은 중복 저장되지 않습니다.")
+
     save_disabled = (
         not worker.strip()
+        or not company.strip()
+        or not department.strip()
         or not task_name.strip()
         or photo is None
+        or already_saved
+        or st.session_state.get("new_saving_signature") == current_signature
     )
 
     if st.button(
@@ -486,6 +959,7 @@ if mode == "📷 새 REBA 평가":
         disabled=save_disabled
     ):
         try:
+            st.session_state["new_saving_signature"] = current_signature
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             original_bytes = photo.getvalue()
             original_name = getattr(photo, "name", "camera.jpg")
@@ -505,7 +979,11 @@ if mode == "📷 새 REBA 평가":
 
             insert_data = {
                 "worker": worker,
-                "department": department,
+                "department": (
+                    f"{company.strip()} / {department.strip()}"
+                    if department.strip()
+                    else company.strip()
+                ),
                 "task_name": task_name,
                 "evaluator": evaluator,
                 "pose_angles": st.session_state.get("new_reba_angles", {}),
@@ -530,10 +1008,34 @@ if mode == "📷 새 REBA 평가":
             }
 
             supabase.table("reba_results").insert(insert_data).execute()
-            st.success("✅ REBA 평가와 사진이 저장되었습니다.")
+            clear_session_query_cache()
+            saved_signatures = set(st.session_state.get("new_saved_signatures", set()))
+            saved_signatures.add(current_signature)
+            st.session_state["new_saved_signatures"] = saved_signatures
+            st.session_state.pop("new_saving_signature", None)
+            success_message = "저장 성공: REBA 평가와 원본사진이 저장되었습니다."
+            if analyzed_path:
+                success_message += " AI 분석사진도 함께 저장되었습니다."
+            st.success(success_message)
 
         except Exception as e:
+            st.session_state.pop("new_saving_signature", None)
             st.error(f"저장 오류: {e}")
+
+    action_columns = st.columns(2)
+    with action_columns[0]:
+        st.button(
+            "🔄 재촬영",
+            width="stretch",
+            on_click=reset_new_capture,
+            disabled=photo is None
+        )
+    with action_columns[1]:
+        st.button(
+            "취소",
+            width="stretch",
+            on_click=cancel_new_evaluation
+        )
 
 
 else:
@@ -586,6 +1088,239 @@ else:
             if existing_analyzed:
                 st.image(existing_analyzed, caption="기존 AI 분석사진", width="stretch")
 
+    # 기존 저장사진의 관절점을 직접 보정하는 기능
+    if existing_original:
+        st.divider()
+        st.subheader("✏️ 기존 저장사진 관절점 직접 보정")
+        st.caption(
+            "기존 원본사진을 이용해 관절을 다시 인식합니다. "
+            "REBA 최종 점수와 원본사진은 변경하지 않습니다."
+        )
+
+        record_id = str(selected["id"])
+        prefix = f"saved_joint_{record_id}"
+
+        enable_edit = st.checkbox(
+            "기존 사진 관절점 보정 시작",
+            key=f"{prefix}_enabled"
+        )
+
+        if enable_edit:
+            with st.spinner("기존 사진에서 관절 위치를 확인하고 있습니다..."):
+                auto_analyze_image(existing_original, prefix)
+
+            error = st.session_state.get(f"{prefix}_error")
+
+            if error:
+                st.warning(error)
+
+            landmarks = st.session_state.get(
+                f"{prefix}_landmarks"
+            )
+
+            if existing_original:
+                if not landmarks:
+                    st.info(
+                        "AI 인식에 실패했습니다. "
+                        "📍 관절점 직접 찍기를 눌러주세요."
+                    )
+
+                joint_indices = [
+                    11, 12, 13, 14, 15, 16,
+                    23, 24, 25, 26, 27, 28
+                ]
+
+                joint_points = [
+                    {
+                        "id": idx,
+                        "x": float(landmarks[idx].x),
+                        "y": float(landmarks[idx].y),
+                    }
+                    for idx in joint_indices
+                ] if landmarks else []
+
+                correction = joint_drag_editor(
+                    existing_original,
+                    joint_points,
+                    key=f"saved_drag_{record_id}",
+                )
+
+                if (
+                    isinstance(correction, dict)
+                    and correction.get("action") == "apply"
+                ):
+                    revision = str(correction.get("revision", ""))
+                    revision_key = f"{prefix}_revision"
+
+                    if (
+                        revision
+                        and st.session_state.get(revision_key) != revision
+                    ):
+                        st.session_state[revision_key] = revision
+
+                        points_by_id = {
+                            int(p["id"]): p
+                            for p in correction.get("points", [])
+                            if isinstance(p, dict)
+                            and all(
+                                k in p
+                                for k in ("id", "x", "y")
+                            )
+                        }
+
+                        if set(joint_indices).issubset(points_by_id):
+                            import copy
+
+                            corrected = (
+                                copy.deepcopy(landmarks)
+                                if landmarks
+                                else make_manual_landmarks()
+                            )
+
+                            for idx in joint_indices:
+                                point = points_by_id[idx]
+                                corrected[idx].x = max(
+                                    0.0,
+                                    min(1.0, float(point["x"]))
+                                )
+                                corrected[idx].y = max(
+                                    0.0,
+                                    min(1.0, float(point["y"]))
+                                )
+                                corrected[idx].visibility = 1.0
+
+                            original_rgb = decode_image(
+                                existing_original
+                            )
+
+                            if original_rgb is not None:
+                                output = draw_pose(
+                                    original_rgb, corrected
+                                )
+
+                                output_bgr = cv2.cvtColor(
+                                    output,
+                                    cv2.COLOR_RGB2BGR
+                                )
+
+                                ok, encoded = cv2.imencode(
+                                    ".png", output_bgr
+                                )
+
+                                if ok:
+                                    height, width = original_rgb.shape[:2]
+
+                                    corrected_angles = get_pose_angles(
+                                        corrected, width, height
+                                    )
+
+                                    st.session_state[
+                                        f"{prefix}_landmarks"
+                                    ] = corrected
+
+                                    st.session_state[
+                                        f"{prefix}_corrected_bytes"
+                                    ] = encoded.tobytes()
+
+                                    st.session_state[
+                                        f"{prefix}_corrected_angles"
+                                    ] = corrected_angles
+
+                                    st.rerun()
+                                else:
+                                    st.error(
+                                        "보정사진 생성에 실패했습니다."
+                                    )
+                            else:
+                                st.error(
+                                    "기존 원본사진을 읽지 못했습니다."
+                                )
+                        else:
+                            st.error(
+                                "관절 좌표가 불완전해 보정하지 않았습니다."
+                            )
+
+                corrected_bytes = st.session_state.get(
+                    f"{prefix}_corrected_bytes"
+                )
+
+                if corrected_bytes:
+                    st.success("관절 위치 보정이 적용됐습니다.")
+
+                    display_photo(
+                        corrected_bytes,
+                        "보정된 AI 관절선 사진 미리보기"
+                    )
+
+                    angles = st.session_state.get(
+                        f"{prefix}_corrected_angles"
+                    )
+
+                    if angles:
+                        with st.expander("보정 후 관절 각도"):
+                            st.json(angles)
+
+                    st.warning(
+                        "아래 저장 버튼을 누르면 기존 평가의 "
+                        "분석사진 연결만 새 사진으로 변경됩니다. "
+                        "원본사진과 REBA 점수는 유지됩니다."
+                    )
+
+                    if st.button(
+                        "💾 기존 평가에 보정사진 저장",
+                        type="primary",
+                        key=f"{prefix}_save",
+                        width="stretch"
+                    ):
+                        try:
+                            timestamp = datetime.now().strftime(
+                                "%Y%m%d_%H%M%S_%f"
+                            )
+
+                            analyzed_path = (
+                                f"{timestamp}/corrected_analyzed.png"
+                            )
+
+                            upload_reba_image(
+                                corrected_bytes,
+                                analyzed_path,
+                                "image/png"
+                            )
+
+                            (
+                                supabase
+                                .table("reba_results")
+                                .update({
+                                    "analyzed_image_path": analyzed_path
+                                })
+                                .eq("id", selected["id"])
+                                .execute()
+                            )
+
+                            clear_session_query_cache()
+
+                            st.session_state.pop(
+                                f"{prefix}_corrected_bytes", None
+                            )
+
+                            st.success(
+                                "✅ 보정사진 저장 완료! "
+                                "기존 REBA 점수와 원본사진은 "
+                                "변경하지 않았습니다."
+                            )
+
+                            st.rerun()
+
+                        except Exception as e:
+                            st.error(
+                                f"보정사진 저장 오류: {e}"
+                            )
+
+            elif not error:
+                st.info(
+                    "관절 분석 결과를 확인하는 중입니다."
+                )
+
     st.divider()
 
     old_source = st.radio(
@@ -629,6 +1364,121 @@ else:
                 width="stretch"
             )
 
+
+        # 기존 평가에 새로운 사진을 연결할 때도 관절점 직접 지정 가능
+        with st.expander("📍 사진에서 관절점 직접 찍기 / 위치 보정"):
+            existing_landmarks = st.session_state.get(
+                "existing_reba_landmarks"
+            )
+
+            joint_indices = [
+                11, 12, 13, 14, 15, 16,
+                23, 24, 25, 26, 27, 28
+            ]
+
+            if not existing_landmarks:
+                st.info(
+                    "AI가 자세를 인식하지 못했어도 괜찮습니다. "
+                    "아래 편집기에서 '관절점 직접 찍기'를 누르세요."
+                )
+
+            joint_points = [
+                {
+                    "id": idx,
+                    "x": float(existing_landmarks[idx].x),
+                    "y": float(existing_landmarks[idx].y),
+                }
+                for idx in joint_indices
+            ] if existing_landmarks else []
+
+            correction = joint_drag_editor(
+                existing_bytes,
+                joint_points,
+                key="existing_link_manual_editor",
+            )
+
+            if (
+                isinstance(correction, dict)
+                and correction.get("action") == "apply"
+            ):
+                revision = str(correction.get("revision", ""))
+
+                if (
+                    revision
+                    and st.session_state.get("existing_link_revision") != revision
+                ):
+                    points_by_id = {
+                        int(p["id"]): p
+                        for p in correction.get("points", [])
+                        if isinstance(p, dict)
+                        and all(k in p for k in ("id", "x", "y"))
+                    }
+
+                    if not set(joint_indices).issubset(points_by_id):
+                        st.error("관절점 12개를 모두 지정해야 합니다.")
+                    else:
+                        corrected = (
+                            copy.deepcopy(existing_landmarks)
+                            if existing_landmarks
+                            else make_manual_landmarks()
+                        )
+
+                        for idx in joint_indices:
+                            point = points_by_id[idx]
+                            corrected[idx].x = max(
+                                0.0, min(1.0, float(point["x"]))
+                            )
+                            corrected[idx].y = max(
+                                0.0, min(1.0, float(point["y"]))
+                            )
+                            corrected[idx].visibility = 1.0
+
+                        original_rgb = decode_image(existing_bytes)
+
+                        if original_rgb is None:
+                            st.error("원본사진을 읽지 못했습니다.")
+                        else:
+                            output = draw_pose(original_rgb, corrected)
+                            output_bgr = cv2.cvtColor(
+                                output, cv2.COLOR_RGB2BGR
+                            )
+                            ok, encoded = cv2.imencode(
+                                ".png", output_bgr
+                            )
+
+                            if ok:
+                                height, width = original_rgb.shape[:2]
+
+                                manual_angles = get_pose_angles(
+                                    corrected, width, height
+                                )
+
+                                st.session_state[
+                                    "existing_reba_landmarks"
+                                ] = corrected
+                                st.session_state[
+                                    "existing_reba_analyzed_bytes"
+                                ] = encoded.tobytes()
+                                st.session_state[
+                                    "existing_reba_angles"
+                                ] = manual_angles
+                                st.session_state[
+                                    "existing_reba_recommendation"
+                                ] = recommend_reba_from_angles(
+                                    manual_angles
+                                )
+                                st.session_state[
+                                    "existing_link_revision"
+                                ] = revision
+
+                                st.success(
+                                    "✅ 관절점 보정 완료! "
+                                    "아래 저장 버튼을 눌러 연결하세요."
+                                )
+                                st.rerun()
+                            else:
+                                st.error("관절선 사진 생성에 실패했습니다.")
+
         st.warning(
             "아래 버튼을 눌러도 기존 REBA 점수, 위험등급, 평가내용은 변경되지 않습니다."
         )
@@ -666,6 +1516,8 @@ else:
                     .eq("id", selected["id"])
                     .execute()
                 )
+
+                clear_session_query_cache()
 
                 st.success(
                     "✅ 기존 REBA 점수는 그대로 유지하고 사진만 연결했습니다."

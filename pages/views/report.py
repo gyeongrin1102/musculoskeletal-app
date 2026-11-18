@@ -6,14 +6,14 @@ import matplotlib.font_manager as fm
 from io import BytesIO
 from datetime import datetime
 
-from supabase import create_client
-
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 
-from auth import require_admin, logout_button
+from auth import require_admin, logout_button, get_authenticated_supabase
+from session_query_cache import get_cached_query, clear_session_query_cache
+from ui_theme import apply_theme
 
 
 # =========================================================
@@ -21,14 +21,18 @@ from auth import require_admin, logout_button
 # =========================================================
 
 require_admin()
+apply_theme()
 
-st.title("📄 근골격계 · REBA · 개선효과 통합 결과보고서")
+st.title("통합 결과보고서")
 
 logout_button()
 
-st.write(
-    "근골격계 증상조사, REBA 작업자세 평가 및 "
-    "개선 전·후 비교결과를 통합하여 Word 보고서를 생성합니다."
+st.caption("증상조사, REBA 평가와 개선효과를 모아 Word 보고서로 출력합니다.")
+st.button(
+    "데이터 새로고침",
+    key="report_refresh_data",
+    on_click=clear_session_query_cache,
+    width="content"
 )
 
 st.divider()
@@ -56,20 +60,7 @@ plt.rcParams["axes.unicode_minus"] = False
 # Supabase
 # =========================================================
 
-try:
-
-    supabase = create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-except Exception as e:
-
-    st.error(
-        f"Supabase 연결 오류: {e}"
-    )
-
-    st.stop()
+supabase = get_authenticated_supabase()
 
 
 # =========================================================
@@ -78,17 +69,17 @@ except Exception as e:
 
 try:
 
-    survey_response = (
-        supabase
-        .table("survey_results")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    survey_rows = (
-        survey_response.data
-        or []
+    survey_rows = get_cached_query(
+        "survey_results",
+        lambda: (
+            supabase
+            .table("survey_results")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+            .data
+            or []
+        )
     )
 
 except Exception as e:
@@ -106,17 +97,17 @@ except Exception as e:
 
 try:
 
-    reba_response = (
-        supabase
-        .table("reba_results")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    reba_rows = (
-        reba_response.data
-        or []
+    reba_rows = get_cached_query(
+        "reba_results",
+        lambda: (
+            supabase
+            .table("reba_results")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+            .data
+            or []
+        )
     )
 
 except Exception as e:
@@ -134,17 +125,17 @@ except Exception as e:
 
 try:
 
-    improvement_response = (
-        supabase
-        .table("reba_improvements")
-        .select("*")
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    improvement_rows = (
-        improvement_response.data
-        or []
+    improvement_rows = get_cached_query(
+        "reba_improvements",
+        lambda: (
+            supabase
+            .table("reba_improvements")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+            .data
+            or []
+        )
     )
 
 except Exception as e:
@@ -267,6 +258,92 @@ reba_df = pd.DataFrame(
 improvement_df = pd.DataFrame(
     improvement_rows
 )
+
+
+def resolve_reba_company(row):
+
+    company = (
+        row.get("company")
+        or row.get("company_name")
+    )
+
+    if company:
+        return str(company).strip()
+
+    department = str(
+        row.get("department")
+        or ""
+    ).strip()
+
+    if " / " in department:
+        return department.split(
+            " / ",
+            1
+        )[0].strip()
+
+    return ""
+
+
+def optimize_report_image(image_bytes):
+
+    from PIL import Image, ImageOps
+
+    with Image.open(BytesIO(image_bytes)) as source:
+        image = ImageOps.exif_transpose(source)
+        image.thumbnail((1400, 1400))
+
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+
+        optimized = BytesIO()
+        image.save(
+            optimized,
+            format="JPEG",
+            quality=85,
+            optimize=True
+        )
+
+        return optimized.getvalue()
+
+
+def download_report_image(path):
+
+    if not isinstance(path, str) or not path.strip():
+        return None
+
+    try:
+        data = (
+            supabase
+            .storage
+            .from_("reba-images")
+            .download(path)
+        )
+
+        if isinstance(data, bytes):
+            image_bytes = data
+        elif hasattr(data, "content"):
+            image_bytes = data.content
+        else:
+            image_bytes = bytes(data)
+
+        if not image_bytes:
+            return None
+
+        return optimize_report_image(image_bytes)
+
+    except Exception as exc:
+        st.warning(
+            "REBA 사진 다운로드 실패: "
+            f"{type(exc).__name__}: {str(exc)[:180]}"
+        )
+        return None
+
+
+if not reba_df.empty:
+    reba_df["_report_company"] = reba_df.apply(
+        resolve_reba_company,
+        axis=1
+    )
 
 
 # =========================================================
@@ -1254,6 +1331,13 @@ company_name = st.text_input(
 )
 
 
+site_start_date = st.text_input(
+    "현장 신설일",
+    value="",
+    placeholder="예: 2020-01-01"
+)
+
+
 survey_period = st.text_input(
     "조사 및 평가기간",
     placeholder=(
@@ -1266,6 +1350,527 @@ survey_period = st.text_input(
 writer = st.text_input(
     "작성자",
     placeholder="예: 보건관리자 홍길동"
+)
+
+
+st.subheader(
+    "업체·작업별 REBA 평가 선택"
+)
+
+company_names = sorted(
+    name
+    for name in reba_df.get(
+        "_report_company",
+        pd.Series(dtype=str)
+    ).dropna().unique()
+    if str(name).strip()
+)
+
+company_filter_options = [
+    "전체 업체",
+    *company_names
+]
+
+if (
+    not reba_df.empty
+    and reba_df["_report_company"].fillna("").eq("").any()
+):
+    company_filter_options.append(
+        "업체 정보 없음"
+    )
+
+
+REBA_SELECTION_STATE_KEY = "report_selected_reba_ids"
+REBA_CHECKBOX_PREFIX = "report_reba_checkbox_"
+REPORT_IMAGE_CACHE_STATE_KEY = "report_selected_image_cache"
+
+
+def clear_report_reba_selection():
+    st.session_state[REBA_SELECTION_STATE_KEY] = []
+    st.session_state.pop(REPORT_IMAGE_CACHE_STATE_KEY, None)
+
+    for key in list(st.session_state.keys()):
+        if key.startswith(REBA_CHECKBOX_PREFIX):
+            st.session_state[key] = False
+
+
+def update_report_reba_selection(evaluation_id):
+    selected_ids = set(
+        st.session_state.get(REBA_SELECTION_STATE_KEY, [])
+    )
+    checkbox_key = f"{REBA_CHECKBOX_PREFIX}{evaluation_id}"
+
+    if st.session_state.get(checkbox_key, False):
+        selected_ids.add(evaluation_id)
+    else:
+        selected_ids.discard(evaluation_id)
+
+    st.session_state[REBA_SELECTION_STATE_KEY] = sorted(selected_ids)
+
+
+def set_report_reba_selection(evaluation_ids, selected):
+    selected_ids = set(
+        st.session_state.get(REBA_SELECTION_STATE_KEY, [])
+    )
+
+    for evaluation_id in evaluation_ids:
+        checkbox_key = f"{REBA_CHECKBOX_PREFIX}{evaluation_id}"
+        st.session_state[checkbox_key] = selected
+
+        if selected:
+            selected_ids.add(evaluation_id)
+        else:
+            selected_ids.discard(evaluation_id)
+
+    st.session_state[REBA_SELECTION_STATE_KEY] = sorted(selected_ids)
+
+
+def prepare_selected_report_data(
+    evaluation_entries,
+    selected_ids,
+    image_loader
+):
+
+    selected_ids = set(selected_ids)
+    selected_records = []
+    selected_images = []
+
+    for evaluation_id, record in evaluation_entries:
+        if evaluation_id not in selected_ids:
+            continue
+
+        selected_records.append(record)
+        original_path = record.get("original_image_path")
+        analyzed_path = record.get("analyzed_image_path")
+        bold_path = record.get("bold_analyzed_image_path")
+
+        # 굵은 사진을 정상적으로 다운로드한 경우에만 사용
+        analyzed_image = (
+            image_loader(bold_path)
+            if isinstance(bold_path, str) and bold_path.strip()
+            else None
+        )
+
+        # 굵은 사진이 없거나 다운로드 실패하면 기존 사진 사용
+        if not analyzed_image:
+            analyzed_image = (
+                image_loader(analyzed_path)
+                if isinstance(analyzed_path, str)
+                and analyzed_path.strip()
+                else None
+            )
+        selected_images.append(
+            {
+                "record": record,
+                "original": (
+                    image_loader(original_path)
+                    if isinstance(original_path, str)
+                    and original_path.strip()
+                    else None
+                ),
+                "analyzed": analyzed_image,
+            }
+        )
+
+    return selected_records, selected_images
+
+
+def get_cached_report_image(path, image_cache, image_loader):
+    if not isinstance(path, str) or not path.strip():
+        return None
+
+    # 성공한 사진만 캐시하고, 실패한 사진은 재시도
+    cached = image_cache.get(path)
+    if cached:
+        return cached
+
+    result = image_loader(path)
+
+    if result:
+        image_cache[path] = result
+    else:
+        image_cache.pop(path, None)
+
+    return result
+
+
+def retain_selected_report_images(image_cache, selected_records):
+    selected_paths = {
+        record.get(path_key)
+        for record in selected_records
+        for path_key in ("original_image_path", "analyzed_image_path", "bold_analyzed_image_path")
+        if isinstance(record.get(path_key), str)
+        and record[path_key].strip()
+    }
+
+    for path in list(image_cache):
+        if path not in selected_paths:
+            image_cache.pop(path, None)
+
+
+def build_selected_reba_word_scope(records):
+
+    frame = pd.DataFrame(records).copy()
+
+    for column in (
+        "_report_selection_id",
+        "department",
+        "task_name",
+        "risk_level",
+        "worker",
+        "id",
+    ):
+        if column not in frame.columns:
+            frame[column] = ""
+
+    if "final_reba" not in frame.columns:
+        frame["final_reba"] = pd.Series(
+            index=frame.index,
+            dtype="float64"
+        )
+    else:
+        frame["final_reba"] = pd.to_numeric(
+            frame["final_reba"],
+            errors="coerce"
+        )
+
+    scores = frame["final_reba"].dropna()
+
+    def group_by(column, label):
+        if frame.empty:
+            return pd.DataFrame(
+                columns=[label, "평가건수", "평균_REBA", "최고_REBA"]
+            )
+
+        summary = (
+            frame.groupby(
+                column,
+                dropna=False
+            )
+            .agg(
+                평가건수=("_report_selection_id", "count"),
+                평균_REBA=("final_reba", "mean"),
+                최고_REBA=("final_reba", "max")
+            )
+            .reset_index()
+            .rename(columns={column: label})
+        )
+        summary[label] = summary[label].fillna("미입력")
+        summary["평균_REBA"] = summary["평균_REBA"].round(1)
+        return summary
+
+    high_risk = frame.loc[
+        frame["final_reba"] >= 8
+    ].copy()
+
+    return {
+        "records": frame,
+        "total": len(frame),
+        "average": scores.mean() if not scores.empty else 0,
+        "maximum": scores.max() if not scores.empty else 0,
+        "high_count": int((scores >= 8).sum()),
+        "very_high_count": int((scores >= 11).sum()),
+        "departments": group_by("department", "공종/부서"),
+        "tasks": group_by("task_name", "작업명"),
+        "high_risk": high_risk,
+        "analysis": (
+            f"선택한 REBA 평가 {len(frame)}건의 평균 점수는 "
+            f"{scores.mean():.1f}점이며, 8점 이상은 "
+            f"{int((scores >= 8).sum())}건입니다."
+            if not frame.empty and not scores.empty
+            else "포함할 REBA 평가를 선택하지 않았습니다."
+        ),
+    }
+
+
+def filter_selected_report_improvements(improvements, selected_records):
+
+    selected_work_keys = {
+        (
+            str(record.get("department") or "").strip().casefold(),
+            str(record.get("task_name") or "").strip().casefold(),
+        )
+        for record in selected_records
+    }
+
+    if not selected_work_keys or improvements.empty:
+        return improvements.iloc[0:0].copy()
+
+    return improvements[
+        improvements.apply(
+            lambda row: (
+                str(row.get("department") or "").strip().casefold(),
+                str(row.get("task_name") or "").strip().casefold(),
+            ) in selected_work_keys,
+            axis=1
+        )
+    ].copy()
+
+
+selected_report_company = st.selectbox(
+    "업체",
+    company_filter_options,
+    key="report_company_filter",
+    on_change=clear_report_reba_selection
+)
+
+if selected_report_company == "전체 업체":
+    company_reba_df = reba_df.copy()
+elif selected_report_company == "업체 정보 없음":
+    company_reba_df = reba_df[
+        reba_df["_report_company"].fillna("").eq("")
+    ].copy()
+else:
+    company_reba_df = reba_df[
+        reba_df["_report_company"].eq(selected_report_company)
+    ].copy()
+
+task_names = sorted(
+    str(name)
+    for name in company_reba_df.get(
+        "task_name",
+        pd.Series(dtype=str)
+    ).dropna().unique()
+    if str(name).strip()
+)
+
+task_filter_options = [
+    "전체 작업",
+    *task_names
+]
+
+selected_report_task = st.selectbox(
+    "작업명",
+    task_filter_options,
+    key="report_task_filter",
+    on_change=clear_report_reba_selection
+)
+
+if selected_report_task == "전체 작업":
+    task_reba_df = company_reba_df.copy()
+else:
+    task_reba_df = company_reba_df[
+        company_reba_df["task_name"].fillna("").astype(str)
+        == selected_report_task
+    ].copy()
+
+selected_reba_records = []
+selected_report_images = []
+selected_report_company_name = (
+    company_name
+    if selected_report_company == "전체 업체"
+    else selected_report_company
+)
+selected_report_task_name = (
+    ""
+    if selected_report_task == "전체 작업"
+    else selected_report_task
+)
+
+if task_reba_df.empty:
+    st.info(
+        "선택한 업체와 작업에 해당하는 REBA 평가가 없습니다."
+    )
+else:
+    evaluation_entries = []
+    for index, row in task_reba_df.iterrows():
+        record = row.to_dict()
+        evaluation_id = str(
+            record.get("id")
+            if record.get("id") is not None
+            else index
+        )
+        record["_report_selection_id"] = evaluation_id
+        evaluation_entries.append((evaluation_id, record))
+
+    evaluation_ids = [
+        evaluation_id
+        for evaluation_id, _ in evaluation_entries
+    ]
+
+    select_all_col, clear_all_col = st.columns(2)
+    with select_all_col:
+        st.button(
+            "업체 평가 전체 선택",
+            key="report_select_all_reba",
+            on_click=set_report_reba_selection,
+            args=(evaluation_ids, True),
+            width="stretch"
+        )
+    with clear_all_col:
+        st.button(
+            "선택 해제",
+            key="report_clear_reba_selection",
+            on_click=set_report_reba_selection,
+            args=(evaluation_ids, False),
+            width="stretch"
+        )
+
+    header_columns = st.columns([0.45, 0.9, 1.1, 1.7, 1.2, 0.8, 1.2])
+    for column, label in zip(
+        header_columns,
+        ["선택", "평가 ID", "근로자", "작업명", "평가일", "REBA", "사진"]
+    ):
+        column.markdown(f"**{label}**")
+
+    selected_ids = set(
+        st.session_state.get(REBA_SELECTION_STATE_KEY, [])
+    )
+
+    for evaluation_id, record in evaluation_entries:
+        checkbox_key = f"{REBA_CHECKBOX_PREFIX}{evaluation_id}"
+        if checkbox_key not in st.session_state:
+            st.session_state[checkbox_key] = evaluation_id in selected_ids
+
+        columns = st.columns([0.45, 0.9, 1.1, 1.7, 1.2, 0.8, 1.2])
+        columns[0].checkbox(
+            "포함",
+            key=checkbox_key,
+            label_visibility="collapsed",
+            on_change=update_report_reba_selection,
+            args=(evaluation_id,)
+        )
+        columns[1].write(f"#{evaluation_id}")
+        columns[2].write(record.get("worker") or "미입력")
+        columns[3].write(record.get("task_name") or "미입력")
+        created_at = str(record.get("created_at") or "미입력")
+        columns[4].write(created_at[:16].replace("T", " "))
+        columns[5].write(record.get("final_reba", "미입력"))
+
+        has_original = (
+            isinstance(record.get("original_image_path"), str)
+            and bool(record["original_image_path"].strip())
+        )
+        has_analyzed = (
+            isinstance(record.get("analyzed_image_path"), str)
+            and bool(record["analyzed_image_path"].strip())
+        )
+        photo_labels = []
+        if has_original:
+            photo_labels.append("원본")
+        if has_analyzed:
+            photo_labels.append("AI")
+        columns[6].write(" / ".join(photo_labels) or "없음")
+
+    selected_ids = set(
+        st.session_state.get(REBA_SELECTION_STATE_KEY, [])
+    )
+    report_image_cache = st.session_state.setdefault(
+        REPORT_IMAGE_CACHE_STATE_KEY,
+        {}
+    )
+    selected_reba_records, selected_report_images = prepare_selected_report_data(
+        evaluation_entries,
+        selected_ids,
+        lambda path: get_cached_report_image(
+            path,
+            report_image_cache,
+            download_report_image
+        )
+    )
+    retain_selected_report_images(
+        report_image_cache,
+        selected_reba_records
+    )
+
+    st.write(f"선택 평가: **{len(selected_reba_records)}건**")
+
+    for selection in selected_report_images:
+        record = selection["record"]
+        evaluation_id = str(record.get("id", ""))
+        original_image = selection["original"]
+        analyzed_image = selection["analyzed"]
+
+        worker_name = record.get("worker") or "근로자 미입력"
+        task_name = record.get("task_name") or "작업명 미입력"
+        created_at = str(record.get("created_at") or "평가일 미입력")[:16]
+        st.markdown(
+            f"**포함 예정 #{evaluation_id}: {worker_name} · "
+            f"{task_name} · {created_at}**"
+        )
+        image_col1, image_col2 = st.columns(2)
+        with image_col1:
+            if original_image:
+                st.image(
+                    original_image,
+                    caption=f"#{evaluation_id} 원본 작업사진",
+                    width="stretch"
+                )
+            else:
+                st.caption(f"#{evaluation_id} 원본사진 없음")
+        with image_col2:
+            if analyzed_image:
+                st.image(
+                    analyzed_image,
+                    caption=f"#{evaluation_id} AI 분석사진",
+                    width="stretch"
+                )
+            else:
+                st.caption(f"#{evaluation_id} AI 분석사진 없음")
+
+word_reba_scope = build_selected_reba_word_scope(
+    selected_reba_records
+)
+
+selected_symptom_df = df.copy()
+symptom_company_column = next(
+    (
+        column
+        for column in ["company", "company_name", "업체명", "사업장명"]
+        if column in selected_symptom_df.columns
+    ),
+    None
+)
+symptom_company_scope_available = (
+    selected_report_company == "전체 업체"
+    or symptom_company_column is not None
+)
+
+if selected_report_company != "전체 업체":
+    if symptom_company_column is None:
+        selected_symptom_df = selected_symptom_df.iloc[0:0]
+    else:
+        selected_symptom_df = selected_symptom_df[
+            selected_symptom_df[symptom_company_column]
+            .fillna("").astype(str).str.strip()
+            == selected_report_company
+        ]
+
+if selected_report_task_name:
+    selected_symptom_df = selected_symptom_df[
+        selected_symptom_df["현재작업"].fillna("").astype(str).str.strip()
+        == selected_report_task_name
+    ]
+
+selected_improvement_df = improvement_df.copy()
+
+if selected_report_company not in ["전체 업체", "업체 정보 없음"]:
+    selected_improvement_df = selected_improvement_df[
+        selected_improvement_df.apply(
+            resolve_reba_company,
+            axis=1
+        ) == selected_report_company
+    ]
+elif selected_report_company == "업체 정보 없음":
+    selected_improvement_df = selected_improvement_df[
+        selected_improvement_df.apply(
+            resolve_reba_company,
+            axis=1
+        ).eq("")
+    ]
+
+if selected_report_task_name:
+    selected_improvement_df = selected_improvement_df[
+        selected_improvement_df.get(
+            "task_name",
+            pd.Series(index=selected_improvement_df.index, dtype=str)
+        ).fillna("").astype(str)
+        == selected_report_task_name
+    ]
+
+selected_improvement_df = filter_selected_report_improvements(
+    selected_improvement_df,
+    selected_reba_records
 )
 
 
@@ -1546,14 +2151,14 @@ def create_bodypart_chart():
     return output
 
 
-def create_improvement_chart():
+def create_improvement_chart(dataframe):
 
-    if improvement_df.empty:
+    if dataframe.empty:
         return None
 
 
     chart_df = (
-        improvement_df[
+        dataframe[
             [
                 "before_reba",
                 "after_reba"
@@ -1723,6 +2328,56 @@ def add_text(
     )
 
 
+def add_selected_reba_photos(document, image_selections):
+
+    for selection in image_selections:
+        record = selection["record"]
+        evaluation_id = record.get("id", "")
+        worker_name = record.get("worker") or "근로자 미입력"
+        task_name = record.get("task_name") or "작업명 미입력"
+        evaluated_at = str(record.get("created_at") or "평가일 미입력")[:16]
+
+        add_heading(
+            document,
+            f"평가 #{evaluation_id} | {worker_name} | "
+            f"{task_name} | {evaluated_at}"
+        )
+
+        photo_table = document.add_table(
+            rows=1,
+            cols=2
+        )
+        photo_table.style = "Table Grid"
+
+        photos = [
+            ("원본 작업사진", selection.get("original")),
+            ("AI 분석사진", selection.get("analyzed"))
+        ]
+
+        for cell, (caption, image_bytes) in zip(
+            photo_table.rows[0].cells,
+            photos
+        ):
+            set_cell_text(
+                cell,
+                caption,
+                True
+            )
+
+            paragraph = cell.add_paragraph()
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+            if image_bytes:
+                paragraph.add_run().add_picture(
+                    BytesIO(image_bytes),
+                    width=Inches(3.1)
+                )
+            else:
+                paragraph.add_run(
+                    "저장된 사진이 없습니다."
+                )
+
+
 # =========================================================
 # Word 생성
 # =========================================================
@@ -1816,75 +2471,83 @@ def create_word_report():
     )
 
 
-    table = document.add_table(
-        rows=8,
-        cols=2
-    )
 
-    table.style = (
-        "Table Grid"
-    )
+    # 조사 현황을 한눈에 보여주는 요약 영역
+    document.add_paragraph("")
 
+    summary_table = document.add_table(rows=2, cols=3)
+    summary_table.style = "Table Grid"
 
-    overview = [
-        [
-            "사업장명",
-            company_name
-        ],
-        [
-            "조사·평가기간",
-            survey_period
-        ],
-        [
-            "작성자",
-            writer
-        ],
-        [
-            "근골격계 조사인원",
-            f"{total_count}명"
-        ],
-        [
-            "근골격계 유소견",
-            f"{abnormal_total}명"
-        ],
-        [
-            "REBA 평가건수",
-            f"{total_reba}건"
-        ],
-        [
-            "개선 전·후 비교",
-            f"{total_improvement}건"
-        ],
-        [
-            "보고서 작성일",
-            datetime.now().strftime(
-                "%Y-%m-%d"
-            )
-        ]
+    summary_items = [
+        ("조사대상", f"{total_count}명"),
+        ("근골격계 유소견 현황", f"{abnormal_total}명"),
+        ("평가건수 현황", f"{total_reba}건"),
     ]
 
+    for col, (label, value) in enumerate(summary_items):
+        set_cell_text(summary_table.cell(0, col), label, True)
+        set_cell_text(summary_table.cell(1, col), value, True)
 
-    for i, item in enumerate(
-        overview
-    ):
+    document.add_paragraph("")
 
-        set_cell_text(
-            table.cell(
-                i,
-                0
-            ),
-            item[0],
-            True
-        )
+    # 세부 조사 개요를 한 줄에 두 항목씩 배치
+    overview = [
+        ("사업장명", company_name),
+        ("현장 신설일", site_start_date),
+        ("조사·평가기간", survey_period),
+        ("작성자", writer),
+        ("근골격계 조사인원", f"{total_count}명"),
+        ("근골격계 유소견", f"{abnormal_total}명"),
+        ("REBA 평가건수", f"{total_reba}건"),
+        ("상세 수록 평가", f"{len(selected_reba_records)}건"),
+        ("개선 전·후 비교", f"{total_improvement}건"),
+        ("보고서 작성일", datetime.now().strftime("%Y-%m-%d")),
+    ]
 
-        set_cell_text(
-            table.cell(
-                i,
-                1
-            ),
-            item[1]
-        )
+    table = document.add_table(rows=5, cols=4)
+    table.style = "Table Grid"
 
+    for row_index in range(5):
+        left_label, left_value = overview[row_index * 2]
+        right_label, right_value = overview[row_index * 2 + 1]
+
+        for column, value, is_label in (
+            (0, left_label, True),
+            (1, left_value, False),
+            (2, right_label, True),
+            (3, right_value, False),
+        ):
+            set_cell_text(
+                table.cell(row_index, column),
+                value,
+                is_label
+            )
+
+    document.add_paragraph("")
+
+
+    document.add_paragraph("")
+
+    add_heading(
+        document,
+        "조사 방법 및 평가 해석"
+    )
+
+    survey_evidence = (
+        f"보고서에 포함된 실제 증상조사 자료는 {total_count}건입니다."
+        if total_count
+        else "보고서 범위에 포함된 증상조사 자료가 없습니다."
+    )
+    add_text(
+        document,
+        "「산업안전보건기준에 관한 규칙」 제657조·제658조 및 "
+        "근골격계부담작업 관련 고시를 참고하여 검토합니다. "
+        f"{survey_evidence} 작업별 실제 수행시간, 반복동작, 작업자세, "
+        "취급 중량과 빈도는 확인된 작업조건 자료가 있는 경우에만 근거로 삼습니다. "
+        "자료가 없거나 확인되지 않은 사항은 판단을 확정하거나 비해당으로 간주하지 않습니다. "
+        "REBA는 법정 필수 평가방법이 아니라 작업자세 위험요인을 시각적으로 설명하는 "
+        "보조평가입니다. 이 안내 문구만으로 법정 조사 의무 이행이 보장되는 것은 아닙니다."
+    )
 
     document.add_paragraph("")
 
@@ -2398,9 +3061,7 @@ def create_word_report():
 
 
             vals = [
-                row[
-                    "공종/부서"
-                ],
+                row["공종/부서"],
                 row[
                     "평가건수"
                 ],
@@ -2488,9 +3149,7 @@ def create_word_report():
 
 
             vals = [
-                row[
-                    "작업명"
-                ],
+                row["작업명"],
                 row[
                     "평가건수"
                 ],
@@ -2534,83 +3193,141 @@ def create_word_report():
         )
 
     else:
+        add_text(
+            document,
+            f"전체 조사에서 REBA 8점 이상은 {high_reba_count}건입니다. "
+            "근로자별 상세 평가와 사진은 11-1절에서 선택한 평가만 수록합니다."
+        )
+
+
+    document.add_paragraph("")
+
+
+    # =====================================================
+    # 11-1. 업체·작업별 REBA 상세 및 사진
+    # =====================================================
+
+    add_heading(
+        document,
+        "11-1. 업체·작업별 REBA 조사 현황 및 사진"
+    )
+
+    if not selected_reba_records:
+        add_text(
+            document,
+            "선택된 업체·작업에 포함할 REBA 평가가 없습니다."
+        )
+    else:
+        symptom_scope_text = (
+            f"{len(selected_symptom_df)}건"
+            if symptom_company_scope_available
+            else "업체 식별정보가 없어 업체별 증상 집계 불가"
+        )
+
+        selected_overview = [
+            ("업체", selected_report_company_name or "미입력"),
+            ("작업", selected_report_task_name or "전체 작업"),
+            ("선택 REBA 평가", f"{len(selected_reba_records)}건"),
+            ("관련 증상조사", symptom_scope_text),
+        ]
+
+        table = document.add_table(
+            rows=0,
+            cols=2
+        )
+        table.style = "Table Grid"
+
+        for label, value in selected_overview:
+            cells = table.add_row().cells
+            set_cell_text(cells[0], label, True)
+            set_cell_text(cells[1], value)
+
+        if not symptom_company_scope_available:
+            add_text(
+                document,
+                "증상조사 저장자료에는 업체 식별 컬럼이 없어 업체별 인원과 증상 현황을 "
+                "임의로 연결하지 않았습니다. 전체 증상조사 결과는 기존 요약에 포함됩니다."
+            )
+
+        add_heading(
+            document,
+            "선택 작업 개선대책"
+        )
+
+        if selected_improvement_df.empty:
+            add_text(
+                document,
+                "선택한 업체·작업에 저장된 개선 전·후 결과 또는 개선대책이 없습니다."
+            )
+        else:
+            table = document.add_table(
+                rows=1,
+                cols=5
+            )
+            table.style = "Table Grid"
+
+            for index, label in enumerate(
+                ["개선 전 REBA", "개선 후 REBA", "감소점수", "개선대책", "평가일"]
+            ):
+                set_cell_text(
+                    table.cell(0, index),
+                    label,
+                    True
+                )
+
+            for _, row in selected_improvement_df.iterrows():
+                cells = table.add_row().cells
+                values = [
+                    row.get("before_reba", ""),
+                    row.get("after_reba", ""),
+                    row.get("score_reduction", ""),
+                    row.get("improvement_action", ""),
+                    row.get("created_at", ""),
+                ]
+
+                for index, value in enumerate(values):
+                    set_cell_text(
+                        cells[index],
+                        value
+                    )
 
         table = document.add_table(
             rows=1,
-            cols=5
+            cols=7
         )
-
-        table.style = (
-            "Table Grid"
-        )
-
-
-        headers = [
-            "대상자",
-            "공종",
-            "작업명",
-            "REBA",
-            "위험수준"
+        table.style = "Table Grid"
+        selected_headers = [
+            "평가 ID", "업체", "근로자", "작업명",
+            "평가일", "REBA", "위험수준"
         ]
+        for index, label in enumerate(selected_headers):
+            set_cell_text(table.cell(0, index), label, True)
 
-
-        for i, h in enumerate(
-            headers
-        ):
-
-            set_cell_text(
-                table.cell(
-                    0,
-                    i
-                ),
-                h,
-                True
-            )
-
-
-        for _, row in (
-            high_risk_reba_df
-            .iterrows()
-        ):
-
-            cells = (
-                table.add_row().cells
-            )
-
-
-            vals = [
-                row.get(
-                    "worker",
-                    ""
-                ),
-                row.get(
-                    "department",
-                    ""
-                ),
-                row.get(
-                    "task_name",
-                    ""
-                ),
-                row.get(
-                    "final_reba",
-                    ""
-                ),
-                row.get(
-                    "risk_level",
-                    ""
-                )
+        for record in selected_reba_records:
+            cells = table.add_row().cells
+            values = [
+                record.get("id", ""),
+                resolve_reba_company(record) or "업체 정보 없음",
+                record.get("worker") or "미입력",
+                record.get("task_name") or "미입력",
+                record.get("created_at") or "미입력",
+                record.get("final_reba", ""),
+                record.get("risk_level", "미입력"),
             ]
+            for index, value in enumerate(values):
+                set_cell_text(cells[index], value)
 
-
-            for i, value in enumerate(
-                vals
-            ):
-
-                set_cell_text(
-                    cells[i],
-                    value
-                )
-
+        if selected_report_images:
+            add_heading(document, "선택 평가 작업사진")
+            add_selected_reba_photos(
+                document,
+                selected_report_images
+            )
+        else:
+            add_text(
+                document,
+                "선택된 평가에 포함할 사진이 없습니다."
+            )
 
     document.add_paragraph("")
 
@@ -2722,9 +3439,7 @@ def create_word_report():
         document.add_paragraph("")
 
 
-        chart = (
-            create_improvement_chart()
-        )
+        chart = create_improvement_chart(improvement_df)
 
 
         if chart is not None:
@@ -2744,99 +3459,32 @@ def create_word_report():
 
     add_heading(
         document,
-        "15. REBA 개선조치 세부내역"
+        "15. 전체 개선조치 관리현황"
     )
 
-
-    if improvement_df.empty:
-
+    if total_improvement == 0:
         add_text(
             document,
-            "개선조치 내역이 없습니다."
+            "저장된 개선조치가 없습니다."
         )
-
     else:
-
         table = document.add_table(
             rows=1,
-            cols=6
+            cols=2
         )
+        table.style = "Table Grid"
+        set_cell_text(table.cell(0, 0), "전체 개선 상태", True)
+        set_cell_text(table.cell(0, 1), "건수", True)
 
-        table.style = (
-            "Table Grid"
-        )
-
-
-        headers = [
-            "공종",
-            "작업명",
-            "개선 전",
-            "개선 후",
-            "감소점수",
-            "개선조치"
-        ]
-
-
-        for i, h in enumerate(
-            headers
+        for label, count in (
+            ("REBA 감소 확인", improved_count),
+            ("점수 변화 없음", unchanged_count),
+            ("점수 증가", worsened_count),
+            ("개선 후 REBA 8점 이상", remaining_high_count),
         ):
-
-            set_cell_text(
-                table.cell(
-                    0,
-                    i
-                ),
-                h,
-                True
-            )
-
-
-        for _, row in (
-            improvement_df
-            .iterrows()
-        ):
-
-            cells = (
-                table.add_row().cells
-            )
-
-
-            vals = [
-                row.get(
-                    "department",
-                    ""
-                ),
-                row.get(
-                    "task_name",
-                    ""
-                ),
-                row.get(
-                    "before_reba",
-                    ""
-                ),
-                row.get(
-                    "after_reba",
-                    ""
-                ),
-                row.get(
-                    "score_reduction",
-                    ""
-                ),
-                row.get(
-                    "improvement_action",
-                    ""
-                )
-            ]
-
-
-            for i, value in enumerate(
-                vals
-            ):
-
-                set_cell_text(
-                    cells[i],
-                    value
-                )
+            cells = table.add_row().cells
+            set_cell_text(cells[0], label)
+            set_cell_text(cells[1], f"{count}건")
 
 
     document.add_paragraph("")
@@ -2854,7 +3502,13 @@ def create_word_report():
 
     add_text(
         document,
-        edited_improvement_analysis
+        (
+            f"전체 개선 전·후 비교 {total_improvement}건 중 "
+            f"{improved_count}건에서 REBA 점수가 감소했습니다. "
+            f"평균 감소점수는 {avg_reduction:.1f}점입니다."
+            if total_improvement
+            else "저장된 개선 전·후 비교자료가 없습니다."
+        )
     )
 
 
@@ -2953,6 +3607,23 @@ def create_word_report():
 
     output = BytesIO()
 
+    from pages.views.report_word_style import apply_corporate_report_style
+    apply_corporate_report_style(document)
+    from docx.shared import RGBColor
+
+    # 첫 페이지 핵심 수치 강조 (데이터 내용은 변경하지 않음)
+    for summary_row in summary_table.rows[1:2]:
+        for cell in summary_row.cells:
+            for paragraph in cell.paragraphs:
+                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                paragraph.paragraph_format.space_before = Pt(7)
+                paragraph.paragraph_format.space_after = Pt(7)
+                for run in paragraph.runs:
+                    run.bold = True
+                    run.font.size = Pt(18)
+                    run.font.color.rgb = RGBColor(23, 61, 115)
+
+
     document.save(
         output
     )
@@ -2971,38 +3642,26 @@ st.subheader(
 )
 
 
-st.write(
-    "현재 DB에 저장된 증상조사, REBA 평가 및 "
-    "개선 전·후 비교결과를 Word 보고서로 생성합니다."
-)
+st.write("선택한 조사·REBA·개선 데이터를 Word 보고서로 생성합니다.")
 
+word_file = None
+if st.button(
+    "Word 보고서 생성",
+    type="primary",
+    key="generate_integrated_word_report"
+):
+    try:
+        with st.spinner("Word 보고서와 차트를 생성하고 있습니다..."):
+            word_file = create_word_report()
+    except Exception as e:
+        st.error(f"보고서 생성 중 오류가 발생했습니다: {e}")
 
-try:
-
-    word_file = (
-        create_word_report()
-    )
-
-
+if word_file is not None:
     st.download_button(
-        label=(
-            "📄 최종 통합 Word "
-            "결과보고서 다운로드"
-        ),
+        label="📄 최종 통합 Word 결과보고서 다운로드",
         data=word_file,
-        file_name=(
-            "근골격계_REBA_개선효과_통합결과보고서.docx"
-        ),
-        mime=(
-            "application/vnd.openxmlformats-"
-            "officedocument.wordprocessingml.document"
-        ),
-        width="stretch"
-    )
-
-
-except Exception as e:
-
-    st.error(
-        f"보고서 생성 중 오류가 발생했습니다: {e}"
+        file_name="근골격계_REBA_개선효과_통합결과보고서.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        width="stretch",
+        on_click="ignore"
     )

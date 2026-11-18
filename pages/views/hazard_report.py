@@ -1,6 +1,5 @@
 from pathlib import Path
 from io import BytesIO
-from datetime import datetime
 
 import pandas as pd
 import streamlit as st
@@ -8,25 +7,16 @@ import streamlit as st
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from supabase import create_client
-
-from auth import require_admin, logout_button
+from auth import require_admin, logout_button, get_authenticated_supabase
 
 require_admin()
 
-st.title("📋 근골격계 유해요인조사표 자동생성")
+st.title("근골격계 유해요인조사표")
 logout_button()
-st.write("저장된 REBA 평가결과와 작업사진을 불러와 근골격계 유해요인조사표 Word 파일을 자동 생성합니다.")
+st.caption("저장된 REBA 평가와 작업사진으로 조사표 Word 파일을 작성합니다.")
 st.divider()
 
-@st.cache_resource
-def get_supabase():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-supabase = get_supabase()
+supabase = get_authenticated_supabase()
 
 try:
     response = (
@@ -47,6 +37,36 @@ if not reba_rows:
 
 reba_df = pd.DataFrame(reba_rows)
 
+evaluation_options = {}
+
+for row_index, row in reba_df.iterrows():
+    record = row.to_dict()
+    evaluation_id = record.get("id") or row_index
+    label = (
+        f"#{evaluation_id} | "
+        f"{record.get('department', '')} | "
+        f"{record.get('task_name', '')} | "
+        f"{record.get('worker', '')} | "
+        f"{record.get('created_at', '')} | "
+        f"REBA {record.get('final_reba', '')}"
+    )
+    evaluation_options[label] = record
+
+selection_prompt = "조사자료를 선택하세요"
+selected_label = st.selectbox(
+    "조사자료 선택",
+    [selection_prompt, *evaluation_options.keys()],
+    key="hazard_report_evaluation"
+)
+
+if selected_label == selection_prompt:
+    st.info("조사표를 생성할 REBA 평가자료를 먼저 선택해주세요.")
+    st.stop()
+
+selected = evaluation_options[selected_label]
+
+
+
 def safe_int(value, default=0):
     try:
         return int(value or 0)
@@ -55,7 +75,9 @@ def safe_int(value, default=0):
 
 def download_storage_file(path):
     if not path:
+        st.warning("사진 저장 경로가 없습니다.")
         return None
+
     try:
         data = (
             supabase
@@ -63,13 +85,36 @@ def download_storage_file(path):
             .from_("reba-images")
             .download(path)
         )
+
         if isinstance(data, bytes):
-            return data
-        if hasattr(data, "content"):
-            return data.content
-        return bytes(data)
-    except Exception:
+            image_bytes = data
+        elif hasattr(data, "content"):
+            image_bytes = data.content
+        else:
+            image_bytes = bytes(data)
+
+        if not image_bytes:
+            st.warning("사진 파일이 비어 있습니다.")
+            return None
+
+        return image_bytes
+
+    except Exception as e:
+        # 실제 근로자 정보, 파일 경로, 인증정보가
+        # 오류 메시지에 노출되지 않도록 처리
+        st.error(
+            "사진을 불러오지 못했습니다. "
+            "Storage 파일 존재 여부와 접근권한을 확인해주세요."
+        )
         return None
+
+original_image_bytes = download_storage_file(
+    selected.get("original_image_path")
+)
+
+analyzed_image_bytes = download_storage_file(
+    selected.get("analyzed_image_path")
+)
 
 def replace_in_paragraph(paragraph, replacements):
     if not paragraph.runs:
@@ -120,6 +165,7 @@ def find_paragraph_containing(document, text):
 
 def add_photo_to_cell(cell, image_bytes, caption):
     cell.text = ""
+
     title_p = cell.paragraphs[0]
     title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_run = title_p.add_run(caption)
@@ -132,32 +178,67 @@ def add_photo_to_cell(cell, image_bytes, caption):
         return
 
     try:
+        from PIL import Image, ImageOps
+
+        # 원본 사진은 변경하지 않고
+        # Word 삽입용 이미지만 메모리에서 축소
+        with Image.open(BytesIO(image_bytes)) as source:
+            image = ImageOps.exif_transpose(source)
+            image.thumbnail((1400, 1400))
+
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+
+            optimized = BytesIO()
+            image.save(
+                optimized,
+                format="JPEG",
+                quality=85,
+                optimize=True
+            )
+            optimized.seek(0)
+
         p = cell.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run()
-        run.add_picture(
-            BytesIO(image_bytes),
+        p.add_run().add_picture(
+            optimized,
             width=Inches(2.45)
         )
+
     except Exception:
         p = cell.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.add_run("사진 삽입 실패")
 
-def insert_photo_section(document, original_image_bytes, analyzed_image_bytes):
-    if not original_image_bytes and not analyzed_image_bytes:
-        return
 
+def insert_photo_section(
+    document,
+    original_image_bytes,
+    analyzed_image_bytes
+):
     target = find_paragraph_containing(
         document,
         "라. 작업조건 조사"
     )
+
     if target is None:
+        st.warning(
+            "Word 템플릿에서 사진 삽입 위치를 찾지 못했습니다."
+        )
         return
 
-    heading = target.insert_paragraph_before("작업자세 사진")
+    heading = target.insert_paragraph_before(
+        "작업자세 사진"
+    )
+
     if heading.runs:
         heading.runs[0].bold = True
+
+    if not original_image_bytes and not analyzed_image_bytes:
+        msg = target.insert_paragraph_before(
+            "저장된 작업사진이 없습니다."
+        )
+        return
 
     table = document.add_table(rows=1, cols=2)
     table.style = "Table Grid"
@@ -167,75 +248,15 @@ def insert_photo_section(document, original_image_bytes, analyzed_image_bytes):
         original_image_bytes,
         "원본 작업사진"
     )
+
     add_photo_to_cell(
         table.cell(0, 1),
         analyzed_image_bytes,
         "AI 관절선 분석사진"
     )
 
-    target._p.addprevious(table._tbl)
-
-st.subheader("1. REBA 평가 선택")
-
-options = {}
-for _, row in reba_df.iterrows():
-    label = (
-        f"#{row.get('id', '')} | "
-        f"{row.get('department', '')} | "
-        f"{row.get('task_name', '')} | "
-        f"{row.get('worker', '')} | "
-        f"REBA {row.get('final_reba', '')}"
-    )
-    options[label] = row.to_dict()
-
-selected_label = st.selectbox(
-    "유해요인조사표를 생성할 평가를 선택하세요.",
-    list(options.keys())
-)
-selected = options[selected_label]
-
-final_reba = safe_int(selected.get("final_reba"))
-risk_level = str(selected.get("risk_level", "") or "")
-action_text = str(selected.get("action_text", "") or "")
-
-st.success(
-    f"선택된 작업: {selected.get('task_name', '')} / REBA {final_reba}점"
-)
-
-original_image_path = selected.get("original_image_path")
-analyzed_image_path = selected.get("analyzed_image_path")
-
-original_image_bytes = download_storage_file(original_image_path)
-analyzed_image_bytes = download_storage_file(analyzed_image_path)
-
-if original_image_bytes or analyzed_image_bytes:
-    st.write("#### 저장된 작업사진")
-    p1, p2 = st.columns(2)
-
-    with p1:
-        if original_image_bytes:
-            st.image(
-                original_image_bytes,
-                caption="원본 작업사진",
-                width="stretch"
-            )
-        else:
-            st.info("원본사진 없음")
-
-    with p2:
-        if analyzed_image_bytes:
-            st.image(
-                analyzed_image_bytes,
-                caption="AI 관절선 분석사진",
-                width="stretch"
-            )
-        else:
-            st.info("AI 분석사진 없음")
-else:
-    st.info(
-        "이 REBA 평가에는 저장된 작업사진이 없습니다. "
-        "사진 저장 기능 적용 이후 평가부터 Word에 사진이 들어갑니다."
-    )
+    # 표를 제목 바로 아래로 이동
+    heading._p.addnext(table._tbl)
 
 st.divider()
 st.subheader("2. 조사 개요")
@@ -245,15 +266,16 @@ c1, c2 = st.columns(2)
 with c1:
     survey_type = st.selectbox(
         "조사구분",
-        ["수시조사", "정기조사"]
+        ["최초조사", "정기조사", "수시조사"]
     )
     survey_date = st.text_input(
         "조사일시",
-        value=datetime.now().strftime("%Y-%m-%d %H:%M")
+        value="",
+        placeholder="예: 2026-10-15"
     )
     investigator = st.text_input(
         "조사자",
-        value=str(selected.get("evaluator", "") or "")
+        value=str(selected.get("evaluator") or "")
     )
 
 with c2:
@@ -375,6 +397,9 @@ coupling_score = safe_int(selected.get("coupling_score"))
 activity_score = safe_int(selected.get("activity_score"))
 score_a = safe_int(selected.get("score_a"))
 score_b = safe_int(selected.get("score_b"))
+final_reba = safe_int(selected.get("final_reba"))
+risk_level = str(selected.get("risk_level") or "미입력")
+action_text = str(selected.get("action_text") or "")
 table_c_score = max(final_reba - activity_score, 0)
 
 reba_preview = pd.DataFrame(

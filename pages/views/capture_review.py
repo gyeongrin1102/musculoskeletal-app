@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
 
-from supabase import create_client
-
-from auth import require_admin, logout_button
+from auth import require_admin, logout_button, get_authenticated_supabase
+from session_query_cache import clear_session_query_cache
 
 
 # =========================================================
@@ -12,14 +11,11 @@ from auth import require_admin, logout_button
 
 require_admin()
 
-st.title("📥 촬영 대기자료 검토")
+st.title("촬영 대기자료 검토")
 
 logout_button()
 
-st.write(
-    "근로자가 휴대폰에서 촬영한 작업사진을 확인하고 "
-    "REBA 최종점수를 확정해 저장합니다."
-)
+st.caption("원본·AI 사진을 확인하고 수동 REBA 점수를 확정합니다.")
 
 st.divider()
 
@@ -28,15 +24,7 @@ st.divider()
 # Supabase
 # =========================================================
 
-@st.cache_resource
-def get_supabase():
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-
-supabase = get_supabase()
+supabase = get_authenticated_supabase()
 
 
 # =========================================================
@@ -966,6 +954,7 @@ if st.button(
             )
             .execute()
         )
+        clear_session_query_cache()
 
         st.success(
             "✅ 최종 REBA 평가가 저장되었습니다. "

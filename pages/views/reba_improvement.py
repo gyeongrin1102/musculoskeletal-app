@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 
-from supabase import create_client
-from auth import require_admin, logout_button
+from auth import require_admin, logout_button, get_authenticated_supabase
+from session_query_cache import clear_session_query_cache
 
 
 # =========================================================
@@ -16,23 +16,13 @@ require_admin()
 # Supabase 연결
 # =========================================================
 
-@st.cache_resource
-def get_supabase():
-
-    return create_client(
-        st.secrets["SUPABASE_URL"],
-        st.secrets["SUPABASE_KEY"]
-    )
-
-
-supabase = get_supabase()
+supabase = get_authenticated_supabase()
 
 
 # =========================================================
 # 데이터 불러오기
 # =========================================================
 
-@st.cache_data(ttl=30)
 def load_reba_results():
 
     response = (
@@ -49,7 +39,6 @@ def load_reba_results():
     return response.data or []
 
 
-@st.cache_data(ttl=30)
 def load_improvements():
 
     response = (
@@ -570,7 +559,7 @@ if st.button(
         ).execute()
 
 
-        st.cache_data.clear()
+        clear_session_query_cache()
 
 
         st.success(

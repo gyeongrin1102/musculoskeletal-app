@@ -11,6 +11,7 @@ from email.mime.text import MIMEText
 import streamlit as st
 
 import survey_form as sf
+from session_query_cache import clear_session_query_cache
 
 STEPS = ["기본 사항", "생활과 병력", "통증 유무와 부위", "부위별 세부 문항", "확인과 제출"]
 PREFIX = "w_"
@@ -144,6 +145,8 @@ def step_basic():
     c1, c2 = st.columns(2)
     c1.number_input("년", 0, 60, value=None, step=1, key=PREFIX + "현직장_근무년")
     c2.number_input("개월째 근무 중", 0, 11, value=None, step=1, key=PREFIX + "현직장_근무개월")
+
+    st.text_input("업체명 (선택)", placeholder="예: OO 사업장", key=PREFIX + "업체명")
 
     st.markdown("**작업부서**")
     c1, c2, c3 = st.columns(3)
@@ -361,8 +364,22 @@ def get_supabase():
 
 
 def already_submitted(client, record):
-    """같은 해에 같은 성명·부서·성별로 낸 응답이 있는지 확인 (중복 제출 방지)."""
-    year = record.get("조사연도") or datetime.now().year
+    """같은 해에 같은 성명·부서·성별로 낸 응답이 있는지 확인 (중복 제출 방지).
+
+    survey_results 에 RLS 가 걸려 있으면 근로자 화면(익명)은 조회할 수 없으므로
+    supabase/survey_duplicate_check.sql 의 함수를 먼저 사용합니다."""
+    year = int(record.get("조사연도") or datetime.now().year)
+    try:
+        res = client.rpc("survey_already_submitted", {
+            "p_name": record.get("성명", ""),
+            "p_department": record.get("작업부서", ""),
+            "p_gender": record.get("성별") or "",
+            "p_year": year,
+        }).execute()
+        if isinstance(res.data, bool):
+            return res.data
+    except Exception:
+        pass  # 함수가 없으면 아래 직접 조회로
     try:
         res = (client.table("survey_results").select("id, survey_data")
                .eq("name", record.get("성명", ""))
@@ -436,6 +453,7 @@ def submit():
     except Exception as e:
         st.error(f"저장 중 오류가 발생했습니다. 잠시 후 다시 눌러 주세요. ({e})")
         return
+    clear_session_query_cache()
     if record.get("최종판정") == "통증호소자":
         send_alert(record)
     ss.sv_done = record
