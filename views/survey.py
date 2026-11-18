@@ -1,673 +1,516 @@
-import streamlit as st
-import pandas as pd
-import os
-from datetime import datetime
-def classify_body_part(
-    symptom,
-    duration,
-    severity,
-    frequency,
-    recent,
-    treatment
-):
+"""근로자용 근골격계질환 증상조사 (5단계 화면).
 
-    # 증상이 없으면 정상
-    if symptom != "예":
-        return "정상"
-
-    # 매우 심한 증상
-    if severity in [
-        "심한 통증",
-        "매우 심한 통증"
-    ]:
-        return "통증호소자"
-
-    # 중간 이상의 통증 + 반복적으로 발생
-    if (
-        severity == "중간 통증"
-        and frequency in [
-            "1주일에 1번 정도",
-            "매일"
-        ]
-    ):
-        return "통증호소자"
-
-    # 최근에도 증상이 있고 치료 경험도 있음
-    if (
-        recent == "예"
-        and treatment == "예"
-    ):
-        return "통증호소자"
-
-    # 그 외 증상이 있는 경우
-    return "관리대상자"
-# -----------------------------
-# 페이지 설정
-# -----------------------------
-
-
-st.title("근골격계 증상조사표")
-st.caption("근로자의 근골격계 증상 및 작업 관련 특성을 확인하기 위한 조사입니다.")
-
-st.divider()
-
-
-# =========================================================
-# I. 일반사항
-# =========================================================
-
-st.header("Ⅰ. 일반사항")
-st.write("아래 사항을 직접 기입하여 주시기 바랍니다.")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    name = st.text_input("성명")
-
-    gender = st.radio(
-        "성별",
-        ["남", "여"],
-        horizontal=True,
-        index=None
-    )
-
-with col2:
-    age = st.number_input(
-        "연령 (만 나이)",
-        min_value=18,
-        max_value=100,
-        value=None,
-        step=1
-    )
-
-    marriage = st.radio(
-        "결혼 여부",
-        ["기혼", "미혼"],
-        horizontal=True,
-        index=None
-    )
-
-
-st.subheader("근무 정보")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    department = st.text_input(
-        "작업부서",
-        placeholder="예: 정형외과병동"
-    )
-
-with col2:
-    line = st.text_input(
-        "라인 / 세부부서",
-        placeholder="해당하는 경우 입력"
-    )
-
-
-col1, col2 = st.columns(2)
-
-with col1:
-    career_year = st.number_input(
-        "현 직장 근무경력 - 년",
-        min_value=0,
-        max_value=60,
-        step=1
-    )
-
-with col2:
-    career_month = st.number_input(
-        "현 직장 근무경력 - 개월",
-        min_value=0,
-        max_value=11,
-        step=1
-    )
-
-
-st.subheader("현재 하고 있는 작업")
-
-current_work = st.text_input(
-    "현재 작업내용",
-    placeholder="예: 환자 병동침대 이동"
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    current_work_year = st.number_input(
-        "현재 작업 수행기간 - 년",
-        min_value=0,
-        max_value=60,
-        step=1
-    )
-
-with col2:
-    current_work_month = st.number_input(
-        "현재 작업 수행기간 - 개월",
-        min_value=0,
-        max_value=11,
-        step=1
-    )
-
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    work_hours = st.number_input(
-        "1일 근무시간",
-        min_value=0.0,
-        max_value=24.0,
-        step=0.5
-    )
-
-with col2:
-    rest_minutes = st.number_input(
-        "근무 중 1회 휴식시간(분)",
-        min_value=0,
-        max_value=300,
-        step=5
-    )
-
-with col3:
-    rest_count = st.number_input(
-        "1일 휴식 횟수",
-        min_value=0,
-        max_value=20,
-        step=1
-    )
-
-
-st.subheader("현재까지 했던 작업")
-
-past_work = st.text_input(
-    "이전에 수행했던 작업내용",
-    placeholder="없으면 '없음' 입력"
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    past_work_year = st.number_input(
-        "이전 작업 수행기간 - 년",
-        min_value=0,
-        max_value=60,
-        step=1
-    )
-
-with col2:
-    past_work_month = st.number_input(
-        "이전 작업 수행기간 - 개월",
-        min_value=0,
-        max_value=11,
-        step=1
-    )
-
-
-st.divider()
-
-
-# =========================================================
-# I-1. 여가 및 취미활동
-# =========================================================
-
-st.subheader("1. 여가 및 취미활동")
-
-st.write(
-    "규칙적인 여가 및 취미활동을 하고 계십니까? "
-    "(한 번에 30분 이상, 1주일에 적어도 2~3회 이상)"
-)
-
-hobbies = st.multiselect(
-    "해당되는 항목을 선택하세요.",
-    [
-        "컴퓨터 관련 활동",
-        "악기 연주",
-        "뜨개질/자수/붓글씨",
-        "테니스/배드민턴/스쿼시",
-        "축구/족구/농구/스키 등",
-        "해당사항 없음"
-    ]
-)
-
-
-# =========================================================
-# I-2. 가사노동
-# =========================================================
-
-st.subheader("2. 하루 평균 가사노동 시간")
-
-housework = st.radio(
-    "빨래하기, 청소하기, 어린아이 돌보기 등을 포함한 하루 평균 가사노동 시간은?",
-    [
-        "거의 하지 않는다",
-        "1시간 미만",
-        "1~2시간",
-        "2~3시간",
-        "3시간 이상"
-    ],
-    index=None
-)
-
-
-# =========================================================
-# I-3. 질병력
-# =========================================================
-
-st.subheader("3. 질병 진단 여부")
-
-disease = st.radio(
-    "의사로부터 다음과 같은 질병을 진단받은 적이 있습니까?",
-    ["아니오", "예"],
-    horizontal=True,
-    index=None
-)
-
-disease_list = []
-
-if disease == "예":
-
-    disease_list = st.multiselect(
-        "진단받은 질병을 선택하세요.",
-        [
-            "류마티스 관절염",
-            "당뇨병",
-            "루프스병",
-            "통풍",
-            "기타"
-        ]
-    )
-
-
-# =========================================================
-# I-4. 과거 손상 경험
-# =========================================================
-
-st.subheader("4. 과거 손상 경험")
-
-injury = st.radio(
-    "운동 중 사고, 교통사고, 넘어짐, 추락 등으로 신체부위를 다친 적이 있습니까?",
-    ["아니오", "예"],
-    horizontal=True,
-    index=None
-)
-
-injury_parts = []
-
-if injury == "예":
-
-    injury_parts = st.multiselect(
-        "다친 부위를 선택하세요.",
-        [
-            "목",
-            "어깨",
-            "팔/팔꿈치",
-            "손/손목/손가락",
-            "허리",
-            "다리/발"
-        ]
-    )
-
-
-# =========================================================
-# I-5. 육체적 부담 정도
-# =========================================================
-
-st.subheader("5. 현재 작업의 육체적 부담 정도")
-
-physical_load = st.radio(
-    "현재 하고 계시는 일의 육체적 부담 정도는 어느 정도라고 생각합니까?",
-    [
-        "전혀 힘들지 않음",
-        "견딜만 함",
-        "약간 힘듦",
-        "매우 힘듦"
-    ],
-    horizontal=True,
-    index=None
-)
-
-
-st.divider()
-
-
-# =========================================================
-# II. 근골격계 증상조사
-# =========================================================
-
-st.header("Ⅱ. 근골격계 증상조사")
-
-st.write(
-    """
-지난 1년 동안 목, 어깨, 팔/팔꿈치, 손/손목/손가락, 허리, 다리/발 중
-어느 한 부위에서라도 작업과 관련하여 통증이나 불편함을 느낀 적이 있습니까?
-
-예: 통증, 쑤시는 느낌, 뻣뻣함, 화끈거리는 느낌,
-무감각 또는 찌릿찌릿한 느낌 등
+1 기본 사항 → 2 생활과 병력 → 3 통증 유무와 부위 → 4 부위별 세부 문항 → 5 확인과 제출
+문항과 보기는 별지 제2호서식 그대로이며(survey_form.py), 판정은 제출 시 자동 처리됩니다.
 """
-)
 
-has_symptom = st.radio(
-    "지난 1년 동안 근골격계 증상이 있었습니까?",
-    ["아니오", "예"],
-    horizontal=True,
-    index=None
-)
+import smtplib
+from datetime import datetime
+from email.mime.text import MIMEText
 
+import streamlit as st
 
-# =========================================================
-# 증상이 있는 경우만 표시
-# =========================================================
+import survey_form as sf
 
-if has_symptom == "예":
-
-    st.info(
-        "증상이 있었던 신체부위를 선택하고, "
-        "각 부위별 증상에 답변해 주세요."
-    )
-
-    symptom_parts = st.multiselect(
-        "증상이 있었던 신체부위",
-        [
-            "목",
-            "어깨",
-            "팔/팔꿈치",
-            "손/손목/손가락",
-            "허리",
-            "다리/발"
-        ]
-    )
+STEPS = ["기본 사항", "생활과 병력", "통증 유무와 부위", "부위별 세부 문항", "확인과 제출"]
+PREFIX = "w_"
 
 
-    # -----------------------------------------------------
-    # 신체부위별 조사 함수
-    # -----------------------------------------------------
+def secret(name, default=""):
+    try:
+        return st.secrets.get(name, default)
+    except Exception:
+        return default
 
-    def symptom_questionnaire(part):
 
-        st.markdown(f"### {part}")
+ORG = secret("ORG_NAME", "")
 
-        duration = st.radio(
-            f"{part} - 한 번 아프기 시작하면 증상이 얼마나 지속됩니까?",
-            [
-                "1일 미만",
-                "1일 이상 ~ 1주일 미만",
-                "1주일 이상 ~ 1개월 미만",
-                "1개월 이상 ~ 6개월 미만",
-                "6개월 이상"
-            ],
-            key=f"{part}_duration",
-            index=None
+# ---------------------------------------------------------
+# 단계를 넘어가도 입력값이 지워지지 않게 유지
+# (Streamlit 은 화면에 없는 위젯의 값을 지우므로 매 실행마다 다시 보관)
+# ---------------------------------------------------------
+for _k in list(st.session_state.keys()):
+    if isinstance(_k, str) and _k.startswith(PREFIX):
+        st.session_state[_k] = st.session_state[_k]
+
+ss = st.session_state
+ss.setdefault("sv_step", 0)
+
+
+def v(field):
+    return ss.get(PREFIX + field)
+
+
+def go(step):
+    ss.sv_step = step
+    ss.pop("sv_errors", None)
+
+
+def reset_survey():
+    for k in list(ss.keys()):
+        if isinstance(k, str) and (k.startswith(PREFIX) or k.startswith("sv_")):
+            del ss[k]
+
+
+# ---------------------------------------------------------
+# 신체 그림
+# ---------------------------------------------------------
+
+def body_svg(selected):
+    on, off, line = "#E4572E", "#E9EDF2", "#8A96A8"
+
+    def c(part):
+        return on if part in selected else off
+
+    return f"""
+<svg viewBox="0 0 220 330" width="100%" style="max-width:260px;display:block;margin:auto"
+     xmlns="http://www.w3.org/2000/svg" role="img" aria-label="신체 부위 그림">
+  <g stroke="{line}" stroke-width="1.5">
+    <circle cx="110" cy="32" r="22" fill="#F4F6F9"/>
+    <rect x="99" y="54" width="22" height="16" rx="4" fill="{c('목')}"/>
+    <path d="M60 74 Q110 62 160 74 L160 92 L60 92 Z" fill="{c('어깨')}"/>
+    <rect x="72" y="92" width="76" height="62" fill="#F4F6F9"/>
+    <rect x="72" y="154" width="76" height="34" fill="{c('허리')}"/>
+    <rect x="40" y="78" width="20" height="92" rx="9" fill="{c('팔/팔꿈치')}"/>
+    <rect x="160" y="78" width="20" height="92" rx="9" fill="{c('팔/팔꿈치')}"/>
+    <ellipse cx="50" cy="186" rx="12" ry="15" fill="{c('손/손목/손가락')}"/>
+    <ellipse cx="170" cy="186" rx="12" ry="15" fill="{c('손/손목/손가락')}"/>
+    <rect x="74" y="188" width="32" height="116" rx="10" fill="{c('다리/발')}"/>
+    <rect x="114" y="188" width="32" height="116" rx="10" fill="{c('다리/발')}"/>
+    <ellipse cx="88" cy="312" rx="18" ry="8" fill="{c('다리/발')}"/>
+    <ellipse cx="132" cy="312" rx="18" ry="8" fill="{c('다리/발')}"/>
+  </g>
+  <g font-size="10" fill="#334" font-family="sans-serif" text-anchor="middle">
+    <text x="110" y="66">목</text><text x="110" y="86">어깨</text>
+    <text x="110" y="175">허리</text><text x="110" y="250">다리/발</text>
+  </g>
+</svg>"""
+
+
+def choose_parts():
+    options = sf.BODY_PARTS
+    if hasattr(st, "pills"):
+        return st.pills("아팠던 부위를 모두 누르세요", options, selection_mode="multi",
+                        key=PREFIX + "_선택부위")
+    return st.multiselect("아팠던 부위를 모두 고르세요", options, key=PREFIX + "_선택부위")
+
+
+# ---------------------------------------------------------
+# 단계별 화면
+# ---------------------------------------------------------
+
+def step_intro():
+    st.title(sf.FORM_TITLE)
+    if ORG:
+        st.caption(ORG)
+    with st.container(border=True):
+        st.markdown(
+            "현재 업무와 관련하여 느끼는 신체 증상·불편감을 **5단계**로 나누어 여쭙니다.  \n"
+            "약 **3~5분** 정도 걸립니다."
         )
-
-
-        severity = st.radio(
-            f"{part} - 증상의 정도는 어느 정도입니까?",
-            [
-                "약한 통증",
-                "중간 통증",
-                "심한 통증",
-                "매우 심한 통증"
-            ],
-            key=f"{part}_severity",
-            index=None
+        st.markdown(
+            "**작성 전 확인해 주세요**\n"
+            "- 증상을 크게 또는 작게 평가하지 마시고 있는 그대로 응답해 주세요.\n"
+            "- 이 조사는 3년마다 실시하는 근골격계부담작업 유해요인조사의 일부입니다.\n"
+            f"- {sf.NOTICE_USE}"
         )
-
-
-        frequency = st.radio(
-            f"{part} - 지난 1년 동안 이러한 증상을 얼마나 자주 경험했습니까?",
-            [
-                "6개월에 1번 정도",
-                "2~3개월에 1번 정도",
-                "1개월에 1번 정도",
-                "1주일에 1번 정도",
-                "매일"
-            ],
-            key=f"{part}_frequency",
-            index=None
+    with st.expander("개인정보(건강정보) 수집·이용 안내", expanded=False):
+        st.markdown(
+            "- **수집 항목**: 성명, 연령, 성별, 근무부서·작업 정보, 진단받은 질병, "
+            "과거 손상, 신체부위별 통증 정보\n"
+            "- **이용 목적**: 근골격계부담작업 유해요인조사 및 작업환경 개선, 근로자 건강관리\n"
+            "- **보유 기간**: 5년 (유해요인조사 결과 보존기간)\n"
+            "- **열람 범위**: 응답 원본은 보건관리 담당자만 열람하며, 집계 자료에는 "
+            "개인이 드러나지 않습니다.\n"
+            "- 동의를 거부할 수 있으며, 이 경우 담당자에게 종이 조사표를 요청해 주세요."
         )
+    agree = st.checkbox("위 안내를 읽었으며, 건강정보를 포함한 개인정보 수집·이용에 동의합니다.",
+                        key=PREFIX + "_동의")
+    if st.button("조사 시작하기  ›", type="primary", width="stretch", disabled=not agree):
+        go(1)
+        st.rerun()
 
 
-        recent = st.radio(
-            f"{part} - 지난 1주일 동안에도 이러한 증상이 있었습니까?",
-            ["아니오", "예"],
-            horizontal=True,
-            key=f"{part}_recent",
-            index=None
+def step_basic():
+    c1, c2 = st.columns(2)
+    c1.text_input("성명 *", key=PREFIX + "성명")
+    c2.number_input("연령 (만 나이) *", min_value=15, max_value=100, value=None, step=1,
+                    key=PREFIX + "연령")
+    c1, c2 = st.columns(2)
+    c1.radio("성별 *", sf.GENDER_OPTIONS, index=None, horizontal=True, key=PREFIX + "성별")
+    c2.radio("결혼여부", sf.MARRIAGE_OPTIONS, index=None, horizontal=True, key=PREFIX + "결혼여부")
+
+    st.markdown("**현 직장경력**")
+    c1, c2 = st.columns(2)
+    c1.number_input("년", 0, 60, value=None, step=1, key=PREFIX + "현직장_근무년")
+    c2.number_input("개월째 근무 중", 0, 11, value=None, step=1, key=PREFIX + "현직장_근무개월")
+
+    st.markdown("**작업부서**")
+    c1, c2, c3 = st.columns(3)
+    c1.text_input("부 *", placeholder="예: 간호부", key=PREFIX + "작업부서")
+    c2.text_input("라인", placeholder="예: 7병동", key=PREFIX + "라인/세부부서")
+    c3.text_input("작업", placeholder="예: 환자이송", key=PREFIX + "수행작업")
+
+    st.markdown("**현재 하고 있는 작업 (구체적으로)**")
+    st.text_input("작업내용", placeholder="예: 환자 병동침대 이동", key=PREFIX + "현재작업")
+    c1, c2 = st.columns(2)
+    c1.number_input("작업기간 - 년", 0, 60, value=None, step=1, key=PREFIX + "현재작업_수행년")
+    c2.number_input("개월째 하고 있음", 0, 11, value=None, step=1, key=PREFIX + "현재작업_수행개월")
+
+    st.markdown("**1일 근무시간**")
+    c1, c2, c3 = st.columns(3)
+    c1.number_input("시간", 0.0, 24.0, value=None, step=0.5, key=PREFIX + "1일근무시간")
+    c2.number_input("휴식시간(식사 제외) 분씩", 0, 300, value=None, step=5, key=PREFIX + "휴식시간_분")
+    c3.number_input("회 휴식", 0, 30, value=None, step=1, key=PREFIX + "휴식횟수")
+
+    st.markdown("**현 작업을 하기 전에 했던 작업**")
+    st.text_input("작업내용", placeholder="없으면 '없음'", key=PREFIX + "이전작업")
+    c1, c2 = st.columns(2)
+    c1.number_input("작업기간 - 년 ", 0, 60, value=None, step=1, key=PREFIX + "이전작업_수행년")
+    c2.number_input("개월 동안 했음", 0, 11, value=None, step=1, key=PREFIX + "이전작업_수행개월")
+
+
+def check_basic():
+    errors = []
+    if not (v("성명") or "").strip():
+        errors.append("성명을 입력해 주세요.")
+    if v("연령") is None:
+        errors.append("연령을 입력해 주세요.")
+    if not v("성별"):
+        errors.append("성별을 선택해 주세요.")
+    if not (v("작업부서") or "").strip():
+        errors.append("작업부서(부)를 입력해 주세요.")
+    return errors
+
+
+def step_history():
+    st.markdown(f"**{sf.Q_HOBBY}**")
+    st.multiselect("해당 항목 모두 선택", sf.HOBBY_OPTIONS, key=PREFIX + "취미활동",
+                   placeholder="선택하세요")
+
+    st.markdown(f"**{sf.Q_HOUSEWORK}**")
+    st.radio("가사노동시간", sf.HOUSEWORK_OPTIONS, index=None, key=PREFIX + "가사노동",
+             label_visibility="collapsed")
+
+    st.markdown(f"**{sf.Q_DISEASE}**")
+    st.caption("(보기: " + ", ".join(sf.DISEASE_OPTIONS) + ")")
+    st.radio("질병 진단", sf.YES_NO, index=None, horizontal=True, key=PREFIX + "질병진단여부",
+             label_visibility="collapsed")
+    if v("질병진단여부") == "예":
+        st.multiselect("진단받은 질병", sf.DISEASE_OPTIONS, key=PREFIX + "진단질병",
+                       placeholder="선택하세요")
+        st.radio("현재상태는?", sf.DISEASE_STATUS_OPTIONS, index=None, horizontal=True,
+                 key=PREFIX + "질병현재상태")
+
+    st.markdown(f"**{sf.Q_INJURY}**")
+    st.radio("과거 손상", sf.YES_NO, index=None, horizontal=True, key=PREFIX + "과거손상여부",
+             label_visibility="collapsed")
+    if v("과거손상여부") == "예":
+        st.multiselect("상해 부위는?", sf.INJURY_PARTS, key=PREFIX + "과거손상부위",
+                       placeholder="선택하세요")
+
+    st.markdown(f"**{sf.Q_LOAD}**")
+    st.radio("육체적 부담", sf.LOAD_OPTIONS, index=None, horizontal=True,
+             key=PREFIX + "육체적부담", label_visibility="collapsed")
+
+
+def check_history():
+    errors = []
+    hobbies = v("취미활동") or []
+    if not hobbies:
+        errors.append("1번(여가 및 취미활동): 해당 항목을 선택해 주세요. 없으면 '해당사항 없음'.")
+    elif "해당사항 없음" in hobbies and len(hobbies) > 1:
+        errors.append("1번: '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.")
+    if not v("가사노동"):
+        errors.append("2번(가사노동시간)을 선택해 주세요.")
+    if not v("질병진단여부"):
+        errors.append("3번(질병 진단)을 선택해 주세요.")
+    elif v("질병진단여부") == "예":
+        if not v("진단질병"):
+            errors.append("3번: 진단받은 질병을 선택해 주세요.")
+        if not v("질병현재상태"):
+            errors.append("3번: 현재상태를 선택해 주세요.")
+    if not v("과거손상여부"):
+        errors.append("4번(과거 손상)을 선택해 주세요.")
+    elif v("과거손상여부") == "예" and not v("과거손상부위"):
+        errors.append("4번: 상해 부위를 선택해 주세요.")
+    if not v("육체적부담"):
+        errors.append("5번(육체적 부담 정도)을 선택해 주세요.")
+    return errors
+
+
+def step_symptom():
+    st.markdown(f"**{sf.Q_SYMPTOM}**")
+    st.radio("증상 여부", sf.YES_NO, index=None, horizontal=True,
+             key=PREFIX + "근골격계증상여부", label_visibility="collapsed")
+    if v("근골격계증상여부") == "예":
+        c1, c2 = st.columns([1, 1.2])
+        with c2:
+            selected = choose_parts() or []
+            st.caption("그림에서 선택한 부위가 빨간색으로 표시됩니다.")
+        with c1:
+            st.markdown(body_svg(selected), unsafe_allow_html=True)
+    elif v("근골격계증상여부") == "아니오":
+        st.success("통증이 없으시면 다음 단계에서 바로 제출할 수 있습니다.")
+
+
+def check_symptom():
+    if not v("근골격계증상여부"):
+        return ["증상 여부를 선택해 주세요."]
+    if v("근골격계증상여부") == "예" and not v("_선택부위"):
+        return ["아팠던 부위를 하나 이상 선택해 주세요."]
+    return []
+
+
+def step_parts():
+    parts = [p for p in sf.BODY_PARTS if p in (v("_선택부위") or [])]
+    with st.expander("<보기> 아픈 정도 기준", expanded=True):
+        for k, txt in sf.SEVERITY_GUIDE.items():
+            st.markdown(f"- **{k}**: {txt}")
+    for part in parts:
+        with st.container(border=True):
+            st.subheader(f"📍 {part}")
+            if part in sf.SIDE_PARTS:
+                st.radio(sf.PART_QUESTIONS[0][1], sf.SIDE_OPTIONS, index=None, horizontal=True,
+                         key=f"{PREFIX}{part}_통증부위")
+            st.radio(sf.PART_QUESTIONS[1][1], sf.DURATION_OPTIONS, index=None,
+                     key=f"{PREFIX}{part}_지속기간")
+            st.radio(sf.PART_QUESTIONS[2][1], sf.SEVERITY_OPTIONS, index=None,
+                     key=f"{PREFIX}{part}_증상정도",
+                     captions=[sf.SEVERITY_GUIDE[o] for o in sf.SEVERITY_OPTIONS])
+            st.radio(sf.PART_QUESTIONS[3][1], sf.FREQUENCY_OPTIONS, index=None,
+                     key=f"{PREFIX}{part}_빈도")
+            st.radio(sf.PART_QUESTIONS[4][1], sf.YES_NO, index=None, horizontal=True,
+                     key=f"{PREFIX}{part}_최근1주증상")
+            st.multiselect(sf.PART_QUESTIONS[5][1], sf.CONSEQUENCE_OPTIONS,
+                           key=f"{PREFIX}{part}_통증으로인한일", placeholder="해당 항목 모두 선택")
+            if "기타" in (v(f"{part}_통증으로인한일") or []):
+                st.text_input("기타 내용", key=f"{PREFIX}{part}_통증으로인한일_기타")
+
+
+def check_parts():
+    errors = []
+    for part in [p for p in sf.BODY_PARTS if p in (v("_선택부위") or [])]:
+        missing = []
+        if part in sf.SIDE_PARTS and not v(f"{part}_통증부위"):
+            missing.append("1번 구체적 부위")
+        for no, field in [(2, "지속기간"), (3, "증상정도"), (4, "빈도"), (5, "최근1주증상")]:
+            if not v(f"{part}_{field}"):
+                missing.append(f"{no}번")
+        conseq = v(f"{part}_통증으로인한일") or []
+        if not conseq:
+            missing.append("6번")
+        elif "해당사항 없음" in conseq and len(conseq) > 1:
+            errors.append(f"{part}: 6번 '해당사항 없음'은 다른 항목과 함께 고를 수 없습니다.")
+        elif "기타" in conseq and not (v(f"{part}_통증으로인한일_기타") or "").strip():
+            missing.append("6번 기타 내용")
+        if missing:
+            errors.append(f"{part}: " + ", ".join(missing) + " 응답이 필요합니다.")
+    return errors
+
+
+def collect():
+    data = {}
+    for k in list(ss.keys()):
+        if isinstance(k, str) and k.startswith(PREFIX) and k != PREFIX + "_동의":
+            val = ss[k]
+            if isinstance(val, str):
+                val = val.strip()
+            data[k[len(PREFIX):]] = val
+    # 조건부 문항: 상위 응답이 '예'가 아니면 하위 응답은 버림
+    if data.get("질병진단여부") != "예":
+        data["진단질병"], data["질병현재상태"] = [], ""
+    if data.get("과거손상여부") != "예":
+        data["과거손상부위"] = []
+    for part in sf.BODY_PARTS:
+        if "기타" not in (data.get(f"{part}_통증으로인한일") or []):
+            data[f"{part}_통증으로인한일_기타"] = ""
+    return sf.finalize_record(data)
+
+
+def step_confirm():
+    record = collect()
+    st.markdown("응답 내용을 확인해 주세요. 고칠 부분이 있으면 **이전**으로 돌아가 수정할 수 있습니다.")
+    with st.container(border=True):
+        st.markdown(
+            f"**{record.get('성명', '')}** · 만 {record.get('연령', '')}세 · {record.get('성별', '')}  \n"
+            f"{record.get('작업부서', '')} {record.get('라인/세부부서', '')} "
+            f"{record.get('수행작업', '')}"
         )
+        if record.get("근골격계증상여부") == "예":
+            for p in sf.BODY_PARTS:
+                if record.get(f"{p}_증상여부") == "예":
+                    side = record.get(f"{p}_통증부위")
+                    st.markdown(
+                        f"- **{p}**{f' ({side})' if side else ''}: "
+                        f"{record.get(f'{p}_지속기간')} 지속 · {record.get(f'{p}_증상정도')} · "
+                        f"{record.get(f'{p}_빈도')} · 지난 1주 증상 {record.get(f'{p}_최근1주증상')}"
+                    )
+        else:
+            st.markdown("- 지난 1년간 작업 관련 근골격계 증상: **없음**")
+    st.checkbox("입력한 내용이 사실과 같음을 확인합니다.", key="sv_confirm")
 
 
-        treatment = st.radio(
-            f"{part} - 지난 1년 동안 증상으로 병원·한의원 등에서 치료를 받은 적이 있습니까?",
-            ["아니오", "예"],
-            horizontal=True,
-            key=f"{part}_treatment",
-            index=None
+# ---------------------------------------------------------
+# 제출 처리
+# ---------------------------------------------------------
+
+def get_supabase():
+    from supabase import create_client
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+
+
+def already_submitted(client, record):
+    """같은 해에 같은 성명·부서·성별로 낸 응답이 있는지 확인 (중복 제출 방지)."""
+    year = record.get("조사연도") or datetime.now().year
+    try:
+        res = (client.table("survey_results").select("id, survey_data")
+               .eq("name", record.get("성명", ""))
+               .eq("department", record.get("작업부서", ""))
+               .gte("created_at", f"{year}-01-01")
+               .execute())
+    except Exception:
+        return False
+    for row in res.data or []:
+        prev = row.get("survey_data") or {}
+        if not prev.get("성별") or prev.get("성별") == record.get("성별"):
+            return True
+    return False
+
+
+def send_alert(record):
+    """통증호소자 응답이 들어오면 담당자에게 메일 (설정된 경우만).
+    메일에는 성명·건강정보를 넣지 않고, 관리자 화면에서 확인하도록 안내합니다."""
+    to = secret("ALERT_EMAIL_TO")
+    host = secret("SMTP_HOST")
+    if not (to and host):
+        return
+    try:
+        body = (
+            f"[{sf.FORM_TITLE}] 통증호소자로 판정된 응답이 접수되었습니다.\n\n"
+            f"- 접수 시각: {record.get('제출일시')}\n"
+            f"- 작업부서: {record.get('작업부서', '')}\n\n"
+            "개인 응답 내용은 관리자 화면(증상조사표 출력 / 대시보드)에서 확인해 주세요."
         )
+        msg = MIMEText(body, _charset="utf-8")
+        msg["Subject"] = f"[증상조사] 통증호소자 응답 접수 - {record.get('작업부서', '')}"
+        sender = secret("SMTP_FROM") or secret("SMTP_USER")
+        msg["From"] = sender
+        msg["To"] = to
+        with smtplib.SMTP(host, int(secret("SMTP_PORT", 587)), timeout=10) as s:
+            s.starttls()
+            if secret("SMTP_USER"):
+                s.login(secret("SMTP_USER"), secret("SMTP_PASSWORD"))
+            s.sendmail(sender, [x.strip() for x in str(to).split(",")], msg.as_string())
+    except Exception:
+        pass  # 알림 실패가 제출을 막지 않도록
 
 
-        return {
-            "duration": duration,
-            "severity": severity,
-            "frequency": frequency,
-            "recent": recent,
-            "treatment": treatment
-        }
+def submit():
+    record = collect()
+    try:
+        client = get_supabase()
+    except Exception as e:
+        st.error(f"저장소 연결 설정을 확인해 주세요: {e}")
+        return
+    if already_submitted(client, record):
+        st.error(
+            f"올해({record['조사연도']}년) 같은 성명·부서로 제출된 응답이 이미 있습니다. "
+            "내용을 고쳐야 하면 보건관리 담당자에게 알려 주세요."
+        )
+        return
+    db_data = {
+        "name": record.get("성명", ""),
+        "gender": record.get("성별", ""),
+        "age": int(record["연령"]) if record.get("연령") is not None else None,
+        "marriage": record.get("결혼여부") or "",
+        "department": record.get("작업부서", ""),
+        "sub_department": record.get("라인/세부부서", ""),
+        "current_work": record.get("현재작업", ""),
+        "symptom_exists": record.get("근골격계증상여부", ""),
+        "final_judgment": record.get("최종판정", ""),
+        "survey_data": record,
+    }
+    try:
+        client.table("survey_results").insert(db_data).execute()
+    except Exception as e:
+        st.error(f"저장 중 오류가 발생했습니다. 잠시 후 다시 눌러 주세요. ({e})")
+        return
+    if record.get("최종판정") == "통증호소자":
+        send_alert(record)
+    ss.sv_done = record
+    go(6)
+    st.rerun()
 
 
-    symptom_results = {}
+def step_done():
+    record = ss.get("sv_done") or {}
+    st.title("제출이 완료되었습니다")
+    st.success("응답해 주셔서 감사합니다. 결과는 작업환경 개선에 활용됩니다.")
+    st.caption("통증이 계속되거나 심해지면 보건관리 담당자와 상담해 주세요.")
+    try:
+        if sf.pdf_available():
+            st.download_button("내 응답 사본 받기 (PDF)", sf.build_pdf([record], ORG),
+                               f"{sf.file_stem(record)}_증상조사표.pdf", "application/pdf",
+                               width="stretch")
+        else:
+            st.download_button(
+                "내 응답 사본 받기 (Word)", sf.build_docx([record], ORG),
+                f"{sf.file_stem(record)}_증상조사표.docx",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                width="stretch")
+    except Exception:
+        pass
+    if st.button("새 응답 작성 (다른 사람)", width="stretch"):
+        reset_survey()
+        st.rerun()
 
-    for part in symptom_parts:
 
-        with st.expander(
-            f"📌 {part} 증상 입력",
-            expanded=True
-        ):
-            symptom_results[part] = symptom_questionnaire(part)
+# ---------------------------------------------------------
+# 화면 구성
+# ---------------------------------------------------------
 
+step = ss.sv_step
 
-elif has_symptom == "아니오":
+if step == 0:
+    step_intro()
+    st.stop()
+if step == 6:
+    step_done()
+    st.stop()
 
-    st.success(
-        "지난 1년 동안 작업과 관련된 근골격계 증상이 없는 것으로 응답하셨습니다."
-    )
+st.markdown(f"#### {sf.FORM_TITLE}")
+no_symptom = v("근골격계증상여부") == "아니오"
+st.progress(step / 5, text=f"{step} / 5 단계 · {STEPS[step - 1]}")
+st.header(f"{step}. {STEPS[step - 1]}")
 
+screens = {1: (step_basic, check_basic), 2: (step_history, check_history),
+           3: (step_symptom, check_symptom), 4: (step_parts, check_parts),
+           5: (step_confirm, lambda: [])}
+render, check = screens[step]
+render()
+
+for msg in ss.get("sv_errors", []):
+    st.error(msg)
 
 st.divider()
+left, right = st.columns(2)
+prev_step = 3 if (step == 5 and no_symptom) else step - 1
+if left.button("‹ 이전", width="stretch"):
+    go(prev_step)
+    st.rerun()
 
-
-# =========================================================
-# 제출
-# =========================================================
-
-agree = st.checkbox(
-    "입력한 내용이 사실과 같음을 확인합니다."
-)
-
-if st.button(
-    "조사 제출",
-    type="primary",
-    use_container_width=True
-):
-
-    if not agree:
-        st.error("내용 확인 후 체크박스를 선택해 주세요.")
-
-    elif not name:
-        st.error("성명을 입력해 주세요.")
-
-    elif has_symptom is None:
-        st.error("근골격계 증상 여부를 선택해 주세요.")
-
-    else:
-
-        # -----------------------------
-        # 기본정보 저장
-        # -----------------------------
-
-        data = {
-        "제출일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "성명": name,
-        "성별": gender,
-        "연령": age,
-        "결혼여부": marriage,
-        "작업부서": department,
-        "라인/세부부서": line,
-        "현직장_근무년": career_year,
-        "현직장_근무개월": career_month,
-        "현재작업": current_work,
-        "현재작업_수행년": current_work_year,
-        "현재작업_수행개월": current_work_month,
-        "1일근무시간": work_hours,
-        "휴식시간_분": rest_minutes,
-        "휴식횟수": rest_count,
-        "이전작업": past_work,
-        "이전작업_수행년": past_work_year,
-        "이전작업_수행개월": past_work_month,
-        "취미활동": ", ".join(hobbies),
-        "가사노동": housework,
-        "질병진단여부": disease,
-        "진단질병": ", ".join(disease_list),
-        "과거손상여부": injury,
-        "과거손상부위": ", ".join(injury_parts),
-        "육체적부담": physical_load,
-        "근골격계증상여부": has_symptom
-        }
-
-        # -----------------------------
-        # 모든 신체부위 열을 고정 생성
-        # -----------------------------
-        body_parts = [
-            "목",
-            "어깨",
-            "팔/팔꿈치",
-            "손/손목/손가락",
-            "허리",
-            "다리/발"
-        ]
-
-        for part in body_parts:
-
-            if (
-                has_symptom == "예"
-                and part in symptom_results
-            ):
-
-                result = symptom_results[part]
-
-                data[f"{part}_증상여부"] = "예"
-                data[f"{part}_지속기간"] = result["duration"]
-                data[f"{part}_증상정도"] = result["severity"]
-                data[f"{part}_빈도"] = result["frequency"]
-                data[f"{part}_최근1주증상"] = result["recent"]
-                data[f"{part}_치료경험"] = result["treatment"]
-
-                judgment = classify_body_part(
-                    symptom="예",
-                    duration=result["duration"],
-                    severity=result["severity"],
-                    frequency=result["frequency"],
-                    recent=result["recent"],
-                    treatment=result["treatment"]
-                )
-
-                data[f"{part}_판정"] = judgment
-
-            else:
-
-                data[f"{part}_증상여부"] = "아니오"
-                data[f"{part}_지속기간"] = ""
-                data[f"{part}_증상정도"] = ""
-                data[f"{part}_빈도"] = ""
-                data[f"{part}_최근1주증상"] = ""
-                data[f"{part}_치료경험"] = ""
-                data[f"{part}_판정"] = "정상"
-        part_judgments = []
-
-        for part in body_parts:
-
-            judgment = data.get(
-                f"{part}_판정",
-                "정상"
-            )
-
-            part_judgments.append(judgment)
-
-        if "통증호소자" in part_judgments:
-            final_judgment = "통증호소자"
-
-        elif "관리대상자" in part_judgments:
-            final_judgment = "관리대상자"
-
-        else:
-            final_judgment = "정상"
-
-        data["최종판정"] = final_judgment
-
-
-
-        # =====================================================
-        # Supabase DB 저장
-        # =====================================================
-
-        try:
-            from supabase import create_client
-
-            supabase_url = st.secrets["SUPABASE_URL"]
-            supabase_key = st.secrets["SUPABASE_KEY"]
-
-            supabase = create_client(
-                supabase_url,
-                supabase_key
-            )
-
-            db_data = {
-                "name": str(data.get("성명", "")),
-                "gender": str(data.get("성별", "")),
-                "age": int(data.get("연령", 0))
-                if str(data.get("연령", "")).strip() not in ["", "None"]
-                else None,
-
-                "marriage": str(
-                    data.get("결혼여부", "")
-                ),
-
-                "department": str(
-                    data.get("작업부서", "")
-                ),
-
-                "sub_department": str(
-                    data.get("라인/세부부서", "")
-                ),
-
-                "current_work": str(
-                    data.get("현재작업", "")
-                ),
-
-                "symptom_exists": str(
-                    data.get("근골격계증상여부", "")
-                ),
-
-                "final_judgment": str(
-                    data.get("최종판정", "")
-                ),
-
-                # 전체 설문 원본 데이터 저장
-                "survey_data": data
-            }
-
-            response = (
-                supabase
-                .table("survey_results")
-                .insert(db_data)
-                .execute()
-            )
-
-            st.success(
-                "근골격계 증상조사가 정상적으로 저장되었습니다."
-            )
-
-        except Exception as e:
-
-            st.error(
-                f"저장 중 오류가 발생했습니다: {e}"
-            )
+if step < 5:
+    if right.button("다음 ›", type="primary", width="stretch"):
+        errors = check()
+        if errors:
+            ss.sv_errors = errors
+            st.rerun()
+        # 통증이 없으면 서식처럼 4단계(부위별 문항)를 건너뜀
+        go(5 if (step == 3 and no_symptom) else step + 1)
+        st.rerun()
+else:
+    if right.button("제출하기", type="primary", width="stretch",
+                    disabled=not ss.get("sv_confirm")):
+        with st.spinner("저장 중입니다…"):
+            submit()
