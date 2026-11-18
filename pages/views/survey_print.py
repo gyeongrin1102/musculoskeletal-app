@@ -85,10 +85,17 @@ tab_out, tab_xlsx, tab_blank, tab_fix = st.tabs(
 with tab_blank:
     st.write("스마트폰 사용이 어려운 근로자에게 나눠 줄 빈 조사표입니다. 문항과 보기는 서식 그대로입니다.")
     c1, c2 = st.columns(2)
-    c1.download_button("빈 양식 Word", sf.build_docx([{}], ORG), "근골격계질환_증상조사표_빈양식.docx",
-                       DOCX_MIME, width="stretch")
-    if sf.pdf_available():
-        c2.download_button("빈 양식 PDF", sf.build_pdf([{}], ORG), "근골격계질환_증상조사표_빈양식.pdf",
+    try:
+        blank_docx = sf.build_docx([{}], ORG)
+        blank_pdf = sf.build_pdf([{}], ORG) if sf.pdf_available() else None
+    except Exception as e:
+        st.error(f"빈 양식을 만들지 못했습니다: {type(e).__name__}: {e}")
+        blank_docx = blank_pdf = None
+    if blank_docx:
+        c1.download_button("빈 양식 Word", blank_docx, "근골격계질환_증상조사표_빈양식.docx",
+                           DOCX_MIME, width="stretch")
+    if blank_pdf:
+        c2.download_button("빈 양식 PDF", blank_pdf, "근골격계질환_증상조사표_빈양식.pdf",
                            "application/pdf", width="stretch")
     st.caption("종이로 받은 조사표는 근로자용 설문 화면에 대신 입력하면 집계에 함께 반영됩니다.")
 
@@ -159,26 +166,29 @@ with tab_out:
         if chosen and st.button("출력 파일 만들기", type="primary", width="stretch"):
             ext, mime = (("pdf", "application/pdf") if fmt == "PDF" else ("docx", DOCX_MIME))
             build = sf.build_pdf if fmt == "PDF" else sf.build_docx
-            with st.spinner(f"{len(chosen)}명 조사표를 만드는 중…"):
-                if mode == "한 파일로 합치기" or len(chosen) == 1:
-                    data = build(chosen, ORG, with_judg)
-                    name = (f"{sf.file_stem(chosen[0])}_증상조사표.{ext}" if len(chosen) == 1
-                            else f"{year}_근골격계증상조사표_{len(chosen)}명.{ext}")
-                else:
-                    buf = io.BytesIO()
-                    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-                        used = set()
-                        for r in chosen:
-                            stem = sf.file_stem(r)
-                            n = 2
-                            while stem in used:
-                                stem = f"{sf.file_stem(r)}_{n}"
-                                n += 1
-                            used.add(stem)
-                            z.writestr(f"{stem}.{ext}", build([r], ORG, with_judg))
-                    data, ext, mime = buf.getvalue(), "zip", "application/zip"
-                    name = f"{year}_근골격계증상조사표_{len(chosen)}명.zip"
-            st.session_state.po_file = (data, name, mime)
+            try:
+                with st.spinner(f"{len(chosen)}명 조사표를 만드는 중…"):
+                    if mode == "한 파일로 합치기" or len(chosen) == 1:
+                        data = build(chosen, ORG, with_judg)
+                        name = (f"{sf.file_stem(chosen[0])}_증상조사표.{ext}" if len(chosen) == 1
+                                else f"{year}_근골격계증상조사표_{len(chosen)}명.{ext}")
+                    else:
+                        buf = io.BytesIO()
+                        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+                            used = set()
+                            for r in chosen:
+                                stem = sf.file_stem(r)
+                                n = 2
+                                while stem in used:
+                                    stem = f"{sf.file_stem(r)}_{n}"
+                                    n += 1
+                                used.add(stem)
+                                z.writestr(f"{stem}.{ext}", build([r], ORG, with_judg))
+                        data, ext, mime = buf.getvalue(), "zip", "application/zip"
+                        name = f"{year}_근골격계증상조사표_{len(chosen)}명.zip"
+                st.session_state.po_file = (data, name, mime)
+            except Exception as e:
+                st.error(f"출력 파일을 만들지 못했습니다: {type(e).__name__}: {e}")
 
         if st.session_state.get("po_file"):
             data, name, mime = st.session_state.po_file
@@ -207,15 +217,23 @@ with tab_xlsx:
     who = company_x if company_x not in ("전체 업체", UNKNOWN_COMPANY) else ORG
     title = f"{year_x}년 {sf.FORM_TITLE} 결과" + (f" ({who})" if who else "")
     stamp = datetime.now().strftime("%Y%m%d")
-    c1, c2 = st.columns(2)
-    c1.download_button(
-        "담당자 보관용 엑셀 (원자료·명단 포함)", sf.build_xlsx(pool, title, True),
-        f"{year_x}_{'' if company_x == '전체 업체' else company_x + '_'}근골격계증상조사_보관용_{stamp}.xlsx", XLSX_MIME, width="stretch",
-        help="건강정보가 들어 있습니다. 담당자만 열람할 수 있는 곳에 5년간 보관하세요.")
-    c2.download_button(
-        "보고·공유용 엑셀 (집계만)", sf.build_xlsx(pool, title, False),
-        f"{year_x}_{'' if company_x == '전체 업체' else company_x + '_'}근골격계증상조사_집계_{stamp}.xlsx", XLSX_MIME, width="stretch",
-        help="개인이 드러나지 않는 숫자 집계만 들어 있습니다.")
+    try:
+        xlsx_private = sf.build_xlsx(pool, title, True)
+        xlsx_public = sf.build_xlsx(pool, title, False)
+    except Exception as e:
+        st.error(f"엑셀 파일을 만들지 못했습니다: {type(e).__name__}: {e}")
+        xlsx_private = xlsx_public = None
+    prefix = "" if company_x == "전체 업체" else company_x + "_"
+    if xlsx_private:
+        c1, c2 = st.columns(2)
+        c1.download_button(
+            "담당자 보관용 엑셀 (원자료·명단 포함)", xlsx_private,
+            f"{year_x}_{prefix}근골격계증상조사_보관용_{stamp}.xlsx", XLSX_MIME, width="stretch",
+            help="건강정보가 들어 있습니다. 담당자만 열람할 수 있는 곳에 5년간 보관하세요.")
+        c2.download_button(
+            "보고·공유용 엑셀 (집계만)", xlsx_public,
+            f"{year_x}_{prefix}근골격계증상조사_집계_{stamp}.xlsx", XLSX_MIME, width="stretch",
+            help="개인이 드러나지 않는 숫자 집계만 들어 있습니다.")
     st.info(
         "보존 기간(KOSHA GUIDE E-G-1-2025 10): 유해요인조사 결과(증상 설문조사 결과 포함) 5년. "
         "조사가 끝나면 연도별로 내려받아 보관해 두세요. "

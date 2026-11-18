@@ -788,6 +788,44 @@ PART_FIELDS = ["증상여부", "통증부위", "지속기간", "증상정도", "
                "통증으로인한일", "통증으로인한일_기타", "판정"]
 
 
+class _SheetWriter:
+    """DataFrame 을 openpyxl 시트에 쓰는 최소 기능 (pandas.ExcelWriter 대체)."""
+
+    def __init__(self):
+        from openpyxl import Workbook
+        self.book = Workbook()
+        self.book.remove(self.book.active)
+        self.sheets = {}
+
+    @staticmethod
+    def _cell(value):
+        from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+        try:
+            import pandas as pd
+            if value is None or (not isinstance(value, (list, dict, tuple)) and pd.isna(value)):
+                return None
+        except (TypeError, ValueError):
+            pass
+        if hasattr(value, "item") and not isinstance(value, (str, bytes)):
+            value = value.item()          # numpy 숫자 → 파이썬 숫자
+        if isinstance(value, bool) or isinstance(value, (int, float)):
+            return value
+        text = str(value)
+        return ILLEGAL_CHARACTERS_RE.sub("", text)   # 엑셀에 못 넣는 제어문자 제거
+
+    def put(self, df, sheet_name, startrow=0):
+        ws = self.sheets.get(sheet_name)
+        if ws is None:
+            ws = self.book.create_sheet(sheet_name)
+            self.sheets[sheet_name] = ws
+        for j, col in enumerate(df.columns, start=1):
+            ws.cell(row=startrow + 1, column=j, value=self._cell(col))
+        for i, values in enumerate(df.itertuples(index=False), start=startrow + 2):
+            for j, value in enumerate(values, start=1):
+                ws.cell(row=i, column=j, value=self._cell(value))
+        return ws
+
+
 def build_xlsx(records, title="", include_personal=True):
     """연도별 보관·보고용 엑셀.
 
@@ -801,11 +839,13 @@ def build_xlsx(records, title="", include_personal=True):
     overall, by_part, by_dept = summary_tables(records)
 
     buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine="openpyxl") as w:
+    # pandas 버전에 따라 ExcelWriter 동작이 달라 openpyxl 로 직접 씁니다.
+    w = _SheetWriter()
+    if True:
         start = 3
-        overall.to_excel(w, "집계", index=False, startrow=start)
-        by_part.to_excel(w, "집계", index=False, startrow=start + 4)
-        by_dept.to_excel(w, "집계", index=False, startrow=start + 6 + len(by_part))
+        w.put(overall, "집계", start)
+        w.put(by_part, "집계", start + 4)
+        w.put(by_dept, "집계", start + 6 + len(by_part))
         ws = w.sheets["집계"]
         ws["A1"] = title or f"{FORM_TITLE} 집계표"
         ws["A1"].font = Font(size=14, bold=True)
@@ -841,8 +881,8 @@ def build_xlsx(records, title="", include_personal=True):
             order = {"통증호소자": 0, "관리대상자": 1}
             if len(target_df):
                 target_df = target_df.sort_values("최종판정", key=lambda s: s.map(order))
-            target_df.to_excel(w, "판정대상자 명단", index=False)
-            raw_df.to_excel(w, "응답 원자료", index=False)
+            w.put(target_df, "판정대상자 명단", 0)
+            w.put(raw_df, "응답 원자료", 0)
 
         thin = Side(style="thin", color="999999")
         head_fill = PatternFill("solid", fgColor="EEF2F7")
@@ -885,6 +925,7 @@ def build_xlsx(records, title="", include_personal=True):
                 fill = {"통증호소자": red, "관리대상자": yellow}.get(row[0].value)
                 if fill:
                     row[0].fill = fill
+    w.book.save(buf)
     return buf.getvalue()
 
 
